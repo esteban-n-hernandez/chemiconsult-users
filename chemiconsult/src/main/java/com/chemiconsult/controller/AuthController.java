@@ -2,6 +2,8 @@ package com.chemiconsult.controller;
 
 import com.chemiconsult.security.JwtUtil;
 import com.chemiconsult.service.JwtUserDetailsService;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,6 +44,8 @@ public class AuthController {
     }
 
     // Clase interna para la respuesta
+    @Setter
+    @Getter
     static class AuthResponse {
         private String token;
 
@@ -49,12 +53,5 @@ public class AuthController {
             this.token = token;
         }
 
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
     }
 }

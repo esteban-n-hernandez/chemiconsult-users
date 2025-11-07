@@ -1,5 +1,6 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -16,9 +17,14 @@ public class EstudiosDE {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonBackReference("user-estudios")
     private UserDE user;
-
     private Date date;
+    private String tipo;
+    private String estado;
+
+    @Lob
+    @Column(name = "archivo")
     private byte[] archivo;
 
 

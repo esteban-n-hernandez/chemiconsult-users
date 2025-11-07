@@ -2,6 +2,7 @@ package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.service.UserService;
+import com.chemiconsult.to.UserPasswordTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +44,19 @@ public class UserController {
             existing.setEmail(user.getEmail());
             existing.setPassword(user.getPassword());
             existing.setRol(user.getRol());
+
+            return userService.createUser(existing);
+        }
+        throw new RuntimeException("Usuario no encontrado con ID: " + id);
+    }
+
+    @PutMapping("/{id}/password")
+    public UserDE updateUserPassword(@PathVariable Long id, @RequestBody UserPasswordTO userPasswordTO) {
+
+        Optional<UserDE> optional = Optional.ofNullable(userService.getUserById(id));
+        if (optional.isPresent()) {
+            UserDE existing = optional.get();
+            existing.setPassword(userPasswordTO.getNewPassword());
 
             return userService.createUser(existing);
         }

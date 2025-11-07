@@ -19,6 +19,10 @@ public class EstudiosService {
         return estudiosRepository.findAll();
     }
 
+    public Optional<EstudiosDE> getEstudio(Long id) {
+        return this.estudiosRepository.findById(id);
+    }
+
     public EstudiosDE createEstudio(EstudiosDE estudio) {
         return estudiosRepository.save(estudio);
     }
@@ -38,4 +42,5 @@ public class EstudiosService {
     public void deleteEstudio(Long id) {
         estudiosRepository.deleteById(id);
     }
+
 }
