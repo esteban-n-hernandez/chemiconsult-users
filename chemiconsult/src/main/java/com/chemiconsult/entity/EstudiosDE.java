@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "estudios")
+@Table(name = "ANALISIS")
 @Data
 public class EstudiosDE {
 
@@ -16,16 +16,25 @@ public class EstudiosDE {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "USER_ID")
     @JsonBackReference("user-estudios")
     private UserDE user;
-    private Date date;
+
+    @Column(name = "ANALYSIS_TYPE")
     private String tipo;
+
+    @Column(name = "STATUS")
     private String estado;
 
     @Lob
-    @Column(name = "archivo")
+    @Column(name = "PDF", columnDefinition = "mediumblob")
     private byte[] archivo;
 
+
+    @Column(name = "CREATED_DATE")
+    private LocalDate createdDate;
+
+    @Column(name = "UPDATE_DATE")
+    private LocalDate updateDate;
 
 }
