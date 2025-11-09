@@ -1,7 +1,11 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.EstudiosDE;
+import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.repository.EstudiosRepository;
+import com.chemiconsult.repository.UserRepository;
+import com.chemiconsult.to.EstudioTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +18,8 @@ public class EstudiosService {
 
     @Autowired
     EstudiosRepository estudiosRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     public List<EstudiosDE> getEstudios() {
         return estudiosRepository.findAll();
@@ -23,15 +29,21 @@ public class EstudiosService {
         return this.estudiosRepository.findById(id);
     }
 
-    public EstudiosDE createEstudio(EstudiosDE estudio) {
-        return estudiosRepository.save(estudio);
+    public EstudiosDE createEstudio(EstudioTO estudio) {
+
+        UserDE user = userRepository.findById(Math.toIntExact(estudio.getUserId()))
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        EstudiosDE estudioDE = EstudiosMapper.createEstudio(estudio,user);
+
+        return estudiosRepository.save(estudioDE);
     }
 
     public EstudiosDE updateEstudio(Long id, EstudiosDE estudio) {
         Optional<EstudiosDE> optional = estudiosRepository.findById(id);
         if (optional.isPresent()) {
             EstudiosDE existing = optional.get();
-            existing.setDate(estudio.getDate());
+            existing.setCreatedDate(estudio.getCreatedDate());
             existing.setArchivo(estudio.getArchivo());
             existing.setUser(estudio.getUser());
             return estudiosRepository.save(existing);

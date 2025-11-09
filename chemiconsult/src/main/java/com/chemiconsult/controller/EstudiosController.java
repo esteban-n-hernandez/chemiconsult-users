@@ -2,6 +2,7 @@ package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.EstudiosDE;
 import com.chemiconsult.service.EstudiosService;
+import com.chemiconsult.to.EstudioTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -30,7 +31,7 @@ public class EstudiosController {
     }
 
     @PostMapping
-    public EstudiosDE createEstudio(@RequestBody EstudiosDE estudio) {
+    public EstudiosDE createEstudio(@RequestBody EstudioTO estudio) {
         return estudiosService.createEstudio(estudio);
     }
 
