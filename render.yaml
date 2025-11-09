@@ -1,9 +1,9 @@
 services:
   - type: web
     name: chemiconsult
-    env: java
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -jar target/chemiconsult-0.0.1-SNAPSHOT.jar
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: JAVA_VERSION
         value: 21
