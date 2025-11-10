@@ -27,7 +27,7 @@ public class EstudiosDE {
     private String estado;
 
     @Lob
-    @Column(name = "PDF", columnDefinition = "mediumblob")
+    @Column(name = "PDF", columnDefinition = "BYTEA")
     private byte[] archivo;
 
 
