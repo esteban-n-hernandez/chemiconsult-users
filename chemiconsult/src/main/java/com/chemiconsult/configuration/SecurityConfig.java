@@ -34,7 +34,6 @@ public class SecurityConfig {
     private JwtRequestFilter jwtRequestFilter;
 
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -51,6 +50,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -58,7 +58,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // public endpoints
-                        .requestMatchers("/login", "/authenticate", "/api/auth/**","/dashboard").permitAll()
+                        .requestMatchers("/login", "/authenticate", "/api/auth/**", "/dashboard").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -69,12 +69,16 @@ public class SecurityConfig {
 
         return http.build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 👇 Cambiá el origen si tu frontend corre en otro puerto
-        // configuration.setAllowedOrigins(List.of("http://localhost:63343","https://esteban-n-hernandez.github.io"));
+        configuration.setAllowedOrigins(List.of(
+                "https://esteban-n-hernandez.github.io",
+                "http://localhost:63343",
+                "http://localhost:4200"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
