@@ -2,9 +2,11 @@ package com.chemiconsult.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import org.hibernate.annotations.Type;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 
@@ -29,7 +31,7 @@ public class EstudiosDE {
     private String estado;
 
     @Lob
-    @Type(type="org.hibernate.type.BinaryType")
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "PDF", columnDefinition = "bytea")
     private byte[] archivo;
 
