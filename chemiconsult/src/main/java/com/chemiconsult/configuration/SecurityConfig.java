@@ -77,6 +77,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "https://esteban-n-hernandez.github.io",
                 "http://localhost:63343",
+                "http://localhost:63342",
                 "http://localhost:4200"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
