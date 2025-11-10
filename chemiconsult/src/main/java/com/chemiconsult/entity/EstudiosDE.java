@@ -1,6 +1,8 @@
 package com.chemiconsult.entity;
 
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import org.hibernate.annotations.Type;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -27,6 +29,7 @@ public class EstudiosDE {
     private String estado;
 
     @Lob
+    @Type(type="org.hibernate.type.BinaryType")
     @Column(name = "PDF", columnDefinition = "bytea")
     private byte[] archivo;
 
