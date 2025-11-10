@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: chemiconsult
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: JAVA_VERSION
+        value: 21
