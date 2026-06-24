@@ -37,21 +37,28 @@ public class AuthController {
         // Cargar los detalles del usuario
         UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(email);
 
+        String role = userDetails.getAuthorities()
+            .stream()
+            .findFirst()
+            .map(a -> a.getAuthority())
+            .orElse("CLIENTE");
+
         // Generar el token JWT
         String token = jwtUtil.generateToken(userDetails.getUsername());
 
-        return ResponseEntity.ok(new AuthResponse(token));
+        return ResponseEntity.ok(new AuthResponse(token, role));
     }
 
     // Clase interna para la respuesta
     @Setter
     @Getter
     static class AuthResponse {
-        private String token;
+    private String token;
+    private String role;  // 👈 campo nuevo
 
-        public AuthResponse(String token) {
-            this.token = token;
-        }
-
+    public AuthResponse(String token, String role) {
+        this.token = token;
+        this.role  = role;
     }
+}
 }
