@@ -1,6 +1,6 @@
 package com.chemiconsult.service;
 
-import com.chemiconsult.entity.EstudiosDE;
+import com.chemiconsult.entity.AnalisisDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.repository.EstudiosRepository;
@@ -21,28 +21,36 @@ public class EstudiosService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<EstudiosDE> getEstudios() {
+    public List<AnalisisDE> getEstudios() {
         return estudiosRepository.findAll();
     }
 
-    public Optional<EstudiosDE> getEstudio(Long id) {
+    /*
+    public List<EstudioTO> getEstudiosByID(Long userId) {
+        return estudiosRepository.findAllById(userId);
+    }
+
+     */
+
+
+    public Optional<AnalisisDE> getEstudio(Long id) {
         return this.estudiosRepository.findById(id);
     }
 
-    public EstudiosDE createEstudio(EstudioTO estudio) {
+    public AnalisisDE createEstudio(EstudioTO estudio) {
 
         UserDE user = userRepository.findById(Math.toIntExact(estudio.getUserId()))
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        EstudiosDE estudioDE = EstudiosMapper.createEstudio(estudio,user);
+        AnalisisDE estudioDE = EstudiosMapper.createEstudio(estudio, user);
 
         return estudiosRepository.save(estudioDE);
     }
 
-    public EstudiosDE updateEstudio(Long id, EstudiosDE estudio) {
-        Optional<EstudiosDE> optional = estudiosRepository.findById(id);
+    public AnalisisDE updateEstudio(Long id, AnalisisDE estudio) {
+        Optional<AnalisisDE> optional = estudiosRepository.findById(id);
         if (optional.isPresent()) {
-            EstudiosDE existing = optional.get();
+            AnalisisDE existing = optional.get();
             existing.setCreatedDate(estudio.getCreatedDate());
             existing.setArchivo(estudio.getArchivo());
             existing.setUser(estudio.getUser());

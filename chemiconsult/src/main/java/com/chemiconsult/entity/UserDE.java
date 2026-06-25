@@ -38,9 +38,8 @@ public class UserDE {
     @Column(name = "UPDATE_DATE")
     private LocalDate updateDate;
 
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-estudios")
-    private List<EstudiosDE> estudios;
+    private List<AnalisisDE> estudios;
 
 }

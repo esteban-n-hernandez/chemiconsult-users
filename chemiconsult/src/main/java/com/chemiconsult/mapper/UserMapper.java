@@ -3,6 +3,8 @@ package com.chemiconsult.mapper;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.to.UserTO;
 
+import java.util.List;
+
 public class UserMapper {
 
     public static UserDE mapUserToEntity(UserTO userTO) {
@@ -25,5 +27,12 @@ public class UserMapper {
 
         return userTO;
     }
+
+    public static List<UserTO> mapEntityToUserTOList(List<UserDE> userDEList) {
+        return userDEList.stream()
+                .map(UserMapper::mapEntityToUserTO)
+                .toList();
+    }
+
 
 }
