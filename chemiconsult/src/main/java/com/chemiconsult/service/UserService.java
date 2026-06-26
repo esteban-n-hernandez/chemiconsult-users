@@ -1,7 +1,9 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.mapper.UserMapper;
 import com.chemiconsult.repository.UserRepository;
+import com.chemiconsult.to.UserTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +17,8 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<UserDE> getUsers() {
-        return userRepository.findAll();
+    public List<UserTO> getUsers() {
+        return UserMapper.mapEntityToUserTOList(userRepository.findAll());
     }
 
     public UserDE getUserById(Long id) {

@@ -3,6 +3,7 @@ package com.chemiconsult.controller;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.service.UserService;
 import com.chemiconsult.to.UserPasswordTO;
+import com.chemiconsult.to.UserTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class UserController {
 
     // ✅ Obtener todos los usuarios
     @GetMapping
-    public List<UserDE> getUsers() {
+    public List<UserTO> getUsers() {
         return userService.getUsers();
     }
 
