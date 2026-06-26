@@ -16,7 +16,7 @@ public class TipoMuestraMapper {
         tipoMuestra.setParametrosPorDefecto(parametros);
         tipoMuestra.setActivo(true);
         tipoMuestra.setCreatedDate(LocalDate.now());
-     //   tipoMuestra.setUpdateDate(LocalDate.now());
+        tipoMuestra.setUpdateDate(LocalDate.now());
         return tipoMuestra;
     }
 
@@ -26,7 +26,7 @@ public class TipoMuestraMapper {
         existing.setNombre(to.getNombre());
         existing.setDescripcion(to.getDescripcion());
         existing.setParametrosPorDefecto(parametros);
-      //  existing.setUpdateDate(LocalDate.now());
+        existing.setUpdateDate(LocalDate.now());
         return existing;
     }
 }

@@ -7,6 +7,7 @@ import com.chemiconsult.repository.ParametroRepository;
 import com.chemiconsult.to.ParametroTO;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,7 +52,7 @@ public class ParametroService {
         if (optional.isPresent()) {
             ParametroDE parametro = optional.get();
             parametro.setActivo(false);
-            //parametro.setUpdateDate(LocalDate.now());
+            parametro.setUpdateDate(LocalDate.now());
             parametroRepository.save(parametro);
             return;
         }

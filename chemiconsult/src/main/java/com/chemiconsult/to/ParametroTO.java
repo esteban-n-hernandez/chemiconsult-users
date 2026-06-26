@@ -10,4 +10,5 @@ public class ParametroTO {
     private Double valorMinimo;
     private Double valorMaximo;
     private String normaReferencia;
+    private Boolean activo;
 }

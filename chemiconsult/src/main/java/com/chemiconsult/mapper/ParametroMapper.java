@@ -16,7 +16,7 @@ public class ParametroMapper {
         parametro.setNormaReferencia(to.getNormaReferencia());
         parametro.setActivo(true);
         parametro.setCreatedDate(LocalDate.now());
-       // parametro.setUpdateDate(LocalDate.now());
+        parametro.setUpdateDate(LocalDate.now());
         return parametro;
     }
 
@@ -26,7 +26,7 @@ public class ParametroMapper {
         existing.setValorMinimo(to.getValorMinimo());
         existing.setValorMaximo(to.getValorMaximo());
         existing.setNormaReferencia(to.getNormaReferencia());
-     //   existing.setUpdateDate(LocalDate.now());
+        existing.setUpdateDate(LocalDate.now());
         return existing;
     }
 }
