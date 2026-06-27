@@ -19,13 +19,12 @@ public class UserMapper {
     }
 
     public static UserTO mapEntityToUserTO(UserDE userDE) {
-        UserTO userTO = new UserTO();
-        userTO.setId(userDE.getId());
-        userTO.setUsername(userDE.getUsername());
-        userTO.setEmail(userDE.getEmail());
-        userTO.setRol(userDE.getRol());
-
-        return userTO;
+        return UserTO.builder()
+                .id(userDE.getId())
+                .username(userDE.getUsername())
+                .email(userDE.getEmail())
+                .rol(userDE.getRol())
+                .build();
     }
 
     public static List<UserTO> mapEntityToUserTOList(List<UserDE> userDEList) {

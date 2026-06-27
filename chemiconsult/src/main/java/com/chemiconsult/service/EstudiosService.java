@@ -3,9 +3,11 @@ package com.chemiconsult.service;
 import com.chemiconsult.entity.AnalisisDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.mapper.EstudiosMapper;
+import com.chemiconsult.mapper.UserMapper;
 import com.chemiconsult.repository.EstudiosRepository;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.EstudioTO;
+import com.chemiconsult.to.UserTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +27,14 @@ public class EstudiosService {
         return estudiosRepository.findAll();
     }
 
-    /*
     public List<EstudioTO> getEstudiosByID(Long userId) {
-        return estudiosRepository.findAllById(userId);
-    }
+        UserDE user = UserMapper.mapUserToEntity(UserTO.builder().id(userId).build());
 
-     */
+        return estudiosRepository.findAllByUser(user)
+                .stream()
+                .map(estudio -> EstudiosMapper.toEstudioTO(estudio))
+                .toList();
+    }
 
 
     public Optional<AnalisisDE> getEstudio(Long id) {

@@ -26,8 +26,8 @@ public class EstudiosController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<AnalisisDE> getEstudiosByID(Long userId) {
-        return estudiosService.getEstudios();
+    public List<EstudioTO> getEstudiosByID(@PathVariable Long userId) {
+        return estudiosService.getEstudiosByID(userId);
     }
 
     @GetMapping("/{id}")
