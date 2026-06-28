@@ -28,9 +28,13 @@ public class AnalisisDE {
     @Column(name = "STATUS")
     private String estado;
 
+    @Column(name = "PDF_URL")
+    private String archivoUrl;
+
     @Column(name = "PDF", columnDefinition = "bytea")
     @Basic(fetch = FetchType.LAZY)
     private byte[] archivo;
+
 
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
