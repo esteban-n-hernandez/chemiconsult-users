@@ -15,8 +15,8 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class TipoMuestraController {
 
-    @Autowired
-    private TipoMuestraService tipoMuestraService;
+
+    TipoMuestraService tipoMuestraService;
 
     // GET /api/tipos-muestra — solo activos
     @GetMapping
@@ -67,5 +67,10 @@ public class TipoMuestraController {
     public ResponseEntity<Void> deleteTipoMuestra(@PathVariable Long id) {
         tipoMuestraService.deleteTipoMuestra(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Autowired
+    public TipoMuestraController(TipoMuestraService tipoMuestraService) {
+        this.tipoMuestraService = tipoMuestraService;
     }
 }
