@@ -15,8 +15,8 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class UserController {
 
-    @Autowired
     UserService userService;
+
 
     // ✅ Obtener todos los usuarios
     @GetMapping
@@ -67,5 +67,10 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+    }
+
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 }

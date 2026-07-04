@@ -1,11 +1,12 @@
 package com.chemiconsult.supabase.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 
@@ -36,6 +37,10 @@ public class SupabaseBucketService {
                 .header("apikey", serviceRoleKey)
                 .accept(MediaType.APPLICATION_PDF, MediaType.ALL)
                 .retrieve()
+                .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(),
+                        (request, response) -> {
+                            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Archivo no encontrado en Supabase");
+                        })
                 .body(byte[].class);
     }
 

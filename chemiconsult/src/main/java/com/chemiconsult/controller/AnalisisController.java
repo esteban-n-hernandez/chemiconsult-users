@@ -5,6 +5,7 @@ import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.service.AnalisisService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.EstudioTO;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Log4j2
 @RestController
 @RequestMapping("/api/estudios")
 @CrossOrigin(origins = "*") // permite llamadas desde el frontend
@@ -66,20 +68,33 @@ public class AnalisisController {
 
     @GetMapping("/{id}/resultado")
     public ResponseEntity<byte[]> getResultado(@PathVariable Long id) {
+        log.info("Obteniendo resultado del estudio con ID: {}", id);
+
         Optional<AnalisisDE> estudio = analisisService.getEstudio(id);
 
-        if (estudio.isPresent()) {
-            if (estudio.get().getArchivo() == null) {
-                return ResponseEntity.notFound().build();
-            }
-        } else {
+        if (estudio.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
+        AnalisisDE analisis = estudio.get();
+        String path = analisis.getArchivoUrl();
+        if (path == null || path.isBlank()) {
+            if (analisis.getArchivo() != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"resultado_" + id + ".pdf\"")
+                        .body(analisis.getArchivo());
+            }
+            return ResponseEntity.notFound().build();
+        }
+
+        byte[] archivo = supabaseBucketService.descargarArchivo(BUCKET, path);
+        String nombreArchivo = path.substring(path.lastIndexOf('/') + 1);
+
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"resultado_" + id + ".pdf\"")
-                .body(estudio.get().getArchivo());
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + nombreArchivo + "\"")
+                .body(archivo);
     }
 
     @PostMapping("/{id}/documento")
@@ -90,11 +105,12 @@ public class AnalisisController {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        String path = id + "/informe.pdf";
+        String path = id + "/" + file.getName();
 
         supabaseBucketService.subirArchivo(BUCKET, path, file);
 
         analisis.setArchivoUrl(path);
+        analisis.setEstado("Informe listo");
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
 
