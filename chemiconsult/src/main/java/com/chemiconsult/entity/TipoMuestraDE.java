@@ -3,6 +3,8 @@ package com.chemiconsult.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,6 +40,7 @@ public class TipoMuestraDE {
             joinColumns = @JoinColumn(name = "TIPO_MUESTRA_ID"),
             inverseJoinColumns = @JoinColumn(name = "PARAMETRO_ID")
     )
-
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<ParametroDE> parametrosPorDefecto;
 }

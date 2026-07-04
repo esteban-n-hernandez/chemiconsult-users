@@ -15,7 +15,6 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class ParametroController {
 
-    @Autowired
     private ParametroService parametroService;
 
     // GET /api/parametros — solo activos
@@ -67,5 +66,11 @@ public class ParametroController {
     public ResponseEntity<Void> deleteParametro(@PathVariable Long id) {
         parametroService.deleteParametro(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @Autowired
+    public ParametroController(ParametroService parametroService) {
+        this.parametroService = parametroService;
     }
 }
