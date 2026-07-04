@@ -20,14 +20,13 @@ public class EstudiosMapper {
     }
 
 
-    //Create mapping method between EstudiosTO and EstudiosDE here
-    public static EstudioTO toEstudioTO(AnalisisDE entity) {
-        EstudioTO estudio = new EstudioTO();
-        estudio.setTipo(entity.getTipo());
-        estudio.setEstado(entity.getEstado());
-        estudio.setArchivo(entity.getArchivo());
-        // Note: User mapping should be handled separately
-        return estudio;
+    public static EstudioTO mapEntityToEstudioTO(AnalisisDE entity) {
+        return EstudioTO.builder()
+                .archivo(entity.getArchivo())
+                .archivoUrl(entity.getArchivoUrl())
+                .estado(entity.getEstado())
+                .tipo(entity.getTipo())
+                .build();
     }
 
 }

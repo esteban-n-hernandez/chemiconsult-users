@@ -1,5 +1,6 @@
 package com.chemiconsult.mapper;
 
+import com.chemiconsult.entity.ClienteDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.to.UserTO;
 
@@ -34,4 +35,15 @@ public class UserMapper {
     }
 
 
+    public static UserDE createUserFromCliente(ClienteDE cliente) {
+
+        UserDE user = new UserDE();
+        user.setUsername(cliente.getNombre());
+        user.setEmail(cliente.getEmail());
+        user.setRol("CLIENTE");
+        user.setPassword("password"); // Aquí puedes establecer una contraseña por defecto o generar una aleatoria
+
+        return user;
+
+    }
 }
