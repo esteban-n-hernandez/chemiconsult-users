@@ -18,7 +18,7 @@ import java.util.Optional;
 @Service
 public class AnalisisService {
 
-     AnalisisRepository analisisRepository;
+    AnalisisRepository analisisRepository;
 
     ClienteService clienteService;
 
@@ -48,7 +48,7 @@ public class AnalisisService {
 
         return analisisRepository.findAllByUser(user)
                 .stream()
-                .map(analisis -> EstudiosMapper.mapEntityToEstudioTO(analisis, cliente))
+                .map(EstudiosMapper::mapEntityToEstudioTO)
                 .toList();
     }
 
