@@ -15,7 +15,7 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class ParametroController {
 
-    private ParametroService parametroService;
+    ParametroService parametroService;
 
     // GET /api/parametros — solo activos
     @GetMapping
