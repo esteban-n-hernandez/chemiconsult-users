@@ -1,6 +1,7 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.AnalisisDE;
+import com.chemiconsult.entity.ClienteDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.mapper.UserMapper;
@@ -17,9 +18,10 @@ import java.util.Optional;
 @Service
 public class AnalisisService {
 
-
     @Autowired
     AnalisisRepository analisisRepository;
+
+    ClienteService clienteService;
 
     @Autowired
     private UserRepository userRepository;
@@ -30,10 +32,11 @@ public class AnalisisService {
 
     public List<EstudioTO> getEstudiosByID(Long userId) {
         UserDE user = UserMapper.mapUserToEntity(UserTO.builder().id(userId).build());
+        ClienteDE cliente = clienteService.getCliente(userId);
 
         return analisisRepository.findAllByUser(user)
                 .stream()
-                .map(EstudiosMapper::mapEntityToEstudioTO)
+                .map(a -> EstudiosMapper.mapEntityToEstudioTO(a, cliente))
                 .toList();
     }
 
