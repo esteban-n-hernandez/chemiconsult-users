@@ -27,12 +27,19 @@ import java.util.Optional;
 public class AnalisisController {
 
     @Autowired
+    public AnalisisController(AnalisisService analisisService,
+                              SupabaseBucketService supabaseBucketService,
+                              AnalisisRepository analisisRepository) {
+        this.analisisService = analisisService;
+        this.supabaseBucketService = supabaseBucketService;
+        this.analisisRepository = analisisRepository;
+    }
+
     AnalisisService analisisService;
 
-    @Autowired
     SupabaseBucketService supabaseBucketService;
-    @Autowired
-    private AnalisisRepository analisisRepository;
+
+    AnalisisRepository analisisRepository;
 
     private final String BUCKET = "chemiconsult-bucket";
 
@@ -41,8 +48,15 @@ public class AnalisisController {
         return analisisService.getEstudios();
     }
 
+    @GetMapping("/all")
+    public List<EstudioTO> getEstudiosTO() {
+        log.info("Obteniendo estudios (DTO)");
+        return analisisService.getEstudiosTO();
+    }
+
     @GetMapping("/user/{userId}")
     public List<EstudioTO> getEstudiosByID(@PathVariable Long userId) {
+        log.info("Obteniendo estudios para el usuario con ID: {}", userId);
         return analisisService.getEstudiosByID(userId);
     }
 
@@ -110,7 +124,7 @@ public class AnalisisController {
         supabaseBucketService.subirArchivo(BUCKET, path, file);
 
         analisis.setArchivoUrl(path);
-        analisis.setEstado("Informe listo");
+        analisis.setEstado("COMPLETO");
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
 

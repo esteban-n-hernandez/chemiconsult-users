@@ -30,16 +30,29 @@ public class AnalisisService {
         return analisisRepository.findAll();
     }
 
+    public List<EstudioTO> getEstudiosTO() {
+        return analisisRepository.findAll()
+                .stream()
+                .map(a -> {
+                    Long userId = a.getUser() != null ? a.getUser().getId() : null;
+                    ClienteDE cliente = null;
+                    if (userId != null) {
+                        cliente = clienteService.getCliente(userId);
+                    }
+                    return EstudiosMapper.mapEntityToEstudioTO(a, cliente);
+                })
+                .toList();
+    }
+
     public List<EstudioTO> getEstudiosByID(Long userId) {
         UserDE user = UserMapper.mapUserToEntity(UserTO.builder().id(userId).build());
         ClienteDE cliente = clienteService.getCliente(userId);
 
         return analisisRepository.findAllByUser(user)
                 .stream()
-                .map(a -> EstudiosMapper.mapEntityToEstudioTO(a, cliente))
+                .map(analisis -> EstudiosMapper.mapEntityToEstudioTO(analisis, cliente))
                 .toList();
     }
-
 
     public Optional<AnalisisDE> getEstudio(Long id) {
         return this.analisisRepository.findById(id);
