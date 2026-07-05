@@ -44,7 +44,6 @@ public class AnalisisService {
 
     public List<EstudioTO> getEstudiosByID(Long userId) {
         UserDE user = UserMapper.mapUserToEntity(UserTO.builder().id(userId).build());
-        ClienteDE cliente = clienteService.getCliente(userId);
 
         return analisisRepository.findAllByUser(user)
                 .stream()

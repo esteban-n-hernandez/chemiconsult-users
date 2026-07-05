@@ -15,5 +15,6 @@ public class EstudioTO {
     private String archivoUrl;
     private Long userId;
     private String userMail;
+    private String createdDate;
 
 }
