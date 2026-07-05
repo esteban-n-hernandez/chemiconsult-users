@@ -1,6 +1,7 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.AnalisisDE;
+import com.chemiconsult.entity.ClienteDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.mapper.UserMapper;
@@ -17,15 +18,28 @@ import java.util.Optional;
 @Service
 public class AnalisisService {
 
-
-    @Autowired
     AnalisisRepository analisisRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    ClienteService clienteService;
+
+    UserRepository userRepository;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
+    }
+
+    public List<EstudioTO> getEstudiosTO() {
+        return analisisRepository.findAll()
+                .stream()
+                .map(a -> {
+                    Long userId = a.getUser() != null ? a.getUser().getId() : null;
+                    ClienteDE cliente = null;
+                    if (userId != null) {
+                        cliente = clienteService.getCliente(userId);
+                    }
+                    return EstudiosMapper.mapEntityToEstudioTO(a, cliente);
+                })
+                .toList();
     }
 
     public List<EstudioTO> getEstudiosByID(Long userId) {
@@ -36,7 +50,6 @@ public class AnalisisService {
                 .map(EstudiosMapper::mapEntityToEstudioTO)
                 .toList();
     }
-
 
     public Optional<AnalisisDE> getEstudio(Long id) {
         return this.analisisRepository.findById(id);
@@ -68,4 +81,12 @@ public class AnalisisService {
         analisisRepository.deleteById(id);
     }
 
+
+    @Autowired
+    public AnalisisService(AnalisisRepository analisisRepository,
+                           ClienteService clienteService, UserRepository userRepository) {
+        this.analisisRepository = analisisRepository;
+        this.clienteService = clienteService;
+        this.userRepository = userRepository;
+    }
 }

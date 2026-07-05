@@ -17,7 +17,6 @@ public class UserController {
 
     UserService userService;
 
-
     // ✅ Obtener todos los usuarios
     @GetMapping
     public List<UserTO> getUsers() {
