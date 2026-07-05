@@ -39,7 +39,6 @@ public class AnalisisDE {
     @Basic(fetch = FetchType.LAZY)
     private byte[] archivo;
 
-
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
 

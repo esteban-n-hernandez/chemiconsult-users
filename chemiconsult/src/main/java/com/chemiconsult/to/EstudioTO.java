@@ -7,6 +7,8 @@ import lombok.Data;
 @Builder
 public class EstudioTO {
 
+    private Long id;
+    private String cliente;
     private String tipo;
     private String estado;
     private byte[] archivo;

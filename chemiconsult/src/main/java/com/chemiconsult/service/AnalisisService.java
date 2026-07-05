@@ -18,13 +18,11 @@ import java.util.Optional;
 @Service
 public class AnalisisService {
 
-    @Autowired
-    AnalisisRepository analisisRepository;
+     AnalisisRepository analisisRepository;
 
     ClienteService clienteService;
 
-    @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -84,4 +82,12 @@ public class AnalisisService {
         analisisRepository.deleteById(id);
     }
 
+
+    @Autowired
+    public AnalisisService(AnalisisRepository analisisRepository,
+                           ClienteService clienteService, UserRepository userRepository) {
+        this.analisisRepository = analisisRepository;
+        this.clienteService = clienteService;
+        this.userRepository = userRepository;
+    }
 }
