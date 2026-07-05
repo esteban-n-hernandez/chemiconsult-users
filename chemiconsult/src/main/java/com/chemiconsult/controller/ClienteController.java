@@ -21,10 +21,14 @@ import java.util.List;
 public class ClienteController {
 
     @Autowired
-    private ClienteService clienteService;
+    public ClienteController (ClienteService clienteService, UserService userService){
+        this.clienteService = clienteService;
+        this.userService = userService;
+    }
 
-    @Autowired
-    private UserService userService;
+    private final ClienteService clienteService;
+
+    private final UserService userService;
 
     // GET /api/clientes — solo activos
     @GetMapping

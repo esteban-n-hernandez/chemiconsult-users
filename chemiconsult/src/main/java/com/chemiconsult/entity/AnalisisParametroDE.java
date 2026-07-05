@@ -2,6 +2,8 @@ package com.chemiconsult.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "ANALISIS_PARAMETRO")
@@ -14,6 +16,8 @@ public class AnalisisParametroDE {
 
     @ManyToOne
     @JoinColumn(name = "ANALISIS_ID", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private AnalisisDE analisis;
 
     @ManyToOne

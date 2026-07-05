@@ -4,6 +4,8 @@ package com.chemiconsult.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +22,8 @@ public class AnalisisDE {
     @ManyToOne
     @JoinColumn(name = "USER_ID")
     @JsonBackReference("user-estudios")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private UserDE user;
 
     @Column(name = "ANALYSIS_TYPE")
@@ -50,12 +54,16 @@ public class AnalisisDE {
 
     @ManyToOne
     @JoinColumn(name = "TIPO_MUESTRA_ID")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private TipoMuestraDE tipoMuestra;
 
     @Column(name = "OBSERVACIONES")
     private String observaciones;
 
     @OneToMany(mappedBy = "analisis", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AnalisisParametroDE> parametros;
 
 }
