@@ -49,7 +49,7 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(userDetails.getUsername(), user.getId());
 
-        return ResponseEntity.ok(new AuthResponse(token, role));
+        return ResponseEntity.ok(new AuthResponse(token, role, user.getId()));
     }
 
     // Clase interna para la respuesta
@@ -58,10 +58,12 @@ public class AuthController {
     static class AuthResponse {
         private String token;
         private String role;
+        private Long userId;
 
-        public AuthResponse(String token, String role) {
+        public AuthResponse(String token, String role, Long userId) {
             this.token = token;
             this.role = role;
+            this.userId = userId;
         }
     }
 

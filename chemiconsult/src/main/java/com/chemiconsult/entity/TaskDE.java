@@ -15,6 +15,10 @@ public class TaskDE {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "USER_ID")
+    private UserDE user;
+
     @Column(nullable = false)
     private String title;
 
