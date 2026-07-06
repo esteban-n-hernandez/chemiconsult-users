@@ -11,6 +11,7 @@ public class TaskTO {
     private String title;
     private String description;
     private String status;
-
+    private Long userId;
+    private String userName;
 
 }

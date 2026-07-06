@@ -57,7 +57,7 @@ public class AnalisisService {
 
     public AnalisisDE createEstudio(EstudioTO estudio) {
 
-        UserDE user = userRepository.findById(Math.toIntExact(estudio.getUserId()))
+        UserDE user = userRepository.findById(estudio.getUserId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         AnalisisDE estudioDE = EstudiosMapper.createEstudio(estudio, user);
