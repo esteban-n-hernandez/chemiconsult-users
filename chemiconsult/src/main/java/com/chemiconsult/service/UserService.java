@@ -22,7 +22,7 @@ public class UserService {
     }
 
     public UserDE getUserById(Long id) {
-        return userRepository.findById(Math.toIntExact(id))
+        return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
     }
 
@@ -31,7 +31,7 @@ public class UserService {
     }
 
     public UserDE updateUser(Long id, @RequestBody UserDE user) {
-        Optional<UserDE> optional = userRepository.findById(Math.toIntExact(id));
+        Optional<UserDE> optional = userRepository.findById(id);
         if (optional.isPresent()) {
             UserDE existing = optional.get();
             existing.setUsername(user.getUsername());
@@ -44,6 +44,6 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        userRepository.deleteById(Math.toIntExact(id));
+        userRepository.deleteById(id);
     }
 }
