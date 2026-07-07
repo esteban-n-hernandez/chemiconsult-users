@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,15 +24,6 @@ import java.util.Optional;
 @RequestMapping("/api/estudios")
 @CrossOrigin(origins = "*") // permite llamadas desde el frontend
 public class AnalisisController {
-
-    @Autowired
-    public AnalisisController(AnalisisService analisisService,
-                              SupabaseBucketService supabaseBucketService,
-                              AnalisisRepository analisisRepository) {
-        this.analisisService = analisisService;
-        this.supabaseBucketService = supabaseBucketService;
-        this.analisisRepository = analisisRepository;
-    }
 
     AnalisisService analisisService;
 
@@ -131,4 +121,12 @@ public class AnalisisController {
         return ResponseEntity.ok().build();
     }
 
+    @Autowired
+    public AnalisisController(AnalisisService analisisService,
+                              SupabaseBucketService supabaseBucketService,
+                              AnalisisRepository analisisRepository) {
+        this.analisisService = analisisService;
+        this.supabaseBucketService = supabaseBucketService;
+        this.analisisRepository = analisisRepository;
+    }
 }

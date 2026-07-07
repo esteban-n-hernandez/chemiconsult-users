@@ -65,4 +65,11 @@ public class AnalisisDE {
     @EqualsAndHashCode.Exclude
     private List<AnalisisParametroDE> parametros;
 
+    // Dentro de AnalisisDE agregar la relación al Destino Legal:
+    @ManyToOne
+    @JoinColumn(name = "RESOL_DESTINO_ID")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ResolucionDestinoDE resolucionDestino;
+
 }
