@@ -2,7 +2,6 @@ package com.chemiconsult.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDate;
 
 @Entity
@@ -15,19 +14,10 @@ public class ParametroDE {
     private Long id;
 
     @Column(name = "NOMBRE", nullable = false)
-    private String nombre; // "pH", "Turbidez", "Coliformes totales"
+    private String nombre;
 
     @Column(name = "UNIDAD")
-    private String unidad; // "mg/L", "NTU", "UFC/100mL"
-
-    @Column(name = "VALOR_MIN")
-    private Double valorMinimo; // límite normativo
-
-    @Column(name = "VALOR_MAX")
-    private Double valorMaximo;
-
-    @Column(name = "NORMA_REFERENCIA")
-    private String normaReferencia; // "CAA Art. 982", "Ley 24051"
+    private String unidad; // "mg/L", "NTU", etc.
 
     @Column(name = "ACTIVO")
     private Boolean activo = true;
@@ -35,7 +25,6 @@ public class ParametroDE {
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
 
-    // ── Agregar esto ──
     @Column(name = "UPDATE_DATE")
     private LocalDate updateDate;
 }
