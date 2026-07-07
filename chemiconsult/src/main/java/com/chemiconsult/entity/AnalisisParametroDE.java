@@ -24,11 +24,25 @@ public class AnalisisParametroDE {
     @JoinColumn(name = "PARAMETRO_ID", nullable = false)
     private ParametroDE parametro;
 
+    @ManyToOne
+    @JoinColumn(name = "METODOLOGIA_ID")
+    private MetodologiaDE metodologiaUsada; // <-- NUEVO: Guarda el método real del ensayo
+
     @Column(name = "VALOR_RESULTADO")
-    private String valorResultado; // String para cubrir "<0.1", "Ausencia", etc.
+    private String valorResultado;
 
     @Column(name = "CUMPLE_NORMA")
     private Boolean cumpleNorma;
+
+    // <-- NUEVOS: Copia de los límites aplicados en este análisis para auditoría futura
+    @Column(name = "LIMITE_APLICADO_MIN")
+    private Double limiteAplicadoMin;
+
+    @Column(name = "LIMITE_APLICADO_MAX")
+    private Double limiteAplicadoMax;
+
+    @Column(name = "LIMITE_APLICADO_TEXTO")
+    private String limiteAplicadoTexto;
 
     @Column(name = "OBSERVACION")
     private String observacion;
