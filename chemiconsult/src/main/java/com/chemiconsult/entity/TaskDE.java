@@ -1,6 +1,6 @@
 package com.chemiconsult.entity;
 
-import com.chemiconsult.enums.TaskStatus;
+import com.chemiconsult.enums.TaskStatusEnum;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -27,7 +27,7 @@ public class TaskDE {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TaskStatus status = TaskStatus.TODO;
+    private TaskStatusEnum status = TaskStatusEnum.TODO;
 
     @Column(name = "CREATED_DATE", nullable = false)
     private LocalDate createdDate;
