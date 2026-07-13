@@ -2,6 +2,8 @@ package com.chemiconsult.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "RESOL_DESTINO_PARAM")
@@ -14,18 +16,24 @@ public class ResolucionDestinoParametroDE {
 
     @ManyToOne
     @JoinColumn(name = "RESOL_DESTINO_ID", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ResolucionDestinoDE destino;
 
     @ManyToOne
     @JoinColumn(name = "PARAMETRO_ID", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ParametroDE parametro;
 
     @ManyToOne
     @JoinColumn(name = "METODOLOGIA_ID")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private MetodologiaDE metodologiaEstandar; // Metodología recomendada por la norma
 
-    @Column(name = "TIPO_LIMITE")
-    private String tipoLimite; // "MAX", "MIN", "RANGO", "TEXTO"
+    @Column(name = "TIPO_LIMITE", nullable = false)
+    private String tipoLimite; // "MAX", "MIN", "RANGO", "TEXTO", "AUSENCIA", "NE" (no exigido)
 
     @Column(name = "VALOR_MIN")
     private Double valorMinimo;
@@ -34,5 +42,5 @@ public class ResolucionDestinoParametroDE {
     private Double valorMaximo;
 
     @Column(name = "LIMITE_TEXTO")
-    private String limiteTexto; // Ej: "Ausencia"
+    private String limiteTexto; // "Ausencia", "Sin olores extraños", etc.
 }

@@ -2,7 +2,7 @@ package com.chemiconsult.service;
 
 import com.chemiconsult.entity.TaskDE;
 import com.chemiconsult.entity.UserDE;
-import com.chemiconsult.enums.TaskStatus;
+import com.chemiconsult.enums.TaskStatusEnum;
 import com.chemiconsult.mapper.TaskMapper;
 import com.chemiconsult.repository.TaskRepository;
 import com.chemiconsult.repository.UserRepository;
@@ -37,7 +37,7 @@ public class TaskService {
     }
 
     // ── Actualizar estado ──
-    public TaskTO updateStatus(Long id, TaskStatus status) {
+    public TaskTO updateStatus(Long id, TaskStatusEnum status) {
         TaskDE task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tarea no encontrada con ID: " + id));
         TaskMapper.applyStatus(task, status);

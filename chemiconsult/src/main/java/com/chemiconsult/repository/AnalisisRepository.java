@@ -10,5 +10,6 @@ import java.util.List;
 public interface AnalisisRepository extends JpaRepository<AnalisisDE, Long> {
 
     List<AnalisisDE> findAllByUser(UserDE user);
-    
+
+    boolean existsByNumeroProtocolo(String numeroProtocolo);
 }

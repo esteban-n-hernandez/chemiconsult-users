@@ -1,32 +1,40 @@
 package com.chemiconsult.mapper;
 
-import com.chemiconsult.entity.AnalisisDE;
-import com.chemiconsult.entity.UserDE;
-import com.chemiconsult.entity.ClienteDE;
-import com.chemiconsult.to.EstudioTO;
+import com.chemiconsult.entity.*;
+import com.chemiconsult.enums.EstadoMuestraEnum;
+import com.chemiconsult.to.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class EstudiosMapper {
 
-    public static AnalisisDE createEstudio(EstudioTO estudio, UserDE user) {
+    public static AnalisisDE createEstudio(EstudioTO estudio, UserDE user, MatrizDE matriz) {
         AnalisisDE entity = new AnalisisDE();
-        entity.setTipo(estudio.getTipo());
-        entity.setEstado(estudio.getEstado());
-        entity.setArchivo(estudio.getArchivo());
         entity.setUser(user);
+        entity.setMatriz(matriz);
+        entity.setNumeroProtocolo(estudio.getNroProtocolo());
+        entity.setIdMuestra(estudio.getIdMuestra());
+        entity.setPuntoMuestreo(estudio.getPuntoMuestreo());
+        entity.setObservaciones(estudio.getObservaciones());
+        entity.setEstado(EstadoMuestraEnum.PENDIENTE);
+
+        entity.setFechaIngreso(estudio.getFechaIngreso() != null
+                ? LocalDate.parse(estudio.getFechaIngreso()) : LocalDate.now());
+        entity.setFechaEntrega(estudio.getFechaEntrega() != null
+                ? LocalDate.parse(estudio.getFechaEntrega()) : null);
+
         entity.setCreatedDate(LocalDate.now());
+        entity.setUpdateDate(LocalDate.now());
 
         return entity;
     }
 
-
     public static EstudioTO mapEntityToEstudioTOByID(AnalisisDE entity) {
         return EstudioTO.builder()
                 .id(entity.getId())
-                .archivo(entity.getArchivo())
                 .archivoUrl(entity.getArchivoUrl())
-                .estado(entity.getEstado())
+                .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
                 .tipo(entity.getTipo())
                 .userId(entity.getUser() != null ? entity.getUser().getId() : null)
                 .userMail(entity.getUser() != null ? entity.getUser().getEmail() : null)
@@ -36,15 +44,95 @@ public class EstudiosMapper {
     public static EstudioTO mapEntityToEstudioTO(AnalisisDE entity) {
         return EstudioTO.builder()
                 .id(entity.getId())
-                .archivo(entity.getArchivo())
                 .archivoUrl(entity.getArchivoUrl())
-                .estado(entity.getEstado())
+                .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
                 .tipo(entity.getTipo())
                 .createdDate(String.valueOf(entity.getCreatedDate()))
                 .build();
     }
 
+    // ── Usado por getEstudiosTO() para el listado principal — ahora completo ──
     public static EstudioTO mapEntityToEstudioTO(AnalisisDE entity, ClienteDE cliente) {
+        String clienteStr = resolverNombreCliente(entity, cliente);
+
+        return EstudioTO.builder()
+                .id(entity.getId())
+                .cliente(clienteStr)
+                .archivoUrl(entity.getArchivoUrl())
+                .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
+                .tipo(entity.getTipo())
+                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
+                .userMail(entity.getUser() != null ? entity.getUser().getEmail() : null)
+                .nroProtocolo(entity.getNumeroProtocolo())
+                .idMuestra(entity.getIdMuestra())
+                .fechaIngreso(entity.getFechaIngreso() != null ? entity.getFechaIngreso().toString() : null)
+                .fechaEntrega(entity.getFechaEntrega() != null ? entity.getFechaEntrega().toString() : null)
+                .build();
+    }
+
+    public static AnalisisDetalleTO mapEntityToDetalleTO(AnalisisDE entity, ClienteDE cliente) {
+        String clienteStr = resolverNombreCliente(entity, cliente);
+
+        List<String> resoluciones = entity.getResolucionesAplicadas() == null
+                ? List.of()
+                : entity.getResolucionesAplicadas().stream()
+                .map(ard -> ard.getResolucionDestino().getResolucion().getNombre()
+                            + " - " + ard.getResolucionDestino().getNombre())
+                .toList();
+
+        List<ParametroResultadoTO> parametros = entity.getParametros() == null
+                ? List.of()
+                : entity.getParametros().stream()
+                .map(EstudiosMapper::mapParametroToResultadoTO)
+                .toList();
+
+        return AnalisisDetalleTO.builder()
+                .id(entity.getId())
+                .nroProtocolo(entity.getNumeroProtocolo())
+                .idMuestra(entity.getIdMuestra())
+                .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
+                .cliente(clienteStr)
+                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
+                .puntoMuestreo(entity.getPuntoMuestreo())
+                .fechaIngreso(entity.getFechaIngreso() != null ? entity.getFechaIngreso().toString() : null)
+                .fechaEntrega(entity.getFechaEntrega() != null ? entity.getFechaEntrega().toString() : null)
+                .observaciones(entity.getObservaciones())
+                .archivoUrl(entity.getArchivoUrl())
+                .matrizNombre(entity.getMatriz() != null ? entity.getMatriz().getNombre() : null)
+                .resolucionesAplicadas(resoluciones)
+                .parametros(parametros)
+                .build();
+    }
+
+    private static ParametroResultadoTO mapParametroToResultadoTO(AnalisisParametroDE ap) {
+        List<LimiteAplicableTO> limites = ap.getLimites() == null
+                ? List.of()
+                : ap.getLimites().stream().map(l -> {
+            ResolucionDestinoDE destino = l.getLimiteOrigen().getDestino();
+            String origenNombre = destino.getResolucion().getNombre() + " - " + destino.getNombre();
+
+            return LimiteAplicableTO.builder()
+                    .origenNombre(origenNombre)
+                    .tipoLimite(l.getLimiteOrigen().getTipoLimite())
+                    .limiteMin(l.getLimiteMin())
+                    .limiteMax(l.getLimiteMax())
+                    .limiteTexto(l.getLimiteTexto())
+                    .cumple(l.getCumple())
+                    .build();
+        }).toList();
+
+        return ParametroResultadoTO.builder()
+                .id(ap.getParametro().getId())
+                .nombre(ap.getParametro().getNombre())
+                .unidad(ap.getParametro().getUnidad())
+                .metodologiaNombre(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getNombre() : null)
+                .valorResultado(ap.getValorResultado())
+                .observacion(ap.getObservacion())
+                .limites(limites)
+                .build();
+    }
+
+    private static String resolverNombreCliente(AnalisisDE entity, ClienteDE cliente) {
         String clienteStr = null;
         if (cliente != null) {
             if (cliente.getTipoCliente() != null && cliente.getTipoCliente().name().equals("PERSONA_FISICA")) {
@@ -61,17 +149,6 @@ public class EstudiosMapper {
                 clienteStr = "";
             }
         }
-
-        return EstudioTO.builder()
-                .id(entity.getId())
-                .cliente(clienteStr)
-                .archivo(entity.getArchivo())
-                .archivoUrl(entity.getArchivoUrl())
-                .estado(entity.getEstado())
-                .tipo(entity.getTipo())
-                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
-                .userMail(entity.getUser() != null ? entity.getUser().getEmail() : null)
-                .build();
+        return clienteStr;
     }
-
 }
