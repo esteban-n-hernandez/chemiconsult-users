@@ -13,6 +13,7 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/task")
+@CrossOrigin(origins = "*")
 public class TaskController {
 
     TaskService taskService;
