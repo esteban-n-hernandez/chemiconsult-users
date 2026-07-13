@@ -1,16 +1,17 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Entity
-@Table(name = "TIPO_MUESTRA")
+@Table(name = "MATRIZ")
 @Data
-public class TipoMuestraDE {
+public class MatrizDE {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,21 +20,12 @@ public class TipoMuestraDE {
     @Column(name = "NOMBRE", nullable = false, unique = true)
     private String nombre;
 
-    @Column(name = "DESCRIPCION")
-    private String descripcion;
-
     @Column(name = "ACTIVO")
     private Boolean activo = true;
 
-    @Column(name = "CREATED_DATE")
-    private LocalDate createdDate;
-
-    @Column(name = "UPDATE_DATE")
-    private LocalDate updateDate;
-
-    @ManyToOne
-    @JoinColumn(name = "MATRIZ_ID", nullable = false)
+    @OneToMany(mappedBy = "matriz", cascade = CascadeType.ALL)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private MatrizDE matriz;
+    private List<ResolucionDE> resoluciones;
 }

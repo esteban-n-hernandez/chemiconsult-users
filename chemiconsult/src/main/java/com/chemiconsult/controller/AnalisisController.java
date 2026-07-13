@@ -1,10 +1,12 @@
 package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.AnalisisDE;
+import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.service.AnalisisService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.EstudioTO;
+import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -22,15 +24,12 @@ import java.util.Optional;
 @Log4j2
 @RestController
 @RequestMapping("/api/estudios")
-@CrossOrigin(origins = "*") // permite llamadas desde el frontend
+@CrossOrigin(origins = "*")
 public class AnalisisController {
 
-    AnalisisService analisisService;
-
-    SupabaseBucketService supabaseBucketService;
-
-    AnalisisRepository analisisRepository;
-
+    private final AnalisisService analisisService;
+    private final SupabaseBucketService supabaseBucketService;
+    private final AnalisisRepository analisisRepository;
     private final String BUCKET = "chemiconsult-bucket";
 
     @GetMapping
@@ -40,13 +39,11 @@ public class AnalisisController {
 
     @GetMapping("/all")
     public List<EstudioTO> getEstudiosTO() {
-        log.info("Obteniendo estudios (DTO)");
         return analisisService.getEstudiosTO();
     }
 
     @GetMapping("/user/{userId}")
     public List<EstudioTO> getEstudiosByID(@PathVariable Long userId) {
-        log.info("Obteniendo estudios para el usuario con ID: {}", userId);
         return analisisService.getEstudiosByID(userId);
     }
 
@@ -56,11 +53,13 @@ public class AnalisisController {
     }
 
     @PostMapping
+    @Transactional
     public AnalisisDE createEstudio(@RequestBody EstudioTO estudio) {
         return analisisService.createEstudio(estudio);
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public AnalisisDE updateEstudio(@PathVariable Long id, @RequestBody AnalisisDE estudio) {
         return analisisService.updateEstudio(id, estudio);
     }
@@ -70,25 +69,16 @@ public class AnalisisController {
         analisisService.deleteEstudio(id);
     }
 
+    // Descarga el PDF desde Supabase (ya no hay fallback a bytea local)
     @GetMapping("/{id}/resultado")
     public ResponseEntity<byte[]> getResultado(@PathVariable Long id) {
         log.info("Obteniendo resultado del estudio con ID: {}", id);
 
-        Optional<AnalisisDE> estudio = analisisService.getEstudio(id);
+        AnalisisDE analisis = analisisService.getEstudio(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (estudio.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        AnalisisDE analisis = estudio.get();
         String path = analisis.getArchivoUrl();
         if (path == null || path.isBlank()) {
-            if (analisis.getArchivo() != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"resultado_" + id + ".pdf\"")
-                        .body(analisis.getArchivo());
-            }
             return ResponseEntity.notFound().build();
         }
 
@@ -109,12 +99,11 @@ public class AnalisisController {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        String path = id + "/" + file.getName();
-
+        String path = id + "/" + file.getOriginalFilename();
         supabaseBucketService.subirArchivo(BUCKET, path, file);
 
         analisis.setArchivoUrl(path);
-        analisis.setEstado("COMPLETO");
+        analisis.setEstado(EstadoMuestraEnum.COMPLETO);
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
 

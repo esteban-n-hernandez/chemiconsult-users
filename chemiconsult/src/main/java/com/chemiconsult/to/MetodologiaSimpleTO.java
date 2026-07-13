@@ -3,8 +3,8 @@ package com.chemiconsult.to;
 import lombok.Data;
 
 @Data
-public class TipoMuestraTO {
+public class MetodologiaSimpleTO {
     private String nombre;
     private String descripcion;
-    private Long matrizId;
 }
+

@@ -1,7 +1,7 @@
 package com.chemiconsult.mapper;
 
 import com.chemiconsult.entity.TaskDE;
-import com.chemiconsult.enums.TaskStatus;
+import com.chemiconsult.enums.TaskStatusEnum;
 import com.chemiconsult.to.TaskTO;
 
 import java.time.LocalDate;
@@ -36,15 +36,15 @@ public class TaskMapper {
         TaskDE taskDE = new TaskDE();
         taskDE.setTitle(task.getTitle());
         taskDE.setDescription(task.getDescription());
-        taskDE.setStatus(task.getStatus() == null ? TaskStatus.TODO : TaskStatus.valueOf(task.getStatus()));
+        taskDE.setStatus(task.getStatus() == null ? TaskStatusEnum.TODO : TaskStatusEnum.valueOf(task.getStatus()));
         taskDE.setCreatedDate(LocalDate.now());
-        taskDE.setCompletedDate(taskDE.getStatus() == TaskStatus.DONE ? LocalDate.now() : null);
+        taskDE.setCompletedDate(taskDE.getStatus() == TaskStatusEnum.DONE ? LocalDate.now() : null);
         return taskDE;
     }
 
-    public static TaskDE applyStatus(TaskDE task, TaskStatus status) {
+    public static TaskDE applyStatus(TaskDE task, TaskStatusEnum status) {
         task.setStatus(status);
-        task.setCompletedDate(status == TaskStatus.DONE ? LocalDate.now() : null);
+        task.setCompletedDate(status == TaskStatusEnum.DONE ? LocalDate.now() : null);
         return task;
     }
 }
