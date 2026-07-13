@@ -1,6 +1,6 @@
 package com.chemiconsult.enums;
 
-public enum TaskStatus {
+public enum TaskStatusEnum {
 
     TODO,
     IN_PROGRESS,

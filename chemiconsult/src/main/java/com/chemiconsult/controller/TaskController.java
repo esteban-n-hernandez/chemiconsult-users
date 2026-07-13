@@ -1,6 +1,6 @@
 package com.chemiconsult.controller;
 
-import com.chemiconsult.enums.TaskStatus;
+import com.chemiconsult.enums.TaskStatusEnum;
 import com.chemiconsult.service.TaskService;
 import com.chemiconsult.to.TaskTO;
 import lombok.extern.log4j.Log4j2;
@@ -34,7 +34,7 @@ public class TaskController {
 
     // PUT /api/task/{id}/status
     @PutMapping("/{id}/status")
-    public ResponseEntity<TaskTO> updateStatus(@PathVariable Long id, @RequestParam TaskStatus status) {
+    public ResponseEntity<TaskTO> updateStatus(@PathVariable Long id, @RequestParam TaskStatusEnum status) {
         log.info("Actualizando estado de la tarea con ID: {} a: {}", id, status);
         return ResponseEntity.ok(taskService.updateStatus(id, status));
     }

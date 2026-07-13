@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.List;
+
 @Entity
 @Table(name = "ANALISIS_PARAMETRO")
 @Data
@@ -22,27 +24,24 @@ public class AnalisisParametroDE {
 
     @ManyToOne
     @JoinColumn(name = "PARAMETRO_ID", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ParametroDE parametro;
 
     @ManyToOne
     @JoinColumn(name = "METODOLOGIA_ID")
-    private MetodologiaDE metodologiaUsada; // <-- NUEVO: Guarda el método real del ensayo
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private MetodologiaDE metodologiaUsada;
 
     @Column(name = "VALOR_RESULTADO")
     private String valorResultado;
 
-    @Column(name = "CUMPLE_NORMA")
-    private Boolean cumpleNorma;
-
-    // <-- NUEVOS: Copia de los límites aplicados en este análisis para auditoría futura
-    @Column(name = "LIMITE_APLICADO_MIN")
-    private Double limiteAplicadoMin;
-
-    @Column(name = "LIMITE_APLICADO_MAX")
-    private Double limiteAplicadoMax;
-
-    @Column(name = "LIMITE_APLICADO_TEXTO")
-    private String limiteAplicadoTexto;
+    // Límites aplicables a este parámetro (uno por cada destino elegido en la muestra)
+    @OneToMany(mappedBy = "analisisParametro", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<AnalisisParametroLimiteDE> limites;
 
     @Column(name = "OBSERVACION")
     private String observacion;
