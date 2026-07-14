@@ -21,16 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-
     private final JwtUserDetailsService jwtUserDetailsService;
-
     private final JwtUtil jwtUtil;
-
-    UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
-        System.out.println("Login endpoint called - email: " + email);
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
@@ -49,24 +45,25 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(userDetails.getUsername(), user.getId());
 
-        return ResponseEntity.ok(new AuthResponse(token, role, user.getId()));
+        // FIX: agregamos username — el front lo necesita para mostrar el nombre correcto
+        return ResponseEntity.ok(new AuthResponse(token, role, user.getId(), user.getUsername()));
     }
 
-    // Clase interna para la respuesta
     @Setter
     @Getter
     static class AuthResponse {
         private String token;
         private String role;
         private Long userId;
+        private String username;
 
-        public AuthResponse(String token, String role, Long userId) {
+        public AuthResponse(String token, String role, Long userId, String username) {
             this.token = token;
             this.role = role;
             this.userId = userId;
+            this.username = username;
         }
     }
-
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager,
@@ -77,5 +74,4 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
     }
-
 }
