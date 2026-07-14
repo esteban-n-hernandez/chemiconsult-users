@@ -9,10 +9,12 @@ import java.util.List;
 
 public class EstudiosMapper {
 
-    public static AnalisisDE createEstudio(EstudioTO estudio, UserDE user, MatrizDE matriz) {
+    public static AnalisisDE createEstudio(EstudioTO estudio, ClienteDE cliente, MatrizDE matriz, ClienteSucursalDE sucursal) {
         AnalisisDE entity = new AnalisisDE();
-        entity.setUser(user);
+        entity.setCliente(cliente);
+        entity.setUser(cliente.getUser());
         entity.setMatriz(matriz);
+        entity.setSucursal(sucursal);
         entity.setNumeroProtocolo(estudio.getNroProtocolo());
         entity.setIdMuestra(estudio.getIdMuestra());
         entity.setPuntoMuestreo(estudio.getPuntoMuestreo());
@@ -30,34 +32,10 @@ public class EstudiosMapper {
         return entity;
     }
 
-    public static EstudioTO mapEntityToEstudioTOByID(AnalisisDE entity) {
-        return EstudioTO.builder()
-                .id(entity.getId())
-                .archivoUrl(entity.getArchivoUrl())
-                .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
-                .tipo(entity.getTipo())
-                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
-                .userMail(entity.getUser() != null ? entity.getUser().getEmail() : null)
-                .build();
-    }
-
     public static EstudioTO mapEntityToEstudioTO(AnalisisDE entity) {
         return EstudioTO.builder()
                 .id(entity.getId())
-                .archivoUrl(entity.getArchivoUrl())
-                .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
-                .tipo(entity.getTipo())
-                .createdDate(String.valueOf(entity.getCreatedDate()))
-                .build();
-    }
-
-    // ── Usado por getEstudiosTO() para el listado principal — ahora completo ──
-    public static EstudioTO mapEntityToEstudioTO(AnalisisDE entity, ClienteDE cliente) {
-        String clienteStr = resolverNombreCliente(entity, cliente);
-
-        return EstudioTO.builder()
-                .id(entity.getId())
-                .cliente(clienteStr)
+                .cliente(resolverNombreCliente(entity))
                 .archivoUrl(entity.getArchivoUrl())
                 .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
                 .tipo(entity.getTipo())
@@ -67,11 +45,12 @@ public class EstudiosMapper {
                 .idMuestra(entity.getIdMuestra())
                 .fechaIngreso(entity.getFechaIngreso() != null ? entity.getFechaIngreso().toString() : null)
                 .fechaEntrega(entity.getFechaEntrega() != null ? entity.getFechaEntrega().toString() : null)
+                .createdDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
                 .build();
     }
 
-    public static AnalisisDetalleTO mapEntityToDetalleTO(AnalisisDE entity, ClienteDE cliente) {
-        String clienteStr = resolverNombreCliente(entity, cliente);
+    public static AnalisisDetalleTO mapEntityToDetalleTO(AnalisisDE entity) {
+        String clienteStr = resolverNombreCliente(entity);
 
         List<String> resoluciones = entity.getResolucionesAplicadas() == null
                 ? List.of()
@@ -132,7 +111,8 @@ public class EstudiosMapper {
                 .build();
     }
 
-    private static String resolverNombreCliente(AnalisisDE entity, ClienteDE cliente) {
+    private static String resolverNombreCliente(AnalisisDE entity) {
+        ClienteDE cliente = entity.getCliente();
         String clienteStr = null;
         if (cliente != null) {
             if (cliente.getTipoCliente() != null && cliente.getTipoCliente().name().equals("PERSONA_FISICA")) {
