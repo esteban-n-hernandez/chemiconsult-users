@@ -24,7 +24,14 @@ public class AnalisisDE {
     @JsonBackReference("user-estudios")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private UserDE user;
+    private UserDE user; // nullable — se completa solo si el cliente tiene acceso al sistema
+
+    // NUEVO: relación directa al cliente, independiente de si tiene usuario o no
+    @ManyToOne
+    @JoinColumn(name = "CLIENTE_ID", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ClienteDE cliente;
 
     @Column(name = "ANALYSIS_TYPE")
     private String tipo;
@@ -75,4 +82,10 @@ public class AnalisisDE {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<AnalisisResolucionDestinoDE> resolucionesAplicadas;
-}
+
+    @ManyToOne
+    @JoinColumn(name = "CLIENTE_SUCURSAL_ID")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ClienteSucursalDE sucursal;
+    }

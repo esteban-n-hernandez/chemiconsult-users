@@ -2,11 +2,9 @@ package com.chemiconsult.service;
 
 import com.chemiconsult.entity.*;
 import com.chemiconsult.mapper.EstudiosMapper;
-import com.chemiconsult.mapper.UserMapper;
 import com.chemiconsult.repository.*;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
-import com.chemiconsult.to.UserTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,14 +13,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 @Service
 public class AnalisisService {
 
     private final AnalisisRepository analisisRepository;
     private final ClienteRepository clienteRepository;
-    private final UserRepository userRepository;
     private final MatrizRepository matrizRepository;
+    private final ClienteSucursalRepository sucursalRepository;
     private final ResolucionDestinoRepository resolucionDestinoRepository;
     private final ParametroRepository parametroRepository;
     private final ResolucionDestinoParametroRepository resolucionDestinoParametroRepository;
@@ -34,16 +31,15 @@ public class AnalisisService {
     public List<EstudioTO> getEstudiosTO() {
         return analisisRepository.findAll()
                 .stream()
-                .map(a -> {
-                    ClienteDE cliente = buscarClientePorAnalisis(a);
-                    return EstudiosMapper.mapEntityToEstudioTO(a, cliente);
-                })
+                .map(EstudiosMapper::mapEntityToEstudioTO)
                 .toList();
     }
 
     public List<EstudioTO> getEstudiosByID(Long userId) {
-        UserDE user = UserMapper.mapUserToEntity(UserTO.builder().id(userId).build());
-        return analisisRepository.findAllByUser(user)
+        ClienteDE cliente = clienteRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("No se encontró un cliente asociado a este usuario"));
+
+        return analisisRepository.findAllByCliente(cliente)
                 .stream()
                 .map(EstudiosMapper::mapEntityToEstudioTO)
                 .toList();
@@ -57,9 +53,7 @@ public class AnalisisService {
     public AnalisisDetalleTO getEstudioDetalle(Long id) {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Muestra no encontrada con ID: " + id));
-
-        ClienteDE cliente = buscarClientePorAnalisis(analisis);
-        return EstudiosMapper.mapEntityToDetalleTO(analisis, cliente);
+        return EstudiosMapper.mapEntityToDetalleTO(analisis);
     }
 
     @Transactional
@@ -74,14 +68,27 @@ public class AnalisisService {
         if (estudio.getParametrosIds() == null || estudio.getParametrosIds().isEmpty()) {
             throw new RuntimeException("Debe seleccionar al menos un parámetro a analizar");
         }
+        if (estudio.getClienteId() == null) {
+            throw new RuntimeException("Debe seleccionar un cliente");
+        }
 
-        UserDE user = userRepository.findById(estudio.getUserId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        ClienteDE cliente = clienteRepository.findById(estudio.getClienteId())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
         MatrizDE matriz = matrizRepository.findById(estudio.getMatrizId())
                 .orElseThrow(() -> new RuntimeException("Matriz no encontrada"));
 
-        AnalisisDE analisis = EstudiosMapper.createEstudio(estudio, user, matriz);
+        ClienteSucursalDE sucursal = null;
+        if (estudio.getSucursalId() != null) {
+            sucursal = sucursalRepository.findById(estudio.getSucursalId())
+                    .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+
+            if (!sucursal.getCliente().getId().equals(cliente.getId())) {
+                throw new RuntimeException("La sucursal seleccionada no pertenece al cliente indicado");
+            }
+        }
+
+        AnalisisDE analisis = EstudiosMapper.createEstudio(estudio, cliente, matriz, sucursal);
         analisis = analisisRepository.save(analisis);
 
         List<Long> destinoIds = estudio.getResolucionDestinoIds() != null
@@ -152,23 +159,18 @@ public class AnalisisService {
         analisisRepository.deleteById(id);
     }
 
-    private ClienteDE buscarClientePorAnalisis(AnalisisDE analisis) {
-        if (analisis.getUser() == null) return null;
-        return clienteRepository.findByUser_Id(analisis.getUser().getId()).orElse(null);
-    }
-
     @Autowired
     public AnalisisService(AnalisisRepository analisisRepository,
                            ClienteRepository clienteRepository,
-                           UserRepository userRepository,
                            MatrizRepository matrizRepository,
+                           ClienteSucursalRepository sucursalRepository,
                            ResolucionDestinoRepository resolucionDestinoRepository,
                            ParametroRepository parametroRepository,
                            ResolucionDestinoParametroRepository resolucionDestinoParametroRepository) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
-        this.userRepository = userRepository;
         this.matrizRepository = matrizRepository;
+        this.sucursalRepository = sucursalRepository;
         this.resolucionDestinoRepository = resolucionDestinoRepository;
         this.parametroRepository = parametroRepository;
         this.resolucionDestinoParametroRepository = resolucionDestinoParametroRepository;
