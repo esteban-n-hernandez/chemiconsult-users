@@ -82,6 +82,16 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    // Agregar a UserService:
+
+    public List<UserTO> getUsersAsignables() {
+        List<String> rolesPermitidos = List.of("ROLE_EMPLEADO", "ROLE_IT", "EMPLEADO", "IT");
+        return UserMapper.mapEntityToUserTOList(userRepository.findByRolIn(rolesPermitidos));
+    }
+
+
+
+
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;

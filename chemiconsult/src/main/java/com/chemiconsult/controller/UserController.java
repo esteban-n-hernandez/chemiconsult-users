@@ -52,6 +52,13 @@ public class UserController {
         userService.deleteUser(id);
     }
 
+    // Agregar a UserController:
+
+    @GetMapping("/asignables")
+    public List<UserTO> getUsersAsignables() {
+        return userService.getUsersAsignables();
+    }
+
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
