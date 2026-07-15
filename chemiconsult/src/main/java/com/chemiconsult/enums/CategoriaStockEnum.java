@@ -2,8 +2,8 @@ package com.chemiconsult.enums;
 
 public enum CategoriaStockEnum {
     REACTIVOS,
-    MATERIALES,
-    DESCARTABLES,
-    EQUIPOS,
+    SOLVENTES,
+    MATERIAL_MUESTREO,
+    MATERIAL_VIDRIO,
     OTROS
 }
