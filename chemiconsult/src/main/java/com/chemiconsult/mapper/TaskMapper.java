@@ -9,19 +9,11 @@ import java.util.List;
 
 public class TaskMapper {
     public static List<TaskTO> mapTaskEntityToTO(List<TaskDE> taskList) {
-        return taskList.stream().map(task ->
-                        TaskTO.builder()
-                                .id(task.getId())
-                                .title(task.getTitle())
-                                .description(task.getDescription())
-                                .status(task.getStatus() != null ? task.getStatus().name() : null)
-                                .userId(task.getUser() != null ? task.getUser().getId() : null)
-                                .userName(task.getUser() != null ? task.getUser().getUsername() : null)
-
-                                .build())
-                .toList();
+        return taskList.stream().map(TaskMapper::mapTaskEntityToTO).toList();
     }
 
+    // FIX: faltaba .userName() — causaba que el front mostrara el avatar del usuario
+    // logueado en vez del asignado real, cada vez que se creaba o movía una tarea.
     public static TaskTO mapTaskEntityToTO(TaskDE task) {
         return TaskTO.builder()
                 .id(task.getId())
@@ -29,6 +21,7 @@ public class TaskMapper {
                 .description(task.getDescription())
                 .status(task.getStatus() != null ? task.getStatus().name() : null)
                 .userId(task.getUser() != null ? task.getUser().getId() : null)
+                .userName(task.getUser() != null ? task.getUser().getUsername() : null)
                 .build();
     }
 
