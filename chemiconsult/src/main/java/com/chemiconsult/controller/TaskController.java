@@ -33,6 +33,13 @@ public class TaskController {
         return ResponseEntity.status(201).body(creada);
     }
 
+    // PUT /api/task/{id} — edición completa (título, descripción, asignado)
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskTO> updateTask(@PathVariable Long id, @RequestBody TaskTO task) {
+        log.info("Actualizando tarea con ID: {}", id);
+        return ResponseEntity.ok(taskService.updateTask(id, task));
+    }
+
     // PUT /api/task/{id}/status
     @PutMapping("/{id}/status")
     public ResponseEntity<TaskTO> updateStatus(@PathVariable Long id, @RequestParam TaskStatusEnum status) {
@@ -48,10 +55,8 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
-
     @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
-
 }
