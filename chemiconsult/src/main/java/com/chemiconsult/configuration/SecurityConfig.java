@@ -3,8 +3,10 @@ package com.chemiconsult.configuration;
 import com.chemiconsult.security.JwtRequestFilter;
 import com.chemiconsult.service.JwtUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -33,6 +35,10 @@ public class SecurityConfig {
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
+    // En local se inyecta desde application-local.properties, en prod desde variables de entorno de Fly.io
+    @Value("${ALLOWED_ORIGINS:}")
+    private String allowedOriginsEnv;
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -57,12 +63,25 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // public endpoints
-                        .requestMatchers("/login", "/authenticate", "/api/auth/**", "/dashboard").permitAll()
+                        // Login y health check
+                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
+                        // Archivos estáticos del front (la auth real la hace auth.js en el cliente)
+                        .requestMatchers(HttpMethod.GET,
+                                "/", "/*.html", "/index.html",
+                                "/js/**", "/css/**", "/img/**", "/fonts/**", "/favicon.ico"
+                        ).permitAll()
+                        // Todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true).maxAgeInSeconds(31536000)
+                        )
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
@@ -74,12 +93,21 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
-                "https://esteban-n-hernandez.github.io",
+        // Orígenes base siempre permitidos (local)
+        List<String> origins = new java.util.ArrayList<>(List.of(
                 "http://localhost:63343",
                 "http://localhost:63342",
-                "http://localhost:4200"
+                "http://localhost:8080"
         ));
+
+        // En prod, Fly.io inyecta ALLOWED_ORIGINS con el dominio real (ej: https://chemiconsult.fly.dev)
+        if (allowedOriginsEnv != null && !allowedOriginsEnv.isBlank()) {
+            for (String origin : allowedOriginsEnv.split(",")) {
+                origins.add(origin.trim());
+            }
+        }
+
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
