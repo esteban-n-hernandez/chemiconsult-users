@@ -63,8 +63,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Login endpoint
+                        // Login y health check
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         // Archivos estáticos del front (la auth real la hace auth.js en el cliente)
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/*.html", "/index.html",
