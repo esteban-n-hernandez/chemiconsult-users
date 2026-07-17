@@ -95,11 +95,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes base siempre permitidos (local)
+        // Orígenes base siempre permitidos
         List<String> origins = new java.util.ArrayList<>(List.of(
                 "http://localhost:63343",
                 "http://localhost:63342",
-                "http://localhost:8080"
+                "http://localhost:8080",
+                "https://esteban-n-hernandez.github.io" // QUITAR cuando dejes GitHub Pages
         ));
 
         // En prod, Fly.io inyecta ALLOWED_ORIGINS con el dominio real (ej: https://chemiconsult.fly.dev)
