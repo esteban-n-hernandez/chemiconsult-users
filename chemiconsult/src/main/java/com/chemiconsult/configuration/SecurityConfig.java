@@ -63,6 +63,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        // Preflight CORS — debe pasar antes que cualquier filtro de auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Login y health check
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
