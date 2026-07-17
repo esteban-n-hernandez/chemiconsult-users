@@ -47,6 +47,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
 
+        // Preflight OPTIONS — pasar sin tocar
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String requestPath = request.getRequestURI();
 
         // Si es una ruta pública, permitir el paso sin validar JWT
