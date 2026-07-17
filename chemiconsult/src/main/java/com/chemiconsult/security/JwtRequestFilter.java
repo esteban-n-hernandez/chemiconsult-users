@@ -31,6 +31,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             "/login",
             "/authenticate",
             "/api/auth",
+            "/actuator/health",
             "/js/",
             "/css/",
             "/img/",
