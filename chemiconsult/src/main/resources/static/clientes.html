@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - CHEMICONSULT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/sidebar.css"/>
+    <link rel="stylesheet" href="css/clientes/clientes.css">
+    <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO"></script>
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+
+<!-- ══════════════════════════════════════════
+     CONTENIDO
+══════════════════════════════════════════ -->
+<div class="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1>Clientes</h1>
+            <p>Gestión de clientes del laboratorio</p>
+        </div>
+        <button class="btn-nuevo-cliente" id="btnNuevoCliente">
+            <i class="bi bi-plus-lg"></i> Nuevo Cliente
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card-filtros">
+        <div class="filtros-row">
+            <input
+                    type="text"
+                    id="inputBusqueda"
+                    placeholder="Buscar por nombre, email o CUIT..."
+            >
+            <select id="selectTipo">
+                <option value="">Todos los tipos</option>
+                <option value="PERSONA_FISICA">Persona Física</option>
+                <option value="EMPRESA">Empresa</option>
+            </select>
+            <button class="btn-buscar" onclick="buscarClientes()">
+                <i class="bi bi-search"></i> Buscar
+            </button>
+            <button class="btn-limpiar" onclick="limpiarFiltros()">
+                <i class="bi bi-x-circle"></i> Limpiar
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="panel">
+        <table class="tabla-clientes">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Tipo</th>
+                <th>Nombre / Razón Social</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Condición IVA</th>
+                <th>Usuario</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody id="tablaClientes">
+            </tbody>
+        </table>
+
+        <!-- Sin resultados -->
+        <div class="sin-resultados" id="sinResultados" style="display:none;">
+            <i class="bi bi-people"></i>
+            <p>No se encontraron clientes</p>
+        </div>
+
+        <!-- Footer con paginación -->
+        <div class="panel-footer">
+            <small id="infoPaginacion">Mostrando 0 clientes</small>
+            <ul class="paginacion" id="paginacion"></ul>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL — Alta Cliente
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalAltaCliente">
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <h5><i class="bi bi-person-plus"></i> Nuevo Cliente</h5>
+            <button class="modal-close" id="modalClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="formAltaCliente" novalidate>
+            <div class="modal-body">
+
+                <!-- Tipo de cliente -->
+                <div>
+                    <p class="seccion-titulo">Tipo de cliente</p>
+                    <div class="tipo-selector">
+                        <label class="tipo-option selected" id="labelPersona">
+                            <input type="radio" name="tipoCliente" value="PERSONA_FISICA"
+                                   checked onchange="toggleTipo()">
+                            <i class="bi bi-person"></i>
+                            Persona Física
+                        </label>
+                        <label class="tipo-option" id="labelEmpresa">
+                            <input type="radio" name="tipoCliente" value="EMPRESA"
+                                   onchange="toggleTipo()">
+                            <i class="bi bi-building"></i>
+                            Empresa
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sección Persona Física -->
+                <div id="seccionPersona">
+                    <p class="seccion-titulo">Datos personales</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre <span class="required">*</span></label>
+                            <input type="text" class="form-control-custom" id="nombre"
+                                   placeholder="Juan">
+                            <span class="field-error" id="errNombre">Campo requerido</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido <span class="required">*</span></label>
+                            <input type="text" class="form-control-custom" id="apellido"
+                                   placeholder="Pérez">
+                            <span class="field-error" id="errApellido">Campo requerido</span>
+                        </div>
+                        <div class="form-group">
+                            <label>DNI</label>
+                            <input type="text" class="form-control-custom" id="dni"
+                                   placeholder="12345678">
+                        </div>
+                        <div class="form-group">
+                            <label>CUIL</label>
+                            <input type="text" class="form-control-custom" id="cuil"
+                                   placeholder="20-12345678-9">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Empresa -->
+                <div id="seccionEmpresa" style="display:none;">
+                    <p class="seccion-titulo">Datos de la empresa</p>
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label>Razón Social <span class="required">*</span></label>
+                            <input type="text" class="form-control-custom" id="razonSocial"
+                                   placeholder="Empresa S.A.">
+                            <span class="field-error" id="errRazonSocial">Campo requerido</span>
+                        </div>
+                        <div class="form-group">
+                            <label>CUIT <span class="required">*</span></label>
+                            <input type="text" class="form-control-custom" id="cuit"
+                                   placeholder="30-12345678-9">
+                            <span class="field-error" id="errCuit">Campo requerido</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Condición IVA</label>
+                            <select class="form-control-custom" id="condicionIVAEmpresa">
+                                <option value="">Seleccionar...</option>
+                                <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
+                                <option value="MONOTRIBUTISTA">Monotributista</option>
+                                <option value="EXENTO">Exento</option>
+                                <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+                                <option value="NO_RESPONSABLE">No Responsable</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos de contacto -->
+                <div>
+                    <p class="seccion-titulo">Datos de contacto</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email <span class="required">*</span></label>
+                            <input type="email" class="form-control-custom" id="email"
+                                   placeholder="email@ejemplo.com">
+                            <span class="field-error" id="errEmail">Campo requerido</span>
+                        </div>
+                        <div class="form-group" id="condicionIVAPersonaGroup">
+                            <label>Condición IVA</label>
+                            <select class="form-control-custom" id="condicionIVAPersona">
+                                <option value="">Seleccionar...</option>
+                                <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
+                                <option value="MONOTRIBUTISTA">Monotributista</option>
+                                <option value="EXENTO">Exento</option>
+                                <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+                                <option value="NO_RESPONSABLE">No Responsable</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" class="form-control-custom" id="telefono"
+                                   placeholder="0341-123456">
+                        </div>
+                        <div class="form-group">
+                            <label>Celular</label>
+                            <input type="text" class="form-control-custom" id="celular"
+                                   placeholder="341-1234567">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domicilio legal -->
+                <div>
+                    <p class="seccion-titulo">Domicilio legal / fiscal</p>
+                    <p class="seccion-ayuda">
+                        Este es el domicilio de registro de la empresa, no un local operativo.
+                        Las sucursales donde se toman muestras se cargan después, desde el ícono
+                        <i class="bi bi-geo-alt"></i> en la tabla de clientes.
+                    </p>
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label>Dirección</label>
+                        <input type="text" class="form-control-custom" id="direccion"
+                               placeholder="Calle 123">
+                    </div>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Localidad</label>
+                            <input type="text" class="form-control-custom" id="localidad"
+                                   placeholder="Rosario">
+                        </div>
+                        <div class="form-group">
+                            <label>Provincia</label>
+                            <select class="form-control-custom" id="provincia">
+                                <option value="">Seleccionar...</option>
+                                <option value="BUENOS_AIRES">Buenos Aires</option>
+                                <option value="CIUDAD_AUTONOMA_DE_BUENOS_AIRES">CABA</option>
+                                <option value="CATAMARCA">Catamarca</option>
+                                <option value="CHACO">Chaco</option>
+                                <option value="CHUBUT">Chubut</option>
+                                <option value="CORDOBA">Córdoba</option>
+                                <option value="CORRIENTES">Corrientes</option>
+                                <option value="ENTRE_RIOS">Entre Ríos</option>
+                                <option value="FORMOSA">Formosa</option>
+                                <option value="JUJUY">Jujuy</option>
+                                <option value="LA_PAMPA">La Pampa</option>
+                                <option value="LA_RIOJA">La Rioja</option>
+                                <option value="MENDOZA">Mendoza</option>
+                                <option value="MISIONES">Misiones</option>
+                                <option value="NEUQUEN">Neuquén</option>
+                                <option value="RIO_NEGRO">Río Negro</option>
+                                <option value="SALTA">Salta</option>
+                                <option value="SAN_JUAN">San Juan</option>
+                                <option value="SAN_LUIS">San Luis</option>
+                                <option value="SANTA_CRUZ">Santa Cruz</option>
+                                <option value="SANTA_FE">Santa Fe</option>
+                                <option value="SANTIAGO_DEL_ESTERO">Santiago del Estero</option>
+                                <option value="TIERRA_DEL_FUEGO">Tierra del Fuego</option>
+                                <option value="TUCUMAN">Tucumán</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div><!-- /modal-body -->
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" id="btnCancelar">Cancelar</button>
+                <button type="submit" class="btn-guardar" id="btnGuardar">
+                    <i class="bi bi-check-lg"></i> Guardar Cliente
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL — Confirmar Desactivar
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalConfirmarBaja">
+    <div class="modal-box modal-box-sm">
+
+        <div class="modal-header">
+            <h5><i class="bi bi-exclamation-triangle"></i> Desactivar Cliente</h5>
+            <button class="modal-close" id="modalConfirmarClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-body" style="gap:0.75rem;">
+            <div class="baja-warning-icon">
+                <i class="bi bi-person-dash"></i>
+            </div>
+            <p class="baja-mensaje">
+                ¿Estás seguro que querés desactivar a
+                <strong id="bajaClienteNombre">—</strong>?
+            </p>
+            <p class="baja-submensaje">
+                El cliente no podrá acceder al sistema, pero sus datos se conservan
+                y la acción puede revertirse.
+            </p>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="btnCancelarBaja">Cancelar</button>
+            <button type="button" class="btn-desactivar" id="btnConfirmarBaja">
+                <i class="bi bi-person-dash"></i> Desactivar
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL — Sucursales y Contactos
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalSucursales">
+    <div class="modal-box modal-box-lg">
+
+        <div class="modal-header">
+            <h5><i class="bi bi-geo-alt"></i> Sucursales y contactos — <span id="sucursalesClienteNombre">—</span></h5>
+            <button class="modal-close" id="modalSucursalesClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+
+            <!-- ── Sección Sucursales ── -->
+            <div class="seccion-sucursales">
+                <div class="seccion-header-flex">
+                    <p class="seccion-titulo" style="margin:0;">Sucursales</p>
+                    <button type="button" class="btn-add-inline" id="btnNuevaSucursal">
+                        <i class="bi bi-plus-lg"></i> Nueva sucursal
+                    </button>
+                </div>
+                <div id="listaSucursales" class="lista-sucursales"></div>
+                <div class="sin-datos-inline" id="sinSucursales" style="display:none;">
+                    Sin sucursales cargadas todavía.
+                </div>
+            </div>
+
+            <!-- ── Form inline: alta/edición de sucursal (oculto hasta que se necesita) ── -->
+            <div class="form-inline-card d-none" id="formSucursalCard">
+                <p class="seccion-titulo" id="formSucursalTitulo">Nueva sucursal</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre <span class="required">*</span></label>
+                        <input type="text" class="form-control-custom" id="sucursalNombre"
+                               placeholder="Ej: Local Monte Grande">
+                        <span class="field-error" id="errSucursalNombre">Campo requerido</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Localidad</label>
+                        <input type="text" class="form-control-custom" id="sucursalLocalidad" placeholder="Monte Grande">
+                    </div>
+                    <div class="form-group">
+                        <label>Provincia</label>
+                        <select class="form-control-custom" id="sucursalProvincia">
+                            <option value="">Seleccionar...</option>
+                            <option value="BUENOS_AIRES">Buenos Aires</option>
+                            <option value="CIUDAD_AUTONOMA_DE_BUENOS_AIRES">CABA</option>
+                            <option value="CATAMARCA">Catamarca</option>
+                            <option value="CHACO">Chaco</option>
+                            <option value="CHUBUT">Chubut</option>
+                            <option value="CORDOBA">Córdoba</option>
+                            <option value="CORRIENTES">Corrientes</option>
+                            <option value="ENTRE_RIOS">Entre Ríos</option>
+                            <option value="FORMOSA">Formosa</option>
+                            <option value="JUJUY">Jujuy</option>
+                            <option value="LA_PAMPA">La Pampa</option>
+                            <option value="LA_RIOJA">La Rioja</option>
+                            <option value="MENDOZA">Mendoza</option>
+                            <option value="MISIONES">Misiones</option>
+                            <option value="NEUQUEN">Neuquén</option>
+                            <option value="RIO_NEGRO">Río Negro</option>
+                            <option value="SALTA">Salta</option>
+                            <option value="SAN_JUAN">San Juan</option>
+                            <option value="SAN_LUIS">San Luis</option>
+                            <option value="SANTA_CRUZ">Santa Cruz</option>
+                            <option value="SANTA_FE">Santa Fe</option>
+                            <option value="SANTIAGO_DEL_ESTERO">Santiago del Estero</option>
+                            <option value="TIERRA_DEL_FUEGO">Tierra del Fuego</option>
+                            <option value="TUCUMAN">Tucumán</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label>Dirección</label>
+                    <input type="text" class="form-control-custom" id="sucursalDireccion" placeholder="Calle Falsa 123">
+                </div>
+                <div class="form-inline-actions">
+                    <button type="button" class="btn-cancelar-sm" id="btnCancelarSucursal">Cancelar</button>
+                    <button type="button" class="btn-guardar-sm" id="btnGuardarSucursal">
+                        <i class="bi bi-check-lg"></i> Guardar sucursal
+                    </button>
+                </div>
+            </div>
+
+            <hr class="separador-modal"/>
+
+            <!-- ── Sección Contactos ── -->
+            <div class="seccion-contactos">
+                <div class="seccion-header-flex">
+                    <p class="seccion-titulo" style="margin:0;">Contactos</p>
+                    <button type="button" class="btn-add-inline" id="btnNuevoContacto">
+                        <i class="bi bi-plus-lg"></i> Nuevo contacto
+                    </button>
+                </div>
+                <p class="seccion-ayuda">
+                    Un contacto puede pertenecer a varias sucursales — tildá a cuáles corresponde.
+                </p>
+                <div id="listaContactos" class="lista-contactos"></div>
+                <div class="sin-datos-inline" id="sinContactos" style="display:none;">
+                    Sin contactos cargados todavía.
+                </div>
+            </div>
+
+            <!-- ── Form inline: alta/edición de contacto ── -->
+            <div class="form-inline-card d-none" id="formContactoCard">
+                <p class="seccion-titulo" id="formContactoTitulo">Nuevo contacto</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre <span class="required">*</span></label>
+                        <input type="text" class="form-control-custom" id="contactoNombre" placeholder="Ej: Micaela Gómez">
+                        <span class="field-error" id="errContactoNombre">Campo requerido</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control-custom" id="contactoEmail" placeholder="mica@empresa.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" class="form-control-custom" id="contactoTelefono" placeholder="11-1234-5678">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label>Sucursales a las que pertenece</label>
+                    <div id="contactoSucursalesCheckboxes" class="checkboxes-sucursales"></div>
+                </div>
+                <div class="form-inline-actions">
+                    <button type="button" class="btn-cancelar-sm" id="btnCancelarContacto">Cancelar</button>
+                    <button type="button" class="btn-guardar-sm" id="btnGuardarContacto">
+                        <i class="bi bi-check-lg"></i> Guardar contacto
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="btnCerrarSucursalesModal">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL — Asignar Usuario
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalAsignarUsuario">
+    <div class="modal-box modal-box-sm">
+
+        <div class="modal-header">
+            <h5><i class="bi bi-person-plus"></i> Asignar acceso al sistema</h5>
+            <button class="modal-close" id="modalAsignarClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="formAsignarUsuario" novalidate>
+            <div class="modal-body">
+                <p class="baja-submensaje" style="margin-bottom: 0.5rem;">
+                    Cliente: <strong id="asignarClienteNombre">—</strong>
+                </p>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Nombre de usuario <span class="required">*</span></label>
+                    <input type="text" class="form-control-custom" id="asignarUsername"
+                           placeholder="ej: jperez" autocomplete="off">
+                    <span class="field-error" id="errAsignarUsername">Campo requerido</span>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Contraseña provisoria <span class="required">*</span></label>
+                    <input type="password" class="form-control-custom" id="asignarPassword"
+                           placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+                    <span class="field-error" id="errAsignarPassword">Mínimo 6 caracteres</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar contraseña <span class="required">*</span></label>
+                    <input type="password" class="form-control-custom" id="asignarPasswordConfirmar"
+                           placeholder="Repetir contraseña" autocomplete="new-password">
+                    <span class="field-error" id="errAsignarPasswordConfirmar">Las contraseñas no coinciden</span>
+                </div>
+
+                <div class="alert-error-servidor" id="asignarErrorServidor" style="display:none;"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" id="btnCancelarAsignar">Cancelar</button>
+                <button type="submit" class="btn-guardar" id="btnConfirmarAsignar">
+                    <i class="bi bi-check-lg"></i> Crear acceso
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TOAST
+══════════════════════════════════════════ -->
+<div class="toast-confirm" id="toastConfirm">
+    <i id="toastIcon"></i>
+    <span id="toastMsg">Operación realizada</span>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/clientes.js"></script>
+</body>
+</html>
