@@ -324,7 +324,7 @@ formAlta.addEventListener("submit", async function (e) {
     btnGuardar.innerHTML = `<i class="bi bi-hourglass-split"></i> Guardando...`;
 
     try {
-        const response = await fetch(`${API_BASE}/estudios`, {
+        const response = await fetch(`${API_BASE}/api/estudios`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

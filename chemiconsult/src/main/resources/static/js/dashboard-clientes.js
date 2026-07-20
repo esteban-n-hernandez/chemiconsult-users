@@ -1,4 +1,4 @@
-const API_CLIENTES_BASE = `${API_BASE}`;
+const API_CLIENTES_BASE = `${API_BASE}/api`;
 
 // ── Guard ──
 const rol = (localStorage.getItem("userRole") || "").toUpperCase();
