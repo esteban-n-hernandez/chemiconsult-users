@@ -1,4 +1,4 @@
-const API_URL = `${API_BASE}/clientes`;
+const API_URL = `${API_BASE}/api/clientes`;
 const TOKEN   = () => localStorage.getItem('token');
 
 let todosLosClientes  = [];
@@ -637,8 +637,8 @@ async function confirmarBaja() {
 // ══════════════════════════════════════════
 //  MODAL SUCURSALES Y CONTACTOS
 // ══════════════════════════════════════════
-const SUCURSALES_URL = `${API_BASE}/clientes`; // /{clienteId}/sucursales, /sucursales, /sucursales/{id}
-const CONTACTOS_URL  = `${API_BASE}/clientes`; // /{clienteId}/contactos, /contactos, /contactos/{id}
+const SUCURSALES_URL = `${API_BASE}/api/clientes`; // /{clienteId}/sucursales, /sucursales, /sucursales/{id}
+const CONTACTOS_URL  = `${API_BASE}/api/clientes`; // /{clienteId}/contactos, /contactos, /contactos/{id}
 
 let clienteSucursalesId = null;   // cliente actualmente abierto en el modal
 let sucursalesDelCliente = [];
