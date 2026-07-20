@@ -1,4 +1,4 @@
-const API_URL = `${API_BASE}/api`;
+const API_URL = `${API_BASE}`;
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarMetodologias();

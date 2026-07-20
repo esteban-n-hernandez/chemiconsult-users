@@ -1,4 +1,4 @@
-const API_URL = API_BASE;
+const API_URL = API_BASE.replace(/\/api$/, '');
 
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
     e.preventDefault();

@@ -1,5 +1,5 @@
-const API_URL = `${API_BASE}/api/task`;
-const USERS_URL = `${API_BASE}/api/users/asignables`;
+const API_URL = `${API_BASE}/task`;
+const USERS_URL = `${API_BASE}/users/asignables`;
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
 const userEmail = localStorage.getItem("userEmail");

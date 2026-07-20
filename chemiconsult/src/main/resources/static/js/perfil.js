@@ -94,7 +94,7 @@ async function cargarDatosCuenta() {
     }
 
     try {
-        const response = await fetchConAuth(`${API_URL}/users/${userId}`);
+        const response = await fetchConAuth(`${API_URL}/api/users/${userId}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const user = await response.json();
 
@@ -138,7 +138,7 @@ async function onSubmitDatosCuenta(e) {
     btn.disabled = true;
 
     try {
-        const response = await fetchConAuth(`${API_URL}/users/${userId}`, {
+        const response = await fetchConAuth(`${API_URL}/api/users/${userId}`, {
             method: "PUT",
             body: JSON.stringify({ username, email })
         });
@@ -194,7 +194,7 @@ async function onSubmitPassword(e) {
     btn.disabled = true;
 
     try {
-        const response = await fetchConAuth(`${API_URL}/users/${userId}/password`, {
+        const response = await fetchConAuth(`${API_URL}/api/users/${userId}/password`, {
             method: "PUT",
             body: JSON.stringify({ passwordActual: actual, passwordNueva: nueva })
         });
