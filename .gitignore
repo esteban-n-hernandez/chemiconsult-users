@@ -26,3 +26,13 @@ replay_pid*
 # Credenciales locales — nunca commitear
 **/application-local.properties
 **/application-secrets.properties
+
+# Maven build output
+target/
+**/target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
