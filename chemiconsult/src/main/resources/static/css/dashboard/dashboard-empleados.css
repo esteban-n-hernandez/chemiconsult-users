@@ -898,3 +898,120 @@ button.btn-nueva-muestra-btn {
     color: #7cd832;
     font-size: 18px;
 }
+
+/* ── Tamaños de modal ── */
+.modal-box-detalle {
+    max-width: 640px;
+}
+
+.modal-box-sm {
+    max-width: 420px;
+}
+
+/* ── Modal detalle ── */
+.detalle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.detalle-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.detalle-campo label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.detalle-campo span {
+    font-size: 13px;
+    color: #1a1a2e;
+}
+
+.detalle-obs {
+    display: block;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #495057;
+    min-height: 36px;
+    white-space: pre-wrap;
+}
+
+.detalle-seccion {
+    margin-top: 0.85rem;
+}
+
+.detalle-seccion-titulo {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.detalle-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.detalle-tag {
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.detalle-tag-verde {
+    background: #eaf5d3;
+    color: #4a8403;
+}
+
+.detalle-tag-azul {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* ── Botón eliminar (confirm modal) ── */
+.btn-eliminar-confirm {
+    padding: 8px 20px;
+    background: #dc3545;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-eliminar-confirm:hover {
+    background: #b02a37;
+}
+
+/* ── Colores de hover por tipo de acción ── */
+.btn-accion.btn-avanzar:hover {
+    background: #d1e7dd;
+    color: #146c43;
+    border-color: #198754;
+}
+
+.btn-accion.btn-eliminar:hover {
+    background: #f8d7da;
+    color: #dc3545;
+    border-color: #dc3545;
+}

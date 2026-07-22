@@ -5,6 +5,7 @@ import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.service.AnalisisService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
+import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
 import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
@@ -52,10 +53,16 @@ public class AnalisisController {
         return analisisService.getEstudio(id);
     }
 
+    @GetMapping("/{id}/detalle")
+    public AnalisisDetalleTO getEstudioDetalle(@PathVariable Long id) {
+        return analisisService.getEstudioDetalle(id);
+    }
+
     @PostMapping
     @Transactional
-    public AnalisisDE createEstudio(@RequestBody EstudioTO estudio) {
-        return analisisService.createEstudio(estudio);
+    public ResponseEntity<Void> createEstudio(@RequestBody EstudioTO estudio) {
+        analisisService.createEstudio(estudio);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{id}")
