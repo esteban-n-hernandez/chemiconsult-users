@@ -261,52 +261,50 @@
 
             <div id="detalleContenido" class="d-none">
 
-                <!-- Datos generales -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="text-muted small">Cliente</label>
-                        <p class="mb-0 fw-semibold" id="detalleCliente">—</p>
+                <!-- Badge de estado -->
+                <div class="detalle-meta">
+                    <span id="detalleEstado" class="badge-estado"></span>
+                </div>
+
+                <!-- Campos informativos -->
+                <div class="detalle-info-grid">
+                    <div class="detalle-info-campo">
+                        <label>Cliente</label>
+                        <span id="detalleCliente">—</span>
                     </div>
-                    <div class="form-group">
-                        <label class="text-muted small">Estado</label>
-                        <p class="mb-0" id="detalleEstado">—</p>
+                    <div class="detalle-info-campo">
+                        <label>ID Muestra</label>
+                        <span id="detalleIdMuestra">—</span>
                     </div>
-                    <div class="form-group">
-                        <label class="text-muted small">ID de muestra</label>
-                        <p class="mb-0" id="detalleIdMuestra">—</p>
+                    <div class="detalle-info-campo">
+                        <label>Matriz</label>
+                        <span id="detalleMatrizTipo">—</span>
+                    </div>
+                    <div class="detalle-info-campo">
+                        <label>Punto de muestreo</label>
+                        <span id="detallePuntoMuestreo">—</span>
+                    </div>
+                    <div class="detalle-info-campo">
+                        <label>Ingreso → Entrega</label>
+                        <span id="detalleFechas">—</span>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="text-muted small">Matriz / Tipo de muestra</label>
-                        <p class="mb-0" id="detalleMatrizTipo">—</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="text-muted small">Punto de muestreo</label>
-                        <p class="mb-0" id="detallePuntoMuestreo">—</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="text-muted small">Fecha ingreso / entrega</label>
-                        <p class="mb-0" id="detalleFechas">—</p>
-                    </div>
-                </div>
-
-                <!-- Resoluciones aplicadas -->
-                <div class="form-group mt-2">
-                    <label class="fw-bold small">Normativas aplicadas</label>
-                    <div id="detalleResoluciones" class="d-flex flex-wrap gap-2">—</div>
+                <!-- Normativas -->
+                <div class="detalle-seccion">
+                    <p class="detalle-seccion-titulo">Normativas aplicadas</p>
+                    <div id="detalleResoluciones" class="detalle-chips"></div>
                 </div>
 
                 <!-- Observaciones -->
-                <div class="form-group mt-2" id="detalleObservacionesWrap">
-                    <label class="text-muted small">Observaciones</label>
-                    <p class="mb-0" id="detalleObservaciones">—</p>
+                <div class="detalle-seccion" id="detalleObservacionesWrap">
+                    <p class="detalle-seccion-titulo">Observaciones</p>
+                    <p class="detalle-obs-text" id="detalleObservaciones">—</p>
                 </div>
 
-                <!-- Parámetros con resultados y límites -->
-                <div class="form-group mt-3">
-                    <label class="fw-bold">Parámetros analizados</label>
+                <!-- Parámetros -->
+                <div class="detalle-seccion">
+                    <p class="detalle-seccion-titulo">Parámetros analizados</p>
                     <div id="detalleParametros"></div>
                 </div>
             </div>

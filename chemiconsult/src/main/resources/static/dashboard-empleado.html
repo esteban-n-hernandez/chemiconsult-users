@@ -82,9 +82,6 @@
                 <h5>
                     <i class="bi bi-list-check me-2 panel-title-icon-green"></i>Cola de trabajo — Muestras activas
                 </h5>
-                <button class="btn btn-sm btn-success btn-nueva-muestra btn-nueva-muestra-btn">
-                    <i class="bi bi-plus-lg"></i> Nueva muestra
-                </button>
             </div>
             <div class="panel-body">
                 <div class="filtros">
@@ -149,7 +146,7 @@
                     operativas
                 </h5>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" id="alertasBody">
                 <div class="alerta-item">
                     <div class="alerta-dot rojo"></div>
                     <div class="alerta-texto">
@@ -387,6 +384,62 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- MODAL DETALLE MUESTRA -->
+<div class="modal-overlay" id="modalDetalle">
+    <div class="modal-box modal-box-detalle">
+        <div class="modal-header">
+            <h5><i class="bi bi-eye"></i> Detalle de muestra</h5>
+            <button class="modal-close" id="modalDetalleClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="detalleEstadoBadge" class="badge-estado" style="margin-bottom:.5rem"></div>
+            <div class="detalle-grid">
+                <div class="detalle-campo"><label>Protocolo</label><span id="detalleProtocolo">—</span></div>
+                <div class="detalle-campo"><label>ID Muestra</label><span id="detalleIdMuestra">—</span></div>
+                <div class="detalle-campo"><label>Cliente</label><span id="detalleCliente">—</span></div>
+                <div class="detalle-campo"><label>Matriz</label><span id="detalleMatriz">—</span></div>
+                <div class="detalle-campo"><label>Punto de muestreo</label><span id="detallePunto">—</span></div>
+                <div class="detalle-campo"><label>Fecha ingreso</label><span id="detalleFechaIngreso">—</span></div>
+                <div class="detalle-campo"><label>Fecha entrega</label><span id="detalleFechaEntrega">—</span></div>
+            </div>
+            <div class="detalle-campo">
+                <label>Observaciones</label>
+                <span id="detalleObservaciones" class="detalle-obs">—</span>
+            </div>
+            <div class="detalle-seccion">
+                <label class="detalle-seccion-titulo">Parámetros a analizar</label>
+                <div id="detalleParametros" class="detalle-tags"></div>
+            </div>
+            <div class="detalle-seccion" id="detalleResolucionesSection">
+                <label class="detalle-seccion-titulo">Resoluciones aplicadas</label>
+                <div id="detalleResoluciones" class="detalle-tags"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="btnDetalleClose">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-overlay" id="modalEliminar">
+    <div class="modal-box modal-box-sm">
+        <div class="modal-header">
+            <h5 style="color:#dc3545"><i class="bi bi-trash3"></i> Eliminar muestra</h5>
+            <button class="modal-close" id="modalEliminarClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <p id="modalEliminarMsg" style="font-size:14px;color:#1a1a2e;margin:0;line-height:1.5"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="btnCancelarEliminar">Cancelar</button>
+            <button type="button" class="btn-eliminar-confirm" id="btnConfirmarEliminar">
+                <i class="bi bi-trash3"></i> Eliminar
+            </button>
+        </div>
     </div>
 </div>
 

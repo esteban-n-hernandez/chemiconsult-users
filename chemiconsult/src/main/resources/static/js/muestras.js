@@ -669,7 +669,7 @@ async function onSubmitMuestra(e) {
         nroProtocolo:       document.getElementById("inputProtocolo").value.trim(),
         fechaIngreso:       document.getElementById("inputFecha").value,
         fechaEntrega:       document.getElementById("inputFechaEntrega").value || null,
-        userId:             parseInt(document.getElementById("inputCliente").value),
+        clienteId:          parseInt(document.getElementById("inputCliente").value),
         idMuestra:          document.getElementById("inputIdMuestra").value.trim(),
         puntoMuestreo:      document.getElementById("inputPuntoMuestreo").value.trim() || null,
         // NUEVO: matrizId en vez de tipoMuestraId (el select ahora lista MATRIZ directo)
@@ -956,87 +956,121 @@ function cerrarModalDetalle() {
     document.getElementById("modalDetalleMuestra").classList.remove("visible");
 }
 
+function badgeClassDetalle(estado) {
+    const map = {
+        PENDIENTE: "badge-pendiente",
+        EN_PROCESO: "badge-proceso",
+        COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
+        DEMORADA: "badge-demorada",
+        COMPLETO: "badge-informe",
+    };
+    return "badge-estado " + (map[(estado || "").toUpperCase()] || "");
+}
+
+function labelEstadoDetalle(estado) {
+    const map = {
+        PENDIENTE: "Pendiente",
+        EN_PROCESO: "En proceso",
+        COMPLETO_SIN_INFORME: "Completo sin informe",
+        DEMORADA: "Demorada",
+        COMPLETO: "Completo",
+    };
+    return map[(estado || "").toUpperCase()] || (estado || "—");
+}
+
 function renderizarDetalleMuestra(d) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || d.idMuestra || `#${d.id}`;
+
+    // Estado badge
+    const estadoEl = document.getElementById("detalleEstado");
+    estadoEl.className = badgeClassDetalle(d.estado);
+    estadoEl.textContent = labelEstadoDetalle(d.estado);
+
     document.getElementById("detalleCliente").textContent = d.cliente || "—";
-    document.getElementById("detalleEstado").innerHTML =
-        `<span class="badge-estado ${(d.estado || '').toLowerCase()}">${d.estado || '—'}</span>`;
     document.getElementById("detalleIdMuestra").textContent = d.idMuestra || "—";
     document.getElementById("detalleMatrizTipo").textContent = d.matrizNombre || "—";
     document.getElementById("detallePuntoMuestreo").textContent = d.puntoMuestreo || "—";
     document.getElementById("detalleFechas").textContent =
         `${formatearFecha(d.fechaIngreso)} → ${d.fechaEntrega ? formatearFecha(d.fechaEntrega) : "sin definir"}`;
 
-    // Observaciones (oculta el bloque si no hay nada que mostrar)
+    // Observaciones
     const wrapObs = document.getElementById("detalleObservacionesWrap");
     if (d.observaciones) {
         document.getElementById("detalleObservaciones").textContent = d.observaciones;
-        wrapObs.style.display = "block";
+        wrapObs.style.display = "";
     } else {
         wrapObs.style.display = "none";
     }
 
-    // Resoluciones aplicadas (chips)
+    // Normativas (chips)
     const contResoluciones = document.getElementById("detalleResoluciones");
     contResoluciones.innerHTML = "";
     if (!d.resolucionesAplicadas || d.resolucionesAplicadas.length === 0) {
-        contResoluciones.innerHTML = '<span class="text-muted small">Sin normativa asociada</span>';
+        contResoluciones.innerHTML = '<span style="color:var(--color-text-tertiary);font-size:13px">Sin normativa asociada</span>';
     } else {
         d.resolucionesAplicadas.forEach(nombre => {
             const chip = document.createElement("span");
-            chip.className = "badge bg-light text-dark border";
+            chip.className = "detalle-chip";
             chip.textContent = nombre;
             contResoluciones.appendChild(chip);
         });
     }
 
-    // Parámetros con resultado y TODOS sus límites en paralelo
+    // Parámetros
     const contParametros = document.getElementById("detalleParametros");
     contParametros.innerHTML = "";
 
     if (!d.parametros || d.parametros.length === 0) {
-        contParametros.innerHTML = '<span class="text-muted small">Sin parámetros cargados.</span>';
+        contParametros.innerHTML = '<span style="color:var(--color-text-tertiary);font-size:13px">Sin parámetros cargados.</span>';
         return;
     }
 
     d.parametros.forEach(p => {
         const card = document.createElement("div");
-        card.className = "parametro-detalle-card border rounded p-2 mb-2";
+        card.className = "param-card";
 
-        const resultado = p.valorResultado != null && p.valorResultado !== ""
-            ? `${p.valorResultado} ${p.unidad || ""}`
-            : '<span class="text-muted">Pendiente</span>';
+        const tieneResultado = p.valorResultado != null && p.valorResultado !== "";
+        const resultadoHtml = tieneResultado
+            ? `<span class="param-card-resultado">${p.valorResultado} <small>${p.unidad || ""}</small></span>`
+            : `<span class="param-card-resultado-pendiente">Pendiente</span>`;
 
         let limitesHtml = "";
         if (!p.limites || p.limites.length === 0) {
-            limitesHtml = '<span class="text-muted small">Sin límite normativo asociado</span>';
+            limitesHtml = `<div class="param-card-limites"><span style="color:var(--color-text-tertiary);font-size:12px">Sin límite normativo asociado</span></div>`;
         } else {
-            limitesHtml = p.limites.map(l => {
+            const filas = p.limites.map(l => {
                 const textoLimite = formatearLimite(l);
-                const cumpleBadge = l.cumple === null || l.cumple === undefined
-                    ? '<span class="badge bg-secondary">Sin evaluar</span>'
-                    : l.cumple
-                        ? '<span class="badge bg-success">Cumple</span>'
-                        : '<span class="badge bg-danger">No cumple</span>';
+                let badgeClass, badgeText;
+                if (l.cumple === null || l.cumple === undefined) {
+                    badgeClass = "badge-cumple badge-cumple-nd";
+                    badgeText = "Sin evaluar";
+                } else if (l.cumple) {
+                    badgeClass = "badge-cumple badge-cumple-si";
+                    badgeText = "Cumple";
+                } else {
+                    badgeClass = "badge-cumple badge-cumple-no";
+                    badgeText = "No cumple";
+                }
                 return `
-                    <div class="d-flex justify-content-between align-items-center small py-1 border-top">
-                        <span class="text-muted">${l.origenNombre}: <strong>${textoLimite}</strong></span>
-                        ${cumpleBadge}
-                    </div>
-                `;
+                    <div class="param-limite-row">
+                        <span class="param-limite-origen">${l.origenNombre}</span>
+                        <span class="param-limite-valor">${textoLimite}</span>
+                        <span class="${badgeClass}">${badgeText}</span>
+                    </div>`;
             }).join("");
+            limitesHtml = `<div class="param-card-limites">${filas}</div>`;
         }
 
         card.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="param-card-header">
                 <div>
-                    <strong>${p.nombre}</strong>
-                    <span class="text-muted small ms-1">(${p.metodologiaNombre || 'Sin metodología'})</span>
+                    <div class="param-card-nombre">${p.nombre} <span class="param-card-unidad">(${p.unidad || "—"})</span></div>
+                    <div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>
                 </div>
-                <div class="fw-semibold">${resultado}</div>
+                ${resultadoHtml}
             </div>
-            ${p.observacion ? `<div class="text-muted small fst-italic mt-1">${p.observacion}</div>` : ""}
-            <div class="mt-1">${limitesHtml}</div>
+            ${p.observacion ? `<div class="param-card-obs">${p.observacion}</div>` : ""}
+            ${limitesHtml}
         `;
         contParametros.appendChild(card);
     });
