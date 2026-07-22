@@ -55,6 +55,35 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
+    // GET /api/task/archived
+    @GetMapping("/archived")
+    public ResponseEntity<List<TaskTO>> getArchivedTasks() {
+        log.info("Obteniendo tareas archivadas");
+        return ResponseEntity.ok(taskService.getArchivedTasks());
+    }
+
+    // PUT /api/task/{id}/archive
+    @PutMapping("/{id}/archive")
+    public ResponseEntity<TaskTO> archiveTask(@PathVariable Long id) {
+        log.info("Archivando tarea con ID: {}", id);
+        return ResponseEntity.ok(taskService.archiveTask(id));
+    }
+
+    // PUT /api/task/archive-all-done
+    @PutMapping("/archive-all-done")
+    public ResponseEntity<Void> archiveAllDone() {
+        int count = taskService.archiveAllDone();
+        log.info("Archivadas {} tareas completadas", count);
+        return ResponseEntity.noContent().build();
+    }
+
+    // PUT /api/task/{id}/restore
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<TaskTO> restoreTask(@PathVariable Long id) {
+        log.info("Restaurando tarea con ID: {}", id);
+        return ResponseEntity.ok(taskService.restoreTask(id));
+    }
+
     @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;

@@ -35,4 +35,10 @@ public class TaskDE {
     @Column(name = "COMPLETED_DATE")
     private LocalDate completedDate;
 
+    @Column(name = "ARCHIVED", nullable = false)
+    private boolean archived = false;
+
+    @Column(name = "ARCHIVED_DATE")
+    private LocalDate archivedDate;
+
 }
