@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadTasks();
     setupForm();
     setupDropzones();
+
+    document.getElementById("archivedModal").addEventListener("show.bs.modal", loadArchivedTasks);
 });
 
 // Trae la lista de usuarios para poblar los selects de asignación
@@ -89,6 +91,10 @@ function createTaskCard(task) {
     const asignadoNombre = task.userName || "Sin asignar";
     const initials = task.userName ? getInitials(task.userName) : "—";
 
+    const archiveBtn = task.status === "DONE"
+        ? `<button class="btn btn-link-secondary" title="Archivar" onclick="archiveTask(${task.id})"><i class="bi bi-archive"></i></button>`
+        : "";
+
     div.innerHTML = `
     <div class="kanban-card-top">
         <p class="kanban-card-title">${escapeHtml(task.title)}</p>
@@ -99,6 +105,7 @@ function createTaskCard(task) {
         <span class="assignee-name">${escapeHtml(asignadoNombre)}</span>
     </div>
     <div class="kanban-card-actions">
+        ${archiveBtn}
         <button class="btn btn-link-danger" title="Editar" onclick="abrirEditar(${task.id})">
             <i class="bi bi-pencil"></i>
         </button>
@@ -258,6 +265,176 @@ async function deleteTask(id) {
     } catch (e) {
         console.error(e);
         alert("Error eliminando tarea");
+    }
+}
+
+async function archiveTask(id) {
+    try {
+        const res = await fetch(`${API_URL}/${id}/archive`, {
+            method: "PUT",
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("No se pudo archivar");
+        tasks = tasks.filter(t => t.id !== id);
+        renderBoard();
+    } catch (e) {
+        console.error(e);
+        alert("Error archivando tarea");
+    }
+}
+
+async function archiveAllDone() {
+    const doneTasks = tasks.filter(t => t.status === "DONE");
+    if (doneTasks.length === 0) return;
+    if (!confirm(`¿Archivar las ${doneTasks.length} tareas finalizadas?`)) return;
+    try {
+        const res = await fetch(`${API_URL}/archive-all-done`, {
+            method: "PUT",
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("No se pudo archivar");
+        tasks = tasks.filter(t => t.status !== "DONE");
+        renderBoard();
+    } catch (e) {
+        console.error(e);
+        alert("Error archivando tareas");
+    }
+}
+
+let archivedTasks = [];
+let archivedPage = 0;
+let archivedFilter = "";
+const ARCHIVED_PAGE_SIZE = 8;
+
+async function loadArchivedTasks() {
+    try {
+        const res = await fetch(`${API_URL}/archived`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("No se pudo cargar el archivo");
+        archivedTasks = await res.json();
+        archivedPage = 0;
+        archivedFilter = "";
+        const searchInput = document.getElementById("archivedSearch");
+        if (searchInput) searchInput.value = "";
+        renderArchivedPage();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function onArchivedSearch(value) {
+    archivedFilter = value.trim().toLowerCase();
+    archivedPage = 0;
+    renderArchivedPage();
+}
+
+function renderArchivedPage() {
+    const tbody = document.getElementById("archivedTableBody");
+    const tableWrap = document.getElementById("archivedTableWrap");
+    const empty = document.getElementById("archivedEmpty");
+    const pagination = document.getElementById("archivedPagination");
+    const countEl = document.getElementById("archivedCount");
+
+    const filtered = archivedFilter
+        ? archivedTasks.filter(t => t.title.toLowerCase().includes(archivedFilter))
+        : archivedTasks;
+
+    const total = archivedTasks.length;
+    const filteredTotal = filtered.length;
+    if (total === 0) {
+        countEl.textContent = "";
+    } else if (archivedFilter && filteredTotal !== total) {
+        countEl.textContent = `${filteredTotal} de ${total} tarea${total !== 1 ? "s" : ""}`;
+    } else {
+        countEl.textContent = `${total} tarea${total !== 1 ? "s" : ""}`;
+    }
+
+    if (filteredTotal === 0) {
+        tableWrap.style.display = "none";
+        empty.style.display = "flex";
+        pagination.style.display = "none";
+        return;
+    }
+
+    tableWrap.style.display = "block";
+    empty.style.display = "none";
+
+    const totalPages = Math.ceil(filteredTotal / ARCHIVED_PAGE_SIZE);
+    const start = archivedPage * ARCHIVED_PAGE_SIZE;
+    const slice = filtered.slice(start, start + ARCHIVED_PAGE_SIZE);
+
+    tbody.innerHTML = "";
+    slice.forEach(task => {
+        const initials = task.userName ? getInitials(task.userName) : "—";
+        const assigneeName = escapeHtml(task.userName || "Sin asignar");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><span class="archive-task-title" title="${escapeHtml(task.title)}">${escapeHtml(task.title)}</span></td>
+            <td>
+                <div class="archive-assignee">
+                    <span class="creator-avatar">${escapeHtml(initials)}</span>
+                    <span>${assigneeName}</span>
+                </div>
+            </td>
+            <td><span class="archive-date">${formatDate(task.completedDate)}</span></td>
+            <td><span class="archive-date">${formatDate(task.archivedDate)}</span></td>
+            <td>
+                <button class="archive-restore-btn" onclick="restoreTask(${task.id})">
+                    <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if (totalPages > 1) {
+        pagination.style.display = "flex";
+        document.getElementById("pageInfo").textContent = `${archivedPage + 1} / ${totalPages}`;
+        document.getElementById("prevPage").disabled = archivedPage === 0;
+        document.getElementById("nextPage").disabled = archivedPage === totalPages - 1;
+    } else {
+        pagination.style.display = "none";
+    }
+}
+
+function changePage(dir) {
+    const totalPages = Math.ceil(archivedTasks.length / ARCHIVED_PAGE_SIZE);
+    archivedPage = Math.max(0, Math.min(archivedPage + dir, totalPages - 1));
+    renderArchivedPage();
+}
+
+async function restoreTask(id) {
+    try {
+        const res = await fetch(`${API_URL}/${id}/restore`, {
+            method: "PUT",
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("No se pudo restaurar");
+        const restored = await res.json();
+        tasks.push(restored);
+        renderBoard();
+        archivedTasks = archivedTasks.filter(t => t.id !== id);
+        const filtered = archivedFilter
+            ? archivedTasks.filter(t => t.title.toLowerCase().includes(archivedFilter))
+            : archivedTasks;
+        if (archivedPage > 0 && archivedPage >= Math.ceil(filtered.length / ARCHIVED_PAGE_SIZE)) {
+            archivedPage--;
+        }
+        renderArchivedPage();
+    } catch (e) {
+        console.error(e);
+        alert("Error restaurando tarea");
+    }
+}
+
+function formatDate(date) {
+    if (!date) return "—";
+    try {
+        const d = new Date(date);
+        return d.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+    } catch {
+        return String(date);
     }
 }
 

@@ -22,6 +22,9 @@ public class TaskMapper {
                 .status(task.getStatus() != null ? task.getStatus().name() : null)
                 .userId(task.getUser() != null ? task.getUser().getId() : null)
                 .userName(task.getUser() != null ? task.getUser().getUsername() : null)
+                .archived(task.isArchived())
+                .completedDate(task.getCompletedDate())
+                .archivedDate(task.getArchivedDate())
                 .build();
     }
 
