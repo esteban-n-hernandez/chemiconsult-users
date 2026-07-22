@@ -80,6 +80,14 @@ public class ClienteService {
         clienteRepository.save(cliente);
     }
 
+    // ── Reactivar ──
+    public void reactivarCliente(Long id) {
+        ClienteDE cliente = getCliente(id);
+        cliente.setActivo(true);
+        cliente.setUpdateDate(LocalDate.now());
+        clienteRepository.save(cliente);
+    }
+
     // ── Eliminar físico ──
     public void deleteCliente(Long id) {
         if (!clienteRepository.existsById(id)) {
