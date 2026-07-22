@@ -14,6 +14,8 @@ public interface UserRepository extends JpaRepository<UserDE, Long> {
 
     boolean existsByUsername(String username);
 
+    boolean existsByEmail(String email);
+
     // NUEVO: para poblar selects de "asignar tarea a" — solo empleados/IT, nunca clientes
     List<UserDE> findByRolIn(List<String> roles);
 }

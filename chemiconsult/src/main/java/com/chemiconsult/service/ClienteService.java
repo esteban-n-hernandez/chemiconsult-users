@@ -97,13 +97,13 @@ public class ClienteService {
             throw new RuntimeException("El cliente ya tiene un usuario asignado");
         }
 
-        // Verificar que el username no exista
-        if (userRepository.existsByUsername(to.getUsername())) {
-            throw new RuntimeException("El username ya está en uso: " + to.getUsername());
+        // Verificar que el email del cliente no esté ya registrado como usuario
+        if (userRepository.existsByEmail(cliente.getEmail())) {
+            throw new RuntimeException("El email del cliente ya tiene un usuario registrado");
         }
 
         UserDE user = new UserDE();
-        user.setUsername(to.getUsername());
+        user.setUsername(cliente.getNombre());
         user.setPassword(passwordEncoder.encode(to.getPassword()));
         user.setEmail(cliente.getEmail());
         user.setRol(RolEnum.ROLE_CLIENTE.name());
