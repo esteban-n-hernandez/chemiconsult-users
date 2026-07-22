@@ -1,10 +1,7 @@
 package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.ClienteDE;
-import com.chemiconsult.entity.UserDE;
-import com.chemiconsult.mapper.UserMapper;
 import com.chemiconsult.service.ClienteService;
-import com.chemiconsult.service.UserService;
 import com.chemiconsult.to.AsignarUsuarioTO;
 import com.chemiconsult.to.ClienteTO;
 import lombok.extern.log4j.Log4j2;
@@ -21,14 +18,11 @@ import java.util.List;
 public class ClienteController {
 
     @Autowired
-    public ClienteController (ClienteService clienteService, UserService userService){
+    public ClienteController(ClienteService clienteService) {
         this.clienteService = clienteService;
-        this.userService = userService;
     }
 
     private final ClienteService clienteService;
-
-    private final UserService userService;
 
     // GET /api/clientes — solo activos
     @GetMapping
@@ -56,10 +50,6 @@ public class ClienteController {
     public ResponseEntity<ClienteDE> createCliente(@RequestBody ClienteTO to) {
         log.info("Creando nuevo cliente: {}", to);
         ClienteDE creado = clienteService.createCliente(to);
-        UserDE user = UserMapper.createUserFromCliente(creado);
-
-        log.info("Creando usuario asociado al cliente: {}", user);
-        userService.createUser(user);
         return ResponseEntity.status(201).body(creado);
     }
 
@@ -86,7 +76,7 @@ public class ClienteController {
     public ResponseEntity<ClienteDE> asignarUsuario(
             @PathVariable Long id,
             @RequestBody AsignarUsuarioTO to) {
-        log.info("Asignando usuario con ID: {} al cliente con ID: {}", to.getUsername(), id);
+        log.info("Asignando usuario al cliente con ID: {}", id);
         ClienteDE actualizado = clienteService.asignarUsuario(id, to);
         return ResponseEntity.ok(actualizado);
     }
