@@ -34,6 +34,7 @@ document.getElementById("fecha-hoy").textContent =
 
 // ── Filtro de tabla y paginación ──
 // Variables para paginar
+let allEstudios = [];
 let allMuestras = [];
 let filteredMuestras = [];
 let currentPage = 1;
@@ -47,6 +48,27 @@ const ESTADOS_VISIBLES = new Set([
 
 function normalizarEstado(estado) {
     return (estado || "").toString().toUpperCase().replace(/\s+/g, "_");
+}
+
+function labelEstado(estado) {
+    const map = {
+        PENDIENTE: "Pendiente",
+        EN_PROCESO: "En proceso",
+        COMPLETO_SIN_INFORME: "Completo sin informe",
+        DEMORADA: "Demorada",
+        COMPLETO: "Completo",
+    };
+    return map[normalizarEstado(estado)] || (estado || "-");
+}
+
+function parseFecha(valor) {
+    if (!valor || valor === "-") return null;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+        const [d, m, y] = valor.split("/");
+        return new Date(y, m - 1, d);
+    }
+    const f = new Date(valor);
+    return isNaN(f.getTime()) ? null : f;
 }
 
 function formatearFechaDMY(valor) {
@@ -80,7 +102,7 @@ function filtrarTabla(estado, btn) {
 }
 
 // ── Gráfico ──
-new Chart(document.getElementById("graficoEstados"), {
+let grafico = new Chart(document.getElementById("graficoEstados"), {
     type: "doughnut",
     data: {
         labels: [
@@ -338,8 +360,6 @@ formAlta.addEventListener("submit", async function (e) {
             throw new Error(`HTTP ${response.status}: ${errorData}`);
         }
 
-        const data = await response.json();
-
         cerrarModal();
         mostrarToast(`Muestra ${protocolo} registrada correctamente`);
         
@@ -361,6 +381,216 @@ function mostrarToast(msg) {
     toast.classList.add("visible");
     setTimeout(() => toast.classList.remove("visible"), 3500);
 }
+
+function generarAlertas() {
+    const alertasBody = document.getElementById("alertasBody");
+    if (!alertasBody) return;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const items = [];
+
+    // Demoradas
+    allEstudios
+        .filter(m => normalizarEstado(m.estado) === "DEMORADA")
+        .slice(0, 3)
+        .forEach(m => items.push({
+            color: "rojo",
+            titulo: `<strong>${m.codigo}</strong> — demorada`,
+            sub: `${m.cliente} · ${m.tipo}`,
+        }));
+
+    // Próximas a vencer (≤ 3 días)
+    allEstudios
+        .filter(m => ["PENDIENTE", "EN_PROCESO"].includes(normalizarEstado(m.estado)))
+        .forEach(m => {
+            const limite = parseFecha(m.fecha);
+            if (!limite) return;
+            const dias = Math.ceil((limite - hoy) / 86400000);
+            if (dias >= 0 && dias <= 3) {
+                items.push({
+                    color: "naranja",
+                    titulo: `<strong>${m.codigo}</strong> — vence en ${dias} día${dias !== 1 ? "s" : ""}`,
+                    sub: `${m.cliente} · ${m.tipo}`,
+                });
+            }
+        });
+
+    // Completo sin informe
+    allEstudios
+        .filter(m => normalizarEstado(m.estado) === "COMPLETO_SIN_INFORME")
+        .slice(0, 2)
+        .forEach(m => items.push({
+            color: "naranja",
+            titulo: `<strong>${m.codigo}</strong> — informe no emitido`,
+            sub: `${m.cliente} · ${m.tipo}`,
+        }));
+
+    // Positivo: informes emitidos esta semana
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+    const informesSemana = allEstudios.filter(m => {
+        if (normalizarEstado(m.estado) !== "COMPLETO") return false;
+        const f = parseFecha(m.fechaAlta);
+        return f && f >= lunes;
+    }).length;
+    if (informesSemana > 0) {
+        items.push({
+            color: "verde",
+            titulo: `${informesSemana} informe${informesSemana !== 1 ? "s" : ""} emitido${informesSemana !== 1 ? "s" : ""} esta semana`,
+            sub: "Buen ritmo de trabajo",
+        });
+    }
+
+    if (items.length === 0) {
+        alertasBody.innerHTML = `<p style="color:#adb5bd;font-size:13px;padding:1rem 0;text-align:center">Sin alertas activas</p>`;
+        return;
+    }
+
+    alertasBody.innerHTML = items.map(item => `
+        <div class="alerta-item">
+            <div class="alerta-dot ${item.color}"></div>
+            <div class="alerta-texto">
+                <p>${item.titulo}</p>
+                <span>${item.sub}</span>
+            </div>
+        </div>
+    `).join("");
+}
+
+// ════════════════════════════════
+//  VER DETALLE
+// ════════════════════════════════
+async function verDetalle(id) {
+    const token = localStorage.getItem("token");
+    try {
+        const resp = await fetch(`${API_BASE}/api/estudios/${id}/detalle`, {
+            headers: token ? { Authorization: "Bearer " + token } : {},
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const d = await resp.json();
+        poblarModalDetalle(d);
+        document.getElementById("modalDetalle").classList.add("visible");
+    } catch (err) {
+        console.error("Error cargando detalle:", err);
+        mostrarToast("Error al cargar el detalle");
+    }
+}
+
+function poblarModalDetalle(d) {
+    const badge = document.getElementById("detalleEstadoBadge");
+    badge.className = badgeClassParaEstado(d.estado);
+    badge.textContent = labelEstado(d.estado);
+
+    document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || "—";
+    document.getElementById("detalleIdMuestra").textContent = d.idMuestra || "—";
+    document.getElementById("detalleCliente").textContent = d.cliente || "—";
+    document.getElementById("detalleMatriz").textContent = d.matrizNombre || "—";
+    document.getElementById("detallePunto").textContent = d.puntoMuestreo || "—";
+    document.getElementById("detalleFechaIngreso").textContent = formatearFechaDMY(d.fechaIngreso) || "—";
+    document.getElementById("detalleFechaEntrega").textContent = formatearFechaDMY(d.fechaEntrega) || "—";
+    document.getElementById("detalleObservaciones").textContent = d.observaciones || "Sin observaciones";
+
+    const paramEl = document.getElementById("detalleParametros");
+    if (d.parametros && d.parametros.length > 0) {
+        paramEl.innerHTML = d.parametros.map(p =>
+            `<span class="detalle-tag detalle-tag-verde">${p.nombre}${p.unidad ? ` (${p.unidad})` : ""}</span>`
+        ).join("");
+    } else {
+        paramEl.innerHTML = `<span style="color:var(--color-text-tertiary);font-size:13px">Sin parámetros</span>`;
+    }
+
+    const resSection = document.getElementById("detalleResolucionesSection");
+    const resEl = document.getElementById("detalleResoluciones");
+    if (d.resolucionesAplicadas && d.resolucionesAplicadas.length > 0) {
+        resSection.style.display = "";
+        resEl.innerHTML = d.resolucionesAplicadas.map(r =>
+            `<span class="detalle-tag detalle-tag-azul">${r}</span>`
+        ).join("");
+    } else {
+        resSection.style.display = "none";
+    }
+}
+
+const modalDetalle = document.getElementById("modalDetalle");
+document.getElementById("modalDetalleClose").addEventListener("click", () => modalDetalle.classList.remove("visible"));
+document.getElementById("btnDetalleClose").addEventListener("click", () => modalDetalle.classList.remove("visible"));
+modalDetalle.addEventListener("click", e => { if (e.target === modalDetalle) modalDetalle.classList.remove("visible"); });
+
+// ════════════════════════════════
+//  AVANZAR ESTADO
+// ════════════════════════════════
+const SIGUIENTE_ESTADO = {
+    PENDIENTE: "EN_PROCESO",
+    EN_PROCESO: "COMPLETO_SIN_INFORME",
+    DEMORADA: "EN_PROCESO",
+};
+
+async function avanzarEstado(id, estadoActual, btn) {
+    const siguiente = SIGUIENTE_ESTADO[estadoActual];
+    if (!siguiente) return;
+
+    const token = localStorage.getItem("token");
+    const originalHtml = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = `<i class="bi bi-hourglass-split"></i>`; }
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/estudios/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: "Bearer " + token } : {}),
+            },
+            body: JSON.stringify({ estado: siguiente }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        mostrarToast(`Estado actualizado: ${labelEstado(siguiente)}`);
+        await cargarEstudios();
+    } catch (err) {
+        console.error("Error avanzando estado:", err);
+        mostrarToast("Error al actualizar el estado");
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    }
+}
+
+// ════════════════════════════════
+//  ELIMINAR
+// ════════════════════════════════
+const modalEliminar = document.getElementById("modalEliminar");
+document.getElementById("modalEliminarClose").addEventListener("click", () => modalEliminar.classList.remove("visible"));
+document.getElementById("btnCancelarEliminar").addEventListener("click", () => modalEliminar.classList.remove("visible"));
+modalEliminar.addEventListener("click", e => { if (e.target === modalEliminar) modalEliminar.classList.remove("visible"); });
+
+function pedirConfirmacionEliminar(id, codigo) {
+    document.getElementById("modalEliminarMsg").textContent =
+        `¿Estás seguro de que querés eliminar la muestra ${codigo}? Esta acción no se puede deshacer.`;
+    document.getElementById("btnConfirmarEliminar").dataset.id = id;
+    modalEliminar.classList.add("visible");
+}
+
+document.getElementById("btnConfirmarEliminar").addEventListener("click", async function () {
+    const id = this.dataset.id;
+    const token = localStorage.getItem("token");
+    this.disabled = true;
+    this.innerHTML = `<i class="bi bi-hourglass-split"></i> Eliminando...`;
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/estudios/${id}`, {
+            method: "DELETE",
+            headers: token ? { Authorization: "Bearer " + token } : {},
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        modalEliminar.classList.remove("visible");
+        mostrarToast("Muestra eliminada correctamente");
+        await cargarEstudios();
+    } catch (err) {
+        console.error("Error eliminando muestra:", err);
+        mostrarToast("Error al eliminar la muestra");
+    } finally {
+        this.disabled = false;
+        this.innerHTML = `<i class="bi bi-trash3"></i> Eliminar`;
+    }
+});
 
 async function cargarEstudios() {
     const tablaBody = document.getElementById("tablaMuestrasBody");
@@ -410,85 +640,75 @@ function badgeClassParaEstado(estado) {
 }
 
 function mostrarMuestras(estudios) {
-    // Normalizar y almacenar en memoria para paginación
-    allMuestras = Array.isArray(estudios)
-        ? estudios
-            .map((est) => ({
+    const mapped = Array.isArray(estudios)
+        ? estudios.map((est) => ({
                 id: est.id || est._id || est.codigo || est.protocolo || null,
                 codigo: est.protocolo || est.codigo || est.id || "-",
-                cliente:
-                    est.cliente || est.clienteNombre || est.customer || "-",
-                tipo:
-                    est.tipo || est.tipoAnalisis || est.tipo_de_analisis || "-",
+                cliente: est.cliente || est.clienteNombre || est.customer || "-",
+                tipo: est.tipo || est.tipoAnalisis || est.tipo_de_analisis || "-",
                 estado: est.estado || est.status || "-",
                 tieneInforme: (est.estado || est.status || "").toString().toUpperCase() === "COMPLETO",
                 fechaAlta: formatearFechaDMY(
-                    est.fechaAlta ||
-                    est.fecha_alta ||
-                    est.fechaCreacion ||
-                    est.fecha_creacion ||
-                    est.createdDate ||
-                    est.createdAt ||
-                    est.fechaDeAlta ||
-                    "-",
+                    est.fechaAlta || est.fecha_alta || est.fechaCreacion ||
+                    est.fecha_creacion || est.createdDate || est.createdAt ||
+                    est.fechaDeAlta || "-",
                 ),
-                fecha:
-                    est.fechaEntrega ||
-                    est.fecha_entrega ||
-                    est.deliveryDate ||
-                    est.fecha ||
-                    "-",
+                fecha: est.fechaEntrega || est.fecha_entrega || est.deliveryDate || est.fecha || "-",
             }))
-            .filter((m) => ESTADOS_VISIBLES.has(normalizarEstado(m.estado)))
         : [];
 
-    // Si se desea mostrar un total fijo para demostración, poner en localStorage.demoTotal = '40'
+    // Dataset completo (incluye COMPLETO) para KPIs y alertas
+    allEstudios = mapped;
+    // Solo activas para la tabla
+    allMuestras = mapped.filter((m) => ESTADOS_VISIBLES.has(normalizarEstado(m.estado)));
+
     const demoTotal = parseInt(localStorage.getItem("demoTotal") || "0");
     if (demoTotal > allMuestras.length) {
-        // clonar registros hasta alcanzar demoTotal (solo para UI demo)
         const clones = [];
         let idx = 0;
         while (allMuestras.length + clones.length < demoTotal) {
             const source = allMuestras[idx % allMuestras.length] || {
-                codigo: `DEM-${idx + 1}`,
-                cliente: "Demo",
-                tipo: "—",
-                estado: "PENDIENTE",
-                fechaAlta: "-",
-                fecha: "-",
+                codigo: `DEM-${idx + 1}`, cliente: "Demo", tipo: "—",
+                estado: "PENDIENTE", fechaAlta: "-", fecha: "-",
             };
             const clone = Object.assign({}, source);
             clone.codigo = `${clone.codigo}-D${idx + 1}`;
             clones.push(clone);
             idx++;
-            // safety break
             if (idx > 1000) break;
         }
         allMuestras = allMuestras.concat(clones);
     }
+
     filteredMuestras = [...allMuestras];
     currentPage = 1;
     actualizarKPIs();
+    generarAlertas();
     renderPage();
 }
 
 function actualizarKPIs() {
-    // Calcular KPIs desde allMuestras (todos los registros)
-    const totalMuestras = allMuestras.length;
-    const pendientes = allMuestras.filter(m => normalizarEstado(m.estado) === "PENDIENTE").length;
-    const demoradas = allMuestras.filter(m => normalizarEstado(m.estado) === "DEMORADA").length;
-    const informesEmitidos = allMuestras.filter(m => m.tieneInforme).length;
+    const pendientes = allEstudios.filter(m => normalizarEstado(m.estado) === "PENDIENTE").length;
+    const enProceso = allEstudios.filter(m => normalizarEstado(m.estado) === "EN_PROCESO").length;
+    const demoradas = allEstudios.filter(m => normalizarEstado(m.estado) === "DEMORADA").length;
+    const completoSinInforme = allEstudios.filter(m => normalizarEstado(m.estado) === "COMPLETO_SIN_INFORME").length;
+    const informesEmitidos = allEstudios.filter(m => normalizarEstado(m.estado) === "COMPLETO").length;
+    const activas = pendientes + enProceso + demoradas + completoSinInforme;
 
-    // Actualizar elementos en el DOM
     const elKpiMuestras = document.getElementById("kpi-muestras-activas");
     const elKpiPendientes = document.getElementById("kpi-pendientes");
     const elKpiDemoradas = document.getElementById("kpi-demoradas");
     const elKpiInformes = document.getElementById("kpi-informes-emitidos");
 
-    if (elKpiMuestras) elKpiMuestras.textContent = totalMuestras;
+    if (elKpiMuestras) elKpiMuestras.textContent = activas;
     if (elKpiPendientes) elKpiPendientes.textContent = pendientes;
     if (elKpiDemoradas) elKpiDemoradas.textContent = demoradas;
     if (elKpiInformes) elKpiInformes.textContent = informesEmitidos;
+
+    if (grafico) {
+        grafico.data.datasets[0].data = [pendientes, enProceso, completoSinInforme, demoradas];
+        grafico.update();
+    }
 }
 
 function renderPage() {
@@ -511,14 +731,30 @@ function renderPage() {
         filteredMuestras.slice(start, end).forEach((m) => {
             const badgeClass = badgeClassParaEstado(m.estado);
             const acciones = [];
-            // Solo mostrar botón "Ver" si realmente hay informe disponible
-            if (m.tieneInforme) {
+            const estadoNorm = normalizarEstado(m.estado);
+
+            acciones.push(
+                `<button class="btn-accion btn-detalle" data-id="${m.id}" title="Ver detalles"><i class="bi bi-eye"></i></button>`,
+            );
+
+            const AVANZAR_MAP = {
+                PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
+                EN_PROCESO: { label: "Marcar completo", icono: "bi-check2-circle" },
+                DEMORADA: { label: "Reactivar", icono: "bi-arrow-counterclockwise" },
+            };
+            if (AVANZAR_MAP[estadoNorm]) {
+                const av = AVANZAR_MAP[estadoNorm];
                 acciones.push(
-                    `<button class="btn-accion btn-ver" data-id="${m.id}" title="Ver"><i class="bi bi-eye"></i></button>`,
+                    `<button class="btn-accion btn-avanzar" data-id="${m.id}" data-estado="${estadoNorm}" title="${av.label}"><i class="bi ${av.icono}"></i></button>`,
                 );
             }
+
             acciones.push(
                 `<button class="btn-accion btn-subir" data-id="${m.id}" title="Subir informe"><i class="bi bi-upload"></i></button>`,
+            );
+
+            acciones.push(
+                `<button class="btn-accion btn-eliminar" data-id="${m.id}" data-codigo="${m.codigo}" title="Eliminar"><i class="bi bi-trash3"></i></button>`,
             );
 
             const row = `
@@ -526,7 +762,7 @@ function renderPage() {
                         <td><span class="cod-badge">${m.codigo}</span></td>
                         <td>${m.cliente}</td>
                         <td>${m.tipo}</td>
-                        <td><span class="${badgeClass}">${m.estado}</span></td>
+                        <td><span class="${badgeClass}">${labelEstado(m.estado)}</span></td>
                         <td>${m.fechaAlta || "-"}</td>
                         <td>${m.fecha}</td>
                         <td>${acciones.join(" ")}</td>
@@ -706,21 +942,43 @@ async function verResultado(id, triggerBtn) {
     }
 }
 
-// Delegación de clicks en botones de subir (se aplica después de renderizado)
+// Delegación de clicks en los botones de la tabla
 document.addEventListener("click", function (e) {
+    const btnDetalle = e.target.closest(".btn-detalle");
+    if (btnDetalle) {
+        const id = btnDetalle.getAttribute("data-id");
+        if (id) verDetalle(id);
+        return;
+    }
+
+    const btnAvanzar = e.target.closest(".btn-avanzar");
+    if (btnAvanzar) {
+        const id = btnAvanzar.getAttribute("data-id");
+        const estado = btnAvanzar.getAttribute("data-estado");
+        if (id && estado) avanzarEstado(id, estado, btnAvanzar);
+        return;
+    }
+
+    const btnEliminar = e.target.closest(".btn-eliminar");
+    if (btnEliminar) {
+        const id = btnEliminar.getAttribute("data-id");
+        const codigo = btnEliminar.getAttribute("data-codigo");
+        if (id) pedirConfirmacionEliminar(id, codigo);
+        return;
+    }
+
     const btnVer = e.target.closest(".btn-ver");
     if (btnVer) {
         const id = btnVer.getAttribute("data-id");
-        if (!id) return alert("ID de muestra desconocido");
-        verResultado(id, btnVer);
+        if (id) verResultado(id, btnVer);
         return;
     }
 
     const btnSubir = e.target.closest(".btn-subir");
-    if (!btnSubir) return;
-    const id = btnSubir.getAttribute("data-id");
-    if (!id) return alert("ID de muestra desconocido");
-    startUploadForId(id, btnSubir);
+    if (btnSubir) {
+        const id = btnSubir.getAttribute("data-id");
+        if (id) startUploadForId(id, btnSubir);
+    }
 });
 
 // Cargar al iniciar

@@ -1,5 +1,6 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,7 @@ public class AnalisisParametroLimiteDE {
 
     @ManyToOne
     @JoinColumn(name = "ANALISIS_PARAMETRO_ID", nullable = false)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private AnalisisParametroDE analisisParametro;

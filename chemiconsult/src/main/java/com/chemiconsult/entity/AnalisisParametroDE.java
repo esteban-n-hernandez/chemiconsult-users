@@ -1,5 +1,6 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,6 +19,7 @@ public class AnalisisParametroDE {
 
     @ManyToOne
     @JoinColumn(name = "ANALISIS_ID", nullable = false)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private AnalisisDE analisis;
