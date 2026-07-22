@@ -4,6 +4,7 @@ import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.mapper.UserMapper;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.CambiarPasswordTO;
+import com.chemiconsult.to.UserCreateTO;
 import com.chemiconsult.to.UserPerfilTO;
 import com.chemiconsult.to.UserTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,11 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public List<UserTO> getUsers() {
-        return UserMapper.mapEntityToUserTOList(userRepository.findAll());
+        return UserMapper.mapEntityToUserTOList(
+            userRepository.findAll().stream()
+                .filter(u -> !"ROLE_CLIENTE".equals(u.getRol()))
+                .toList()
+        );
     }
 
     public UserDE getUserById(Long id) {
@@ -38,6 +43,32 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
         return userRepository.save(user);
+    }
+
+    public UserTO createEmpleado(UserCreateTO to) {
+        if (userRepository.existsByEmail(to.getEmail())) {
+            throw new RuntimeException("Ya existe un usuario con el email: " + to.getEmail());
+        }
+        if (to.getPassword() == null || to.getPassword().length() < 6) {
+            throw new RuntimeException("La contraseña debe tener al menos 6 caracteres");
+        }
+        UserDE user = new UserDE();
+        user.setUsername(to.getUsername());
+        user.setEmail(to.getEmail());
+        user.setPassword(passwordEncoder.encode(to.getPassword()));
+        user.setRol(to.getRol());
+        user.setCreatedDate(LocalDate.now());
+        return UserMapper.mapEntityToUserTO(userRepository.save(user));
+    }
+
+    public void resetPassword(Long id, String passwordNueva) {
+        if (passwordNueva == null || passwordNueva.length() < 6) {
+            throw new RuntimeException("La contraseña debe tener al menos 6 caracteres");
+        }
+        UserDE user = getUserById(id);
+        user.setPassword(passwordEncoder.encode(passwordNueva));
+        user.setUpdateDate(LocalDate.now());
+        userRepository.save(user);
     }
 
     // Edita username/email — password se maneja aparte en cambiarPassword()
