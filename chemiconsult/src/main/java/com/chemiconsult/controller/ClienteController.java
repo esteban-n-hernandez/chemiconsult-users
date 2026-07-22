@@ -71,6 +71,14 @@ public class ClienteController {
         return ResponseEntity.noContent().build();
     }
 
+    // PATCH /api/clientes/{id}/reactivar
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<Void> reactivarCliente(@PathVariable Long id) {
+        log.info("Reactivando cliente con ID: {}", id);
+        clienteService.reactivarCliente(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // PATCH /api/clientes/{id}/asignar-usuario
     @PatchMapping("/{id}/asignar-usuario")
     public ResponseEntity<ClienteDE> asignarUsuario(
