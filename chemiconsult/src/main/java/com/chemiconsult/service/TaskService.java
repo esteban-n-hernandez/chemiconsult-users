@@ -22,7 +22,37 @@ public class TaskService {
     private final BrevoEmailService emailService;
 
     public List<TaskTO> getAllTasks() {
-        return TaskMapper.mapTaskEntityToTO(taskRepository.findAll());
+        return TaskMapper.mapTaskEntityToTO(taskRepository.findByArchivedFalse());
+    }
+
+    public List<TaskTO> getArchivedTasks() {
+        return TaskMapper.mapTaskEntityToTO(taskRepository.findByArchivedTrue());
+    }
+
+    public TaskTO archiveTask(Long id) {
+        TaskDE task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarea no encontrada con ID: " + id));
+        task.setArchived(true);
+        task.setArchivedDate(java.time.LocalDate.now());
+        return TaskMapper.mapTaskEntityToTO(taskRepository.save(task));
+    }
+
+    public int archiveAllDone() {
+        List<TaskDE> doneTasks = taskRepository.findByArchivedFalseAndStatus(com.chemiconsult.enums.TaskStatusEnum.DONE);
+        doneTasks.forEach(t -> {
+            t.setArchived(true);
+            t.setArchivedDate(java.time.LocalDate.now());
+        });
+        taskRepository.saveAll(doneTasks);
+        return doneTasks.size();
+    }
+
+    public TaskTO restoreTask(Long id) {
+        TaskDE task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarea no encontrada con ID: " + id));
+        task.setArchived(false);
+        task.setArchivedDate(null);
+        return TaskMapper.mapTaskEntityToTO(taskRepository.save(task));
     }
 
     public TaskTO createTask(TaskTO task) {
