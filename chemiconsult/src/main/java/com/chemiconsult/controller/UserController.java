@@ -3,8 +3,11 @@ package com.chemiconsult.controller;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.service.UserService;
 import com.chemiconsult.to.CambiarPasswordTO;
+import com.chemiconsult.to.UserCreateTO;
 import com.chemiconsult.to.UserPerfilTO;
 import com.chemiconsult.to.UserTO;
+
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,10 +31,15 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserTOById(id));
     }
 
-    // FIX: faltaba el @PostMapping — nunca se podía crear un usuario desde acá
     @PostMapping
-    public ResponseEntity<UserDE> createUser(@RequestBody UserDE user) {
-        return ResponseEntity.status(201).body(userService.createUser(user));
+    public ResponseEntity<UserTO> createEmpleado(@RequestBody UserCreateTO to) {
+        return ResponseEntity.status(201).body(userService.createEmpleado(to));
+    }
+
+    @PatchMapping("/{id}/reset-password")
+    public ResponseEntity<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        userService.resetPassword(id, body.get("passwordNueva"));
+        return ResponseEntity.noContent().build();
     }
 
     // Edita username/email — NO toca password (ver /password abajo)
