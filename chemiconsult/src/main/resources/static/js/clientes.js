@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cargarClientes();
     initModalBaja();
+    initModalReactivar();
     initModal();
     initForm();
     initModalAsignar();
@@ -35,14 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════════
 async function cargarClientes() {
     try {
-        const res = await fetch(API_URL, {
+        const res = await fetch(`${API_URL}/todos`, {
             headers: { 'Authorization': `Bearer ${TOKEN()}` }
         });
         if (!res.ok) throw new Error();
-        todosLosClientes  = await res.json();
-        clientesFiltrados = [...todosLosClientes];
-        paginaActual      = 1;
-        renderTabla();
+        todosLosClientes = await res.json();
+        paginaActual     = 1;
+        buscarClientes();
     } catch {
         mostrarToast('Error al cargar clientes', 'danger');
     }
@@ -82,11 +82,19 @@ function renderTabla() {
             ? `<span class="badge-activo">Activo</span>`
             : `<span class="badge-inactivo">Inactivo</span>`;
 
-        const btnAsignar = !c.user
+        const btnAsignar = !c.user && c.activo
             ? `<button class="btn-accion" title="Asignar usuario" onclick="asignarUsuario(${c.id})">
                    <i class="bi bi-person-plus"></i>
                </button>`
             : '';
+
+        const btnEstado = c.activo
+            ? `<button class="btn-accion danger" title="Desactivar" onclick="abrirModalBaja(${c.id})">
+                   <i class="bi bi-person-dash"></i>
+               </button>`
+            : `<button class="btn-accion" title="Reactivar" style="color:#198754;border-color:#198754;" onclick="abrirModalReactivar(${c.id})">
+                   <i class="bi bi-person-check"></i>
+               </button>`;
 
         return `
             <tr>
@@ -108,10 +116,7 @@ function renderTabla() {
                         <i class="bi bi-geo-alt"></i>
                     </button>
                     ${btnAsignar}
-                   <button class="btn-accion danger" title="Desactivar"
-        onclick="abrirModalBaja(${c.id})">   
-    <i class="bi bi-trash3"></i>
-</button>
+                    ${btnEstado}
                 </td>
             </tr>
         `;
@@ -143,8 +148,9 @@ function irAPagina(n) {
 //  FILTROS
 // ══════════════════════════════════════════
 function buscarClientes() {
-    const texto = document.getElementById('inputBusqueda').value.toLowerCase();
-    const tipo  = document.getElementById('selectTipo').value;
+    const texto  = document.getElementById('inputBusqueda').value.toLowerCase();
+    const tipo   = document.getElementById('selectTipo').value;
+    const estado = document.getElementById('selectEstado').value;
 
     clientesFiltrados = todosLosClientes.filter(c => {
         const nombre = c.tipoCliente === 'EMPRESA'
@@ -157,7 +163,10 @@ function buscarClientes() {
             c.cuit?.includes(texto) ||
             c.dni?.includes(texto);
 
-        return matchTexto && (!tipo || c.tipoCliente === tipo);
+        const matchEstado = estado === 'todos' ||
+            (estado === 'inactivos' ? !c.activo : c.activo);
+
+        return matchTexto && (!tipo || c.tipoCliente === tipo) && matchEstado;
     });
 
     paginaActual = 1;
@@ -167,9 +176,9 @@ function buscarClientes() {
 function limpiarFiltros() {
     document.getElementById('inputBusqueda').value = '';
     document.getElementById('selectTipo').value    = '';
-    clientesFiltrados = [...todosLosClientes];
+    document.getElementById('selectEstado').value  = 'activos';
     paginaActual = 1;
-    renderTabla();
+    buscarClientes();
 }
 
 // ══════════════════════════════════════════
@@ -425,17 +434,13 @@ function asignarUsuario(id) {
 
     document.getElementById('asignarClienteNombre').textContent = nombre;
 
-    // Sugerencia de username a partir del email (el empleado la puede editar)
-    const sugerido = (cliente.email || '').split('@')[0] || '';
-    document.getElementById('asignarUsername').value = sugerido;
-
     document.getElementById('asignarPassword').value = '';
     document.getElementById('asignarPasswordConfirmar').value = '';
     ocultarErrorServidorAsignar();
     limpiarErroresAsignar();
 
     document.getElementById('modalAsignarUsuario').classList.add('visible');
-    document.getElementById('asignarUsername').focus();
+    document.getElementById('asignarPassword').focus();
 }
 
 function cerrarModalAsignar() {
@@ -447,15 +452,10 @@ async function confirmarAsignarUsuario() {
     limpiarErroresAsignar();
     ocultarErrorServidorAsignar();
 
-    const username = document.getElementById('asignarUsername').value.trim();
-    const password = document.getElementById('asignarPassword').value;
+    const password  = document.getElementById('asignarPassword').value;
     const confirmar = document.getElementById('asignarPasswordConfirmar').value;
 
     let valido = true;
-    if (!username) {
-        mostrarErrorAsignar('errAsignarUsername', 'asignarUsername');
-        valido = false;
-    }
     if (!password || password.length < 6) {
         mostrarErrorAsignar('errAsignarPassword', 'asignarPassword');
         valido = false;
@@ -477,7 +477,7 @@ async function confirmarAsignarUsuario() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${TOKEN()}`
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ password })
         });
 
         if (!res.ok) {
@@ -505,10 +505,10 @@ function mostrarErrorAsignar(errId, inputId) {
 }
 
 function limpiarErroresAsignar() {
-    ['errAsignarUsername', 'errAsignarPassword', 'errAsignarPasswordConfirmar'].forEach(id =>
+    ['errAsignarPassword', 'errAsignarPasswordConfirmar'].forEach(id =>
         document.getElementById(id)?.classList.remove('visible')
     );
-    ['asignarUsername', 'asignarPassword', 'asignarPasswordConfirmar'].forEach(id =>
+    ['asignarPassword', 'asignarPasswordConfirmar'].forEach(id =>
         document.getElementById(id)?.classList.remove('error')
     );
 }
@@ -570,6 +570,66 @@ function formatCondicionIVA(val) {
         NO_RESPONSABLE:        'No Responsable'
     };
     return map[val] || '—';
+}
+
+// ══════════════════════════════════════════
+//  MODAL CONFIRMAR REACTIVAR
+// ══════════════════════════════════════════
+let clienteReactivandoId = null;
+
+function initModalReactivar() {
+    document.getElementById('modalReactivarClose').addEventListener('click', cerrarModalReactivar);
+    document.getElementById('btnCancelarReactivar').addEventListener('click', cerrarModalReactivar);
+    document.getElementById('btnConfirmarReactivar').addEventListener('click', confirmarReactivar);
+
+    document.getElementById('modalConfirmarReactivar').addEventListener('click', e => {
+        if (e.target === document.getElementById('modalConfirmarReactivar')) cerrarModalReactivar();
+    });
+}
+
+function abrirModalReactivar(id) {
+    const cliente = todosLosClientes.find(c => c.id === id);
+    if (!cliente) return;
+
+    clienteReactivandoId = id;
+
+    const nombre = cliente.tipoCliente === 'EMPRESA'
+        ? cliente.razonSocial
+        : `${cliente.nombre ?? ''} ${cliente.apellido ?? ''}`.trim();
+
+    document.getElementById('reactivarClienteNombre').textContent = nombre;
+    document.getElementById('modalConfirmarReactivar').classList.add('visible');
+}
+
+function cerrarModalReactivar() {
+    document.getElementById('modalConfirmarReactivar').classList.remove('visible');
+    clienteReactivandoId = null;
+}
+
+async function confirmarReactivar() {
+    if (!clienteReactivandoId) return;
+
+    const btn = document.getElementById('btnConfirmarReactivar');
+    btn.disabled  = true;
+    btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Reactivando...`;
+
+    try {
+        const res = await fetch(`${API_URL}/${clienteReactivandoId}/reactivar`, {
+            method:  'PATCH',
+            headers: { 'Authorization': `Bearer ${TOKEN()}` }
+        });
+        if (!res.ok) throw new Error();
+
+        cerrarModalReactivar();
+        await cargarClientes();
+        mostrarToast('Cliente reactivado correctamente', 'success');
+
+    } catch {
+        mostrarToast('Error al reactivar cliente', 'danger');
+    } finally {
+        btn.disabled  = false;
+        btn.innerHTML = `<i class="bi bi-person-check"></i> Reactivar`;
+    }
 }
 
 // ══════════════════════════════════════════
