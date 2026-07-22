@@ -5,6 +5,5 @@ import lombok.Data;
 
 @Data
 public class AsignarUsuarioTO {
-    private String username;
     private String password;
 }
