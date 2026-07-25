@@ -5,6 +5,7 @@ import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.repository.*;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
+import com.chemiconsult.to.ResultadoParametroTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 @Service
 public class AnalisisService {
 
@@ -157,6 +160,46 @@ public class AnalisisService {
 
     public void deleteEstudio(Long id) {
         analisisRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void guardarResultados(Long analisisId, List<ResultadoParametroTO> resultados) {
+        AnalisisDE analisis = analisisRepository.findById(analisisId)
+                .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
+
+        Map<Long, ResultadoParametroTO> porParametroId = resultados.stream()
+                .collect(Collectors.toMap(ResultadoParametroTO::getParametroId, r -> r));
+
+        for (AnalisisParametroDE ap : analisis.getParametros()) {
+            ResultadoParametroTO r = porParametroId.get(ap.getParametro().getId());
+            if (r == null) continue;
+            ap.setValorResultado(r.getValorResultado());
+            ap.setObservacion(r.getObservacion());
+            for (AnalisisParametroLimiteDE limite : ap.getLimites()) {
+                limite.setCumple(evaluarCumple(r.getValorResultado(), limite));
+            }
+        }
+
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
+    }
+
+    private Boolean evaluarCumple(String valorStr, AnalisisParametroLimiteDE limite) {
+        if (valorStr == null || valorStr.isBlank()) return null;
+        String tipo = limite.getLimiteOrigen().getTipoLimite();
+        if ("TEXTO".equals(tipo)) return null;
+        try {
+            double valor = Double.parseDouble(valorStr.replace(",", ".").trim());
+            return switch (tipo) {
+                case "MAX"   -> limite.getLimiteMax() != null && valor <= limite.getLimiteMax();
+                case "MIN"   -> limite.getLimiteMin() != null && valor >= limite.getLimiteMin();
+                case "RANGO" -> limite.getLimiteMin() != null && limite.getLimiteMax() != null
+                                && valor >= limite.getLimiteMin() && valor <= limite.getLimiteMax();
+                default      -> null;
+            };
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Autowired
