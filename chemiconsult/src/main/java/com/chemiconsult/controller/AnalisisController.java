@@ -7,6 +7,7 @@ import com.chemiconsult.service.AnalisisService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
+import com.chemiconsult.to.ResultadoParametroTO;
 import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +75,14 @@ public class AnalisisController {
     @DeleteMapping("/{id}")
     public void deleteEstudio(@PathVariable Long id) {
         analisisService.deleteEstudio(id);
+    }
+
+    @PutMapping("/{id}/resultados")
+    public ResponseEntity<Void> guardarResultados(
+            @PathVariable Long id,
+            @RequestBody List<ResultadoParametroTO> resultados) {
+        analisisService.guardarResultados(id, resultados);
+        return ResponseEntity.ok().build();
     }
 
     // Descarga el PDF desde Supabase (ya no hay fallback a bytea local)
