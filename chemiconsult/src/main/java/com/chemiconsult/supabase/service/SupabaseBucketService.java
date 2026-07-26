@@ -59,4 +59,15 @@ public class SupabaseBucketService {
         }
     }
 
+    public void subirArchivoBytes(String bucket, String path, byte[] bytes) {
+        restClient.put()
+                .uri("/object/{bucket}/{path}", bucket, path)
+                .header("Authorization", "Bearer " + serviceRoleKey)
+                .header("apikey", serviceRoleKey)
+                .header("Content-Type", "application/pdf")
+                .body(bytes)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
 }

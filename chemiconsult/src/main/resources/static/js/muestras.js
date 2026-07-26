@@ -289,6 +289,9 @@ function vincularEventos() {
     // — Guardar resultados de parámetros —
     document.getElementById("btnGuardarResultados").addEventListener("click", onGuardarResultados);
 
+    // — Generar informe PDF —
+    document.getElementById("btnGenerarInforme").addEventListener("click", onGenerarInforme);
+
     // Live re-evaluation of cumple badges as user types a result
     document.getElementById("detalleParametros").addEventListener("input", e => {
         if (!e.target.classList.contains("param-resultado-input")) return;
@@ -996,6 +999,10 @@ function labelEstadoDetalle(estado) {
 function renderizarDetalleMuestra(d) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || d.idMuestra || `#${d.id}`;
 
+    // El botón "Generar informe" se oculta si la muestra ya está COMPLETO
+    const btnGenerar = document.getElementById("btnGenerarInforme");
+    btnGenerar.style.display = (d.estado === "COMPLETO") ? "none" : "";
+
     // Estado badge
     const estadoEl = document.getElementById("detalleEstado");
     estadoEl.className = badgeClassDetalle(d.estado);
@@ -1190,6 +1197,48 @@ async function onGuardarResultados() {
     } catch (err) {
         console.error("Error guardando resultados:", err);
         mostrarToast("Error al guardar los resultados.", true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+}
+
+async function onGenerarInforme() {
+    if (!detalleAnalisisId) return;
+
+    const btn = document.getElementById("btnGenerarInforme");
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Generando...`;
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/generar-informe`, {
+            method: "POST"
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Error HTTP ${resp.status}`);
+        }
+
+        // Descarga el PDF directamente en el navegador
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `informe-${detalleAnalisisId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        mostrarToast("Informe generado y descargado correctamente.");
+        cerrarModalDetalle();
+        await cargarMuestrasActivas();
+
+    } catch (err) {
+        console.error("Error generando informe:", err);
+        mostrarToast(`Error al generar el informe: ${err.message}`, true);
     } finally {
         btn.disabled = false;
         btn.innerHTML = textoOriginal;

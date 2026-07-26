@@ -4,6 +4,7 @@ import com.chemiconsult.entity.AnalisisDE;
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.service.AnalisisService;
+import com.chemiconsult.service.InformeService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
@@ -32,6 +33,7 @@ public class AnalisisController {
     private final AnalisisService analisisService;
     private final SupabaseBucketService supabaseBucketService;
     private final AnalisisRepository analisisRepository;
+    private final InformeService informeService;
     private final String BUCKET = "chemiconsult-bucket";
 
     @GetMapping
@@ -107,6 +109,18 @@ public class AnalisisController {
                 .body(archivo);
     }
 
+    @PostMapping("/{id}/generar-informe")
+    public ResponseEntity<byte[]> generarInforme(@PathVariable Long id) {
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        String nro = analisis.getNumeroProtocolo() != null ? analisis.getNumeroProtocolo() : String.valueOf(id);
+        byte[] pdf = informeService.generarYPublicar(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"informe-" + nro + ".pdf\"")
+                .body(pdf);
+    }
+
     @PostMapping("/{id}/documento")
     public ResponseEntity<Void> subirDocumento(
             @PathVariable Long id,
@@ -129,9 +143,11 @@ public class AnalisisController {
     @Autowired
     public AnalisisController(AnalisisService analisisService,
                               SupabaseBucketService supabaseBucketService,
-                              AnalisisRepository analisisRepository) {
+                              AnalisisRepository analisisRepository,
+                              InformeService informeService) {
         this.analisisService = analisisService;
         this.supabaseBucketService = supabaseBucketService;
         this.analisisRepository = analisisRepository;
+        this.informeService = informeService;
     }
 }
