@@ -96,7 +96,7 @@ body {
 }
 
 .kanban-header h6 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
     display: flex;
@@ -120,12 +120,30 @@ body {
 .kanban-col[data-status="DONE"] .kanban-header h6::before { background: var(--status-done); }
 
 .kanban-header .badge {
-    background: #f1f5f9 !important;
-    color: var(--text-secondary) !important;
     font-weight: 500;
     font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.kanban-col[data-status="TODO"] .kanban-header .badge {
+    background: #f1f5f9 !important;
+    color: var(--text-secondary) !important;
+}
+
+.kanban-col[data-status="IN_PROGRESS"] .kanban-header .badge {
+    background: var(--status-inprogress-bg) !important;
+    color: var(--status-inprogress-text) !important;
+}
+
+.kanban-col[data-status="EN_REVISION"] .kanban-header .badge {
+    background: var(--status-revision-bg) !important;
+    color: var(--status-revision-text) !important;
+}
+
+.kanban-col[data-status="DONE"] .kanban-header .badge {
+    background: var(--status-done-bg) !important;
+    color: var(--status-done-text) !important;
 }
 
 .dropzone {
@@ -150,8 +168,7 @@ body {
     position: relative;
     background: #ffffff;
     border: 1px solid var(--border-flat);
-    border-left: 3px solid var(--status-todo);
-    border-radius: 0 10px 10px 0;
+    border-radius: 10px;
     padding: 12px 14px;
     cursor: grab;
     display: flex;
@@ -159,21 +176,14 @@ body {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.kanban-card.todo        { border-left-color: var(--status-todo); }
-.kanban-card.in_progress { border-left-color: var(--status-inprogress); }
-.kanban-card.en_revision { border-left-color: var(--status-revision); }
-.kanban-card.done        { border-left-color: var(--status-done); }
+.kanban-card.done { opacity: 0.65; }
+.kanban-card.done .kanban-card-title { text-decoration: line-through; color: var(--text-muted); }
 
 .kanban-card:hover {
     border-color: #cbd5e1;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
     transform: translateY(-2px);
 }
-/* Preserva el color de la franja incluso en hover (el hover de arriba pisa border-color entero) */
-.kanban-card.todo:hover        { border-left-color: var(--status-todo); }
-.kanban-card.in_progress:hover { border-left-color: var(--status-inprogress); }
-.kanban-card.en_revision:hover { border-left-color: var(--status-revision); }
-.kanban-card.done:hover        { border-left-color: var(--status-done); }
 
 .kanban-card:active {
     cursor: grabbing;
@@ -213,12 +223,21 @@ body {
     overflow: hidden;
 }
 
-/* Nombre del asignado visible, con avatar al lado */
+.kanban-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-width: 0;
+}
+
 .kanban-card-assignee {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 10px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .assignee-name {
@@ -289,6 +308,84 @@ body {
 .btn-link-secondary:hover {
     color: var(--text-secondary);
 }
+
+/* ── Deadline badges ── */
+.dl-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dl-over, .dl-hoy { background: #fef2f2; color: #dc2626; }
+.dl-tom            { background: #fff7ed; color: #ea580c; }
+.dl-soon           { background: #eff6ff; color: #2563eb; }
+.dl-ok             { background: #f1f5f9; color: var(--text-secondary); }
+
+/* ── Filtro personas ── */
+.kb-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.kb-filter-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    margin-right: 2px;
+}
+
+.kb-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-flat);
+    background: #ffffff;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .15s ease;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.kb-pill:hover { border-color: #cbd5e1; color: var(--text-primary); }
+
+.kb-pill.active {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: #ffffff;
+}
+
+.kb-pill-av {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: var(--text-secondary);
+    font-size: 8px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kb-pill.active .kb-pill-av { background: rgba(255,255,255,.2); color: #ffffff; }
+
+.kanban-card.kb-hidden { display: none; }
 
 /* ==========================================================================
    Modal Archivo
