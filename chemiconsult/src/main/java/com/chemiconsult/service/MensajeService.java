@@ -7,6 +7,7 @@ import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.ConversacionTO;
 import com.chemiconsult.to.MensajeTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,8 @@ import java.util.*;
 
 @Service
 public class MensajeService {
+
+    private static final int LIMITE_DEFAULT = 10;
 
     private final MensajeRepository mensajeRepository;
     private final UserRepository userRepository;
@@ -24,8 +27,23 @@ public class MensajeService {
         this.userRepository = userRepository;
     }
 
-    public List<MensajeTO> getConversacion(Long miId, Long otroId) {
-        return mensajeRepository.findConversacion(miId, otroId)
+    // Carga inicial: últimos N mensajes en orden cronológico
+    public List<MensajeTO> getUltimosMensajes(Long miId, Long otroId, int limite) {
+        List<MensajeDE> desc = mensajeRepository.findUltimos(miId, otroId, PageRequest.of(0, limite));
+        Collections.reverse(desc);
+        return desc.stream().map(this::toTO).toList();
+    }
+
+    // Scroll hacia arriba: N mensajes anteriores al id dado
+    public List<MensajeTO> getMensajesAntesDe(Long miId, Long otroId, Long antesDeId, int limite) {
+        List<MensajeDE> desc = mensajeRepository.findAntesDe(miId, otroId, antesDeId, PageRequest.of(0, limite));
+        Collections.reverse(desc);
+        return desc.stream().map(this::toTO).toList();
+    }
+
+    // Polling: mensajes nuevos desde el id dado
+    public List<MensajeTO> getMensajesDespuesDe(Long miId, Long otroId, Long despuesDeId) {
+        return mensajeRepository.findDespuesDe(miId, otroId, despuesDeId)
                 .stream().map(this::toTO).toList();
     }
 

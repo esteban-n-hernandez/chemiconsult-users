@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${link('dashboard-empleado.html', 'bi-speedometer2',          'Dashboard')}
         ${link('task.html',               'bi-list-task',              'Tareas')}
         ${link('muestras.html',           'bi-file-earmark-medical',   'Muestras')}
+        ${link('agenda.html',             'bi-calendar-check',         'Agenda')}
         ${link('clientes.html',           'bi-people',                 'Clientes')}
         ${link('stock.html',              'bi-box-seam',               'Stock')}
         ${link('panel-tecnico.html',      'bi-gear-fill',              'Panel Técnico')}

@@ -39,9 +39,18 @@ public class MensajeController {
     @GetMapping("/conversacion/{otroId}")
     public ResponseEntity<List<MensajeTO>> getConversacion(
             @PathVariable Long otroId,
+            @RequestParam(defaultValue = "10") int limite,
+            @RequestParam(required = false) Long antes,
+            @RequestParam(required = false) Long despues,
             @AuthenticationPrincipal UserDetails principal) {
         Long miId = resolverUserId(principal);
-        return ResponseEntity.ok(mensajeService.getConversacion(miId, otroId));
+        if (antes != null) {
+            return ResponseEntity.ok(mensajeService.getMensajesAntesDe(miId, otroId, antes, limite));
+        }
+        if (despues != null) {
+            return ResponseEntity.ok(mensajeService.getMensajesDespuesDe(miId, otroId, despues));
+        }
+        return ResponseEntity.ok(mensajeService.getUltimosMensajes(miId, otroId, limite));
     }
 
     @PostMapping
