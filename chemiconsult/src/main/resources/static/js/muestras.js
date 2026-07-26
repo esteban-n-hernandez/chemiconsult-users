@@ -1246,7 +1246,7 @@ async function onGenerarInforme() {
 }
 
 function init() {
-    establecerFechaHoy();
+    inicializarHeader();
     cargarClientes();
     cargarMatrices();
     cargarMuestrasActivas();
