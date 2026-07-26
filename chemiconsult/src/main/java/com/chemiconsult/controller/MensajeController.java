@@ -71,7 +71,7 @@ public class MensajeController {
     }
 
     private Long resolverUserId(UserDetails principal) {
-        UserDE user = userRepository.findByUsername(principal.getUsername())
+        UserDE user = userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + principal.getUsername()));
         return user.getId();
     }
