@@ -40,12 +40,12 @@
     }
 
     const COLORES = [
-        { bg: '#1e3a5f', color: '#93c5fd' },
-        { bg: '#1a2e1a', color: '#86efac' },
-        { bg: '#2d1f3d', color: '#c4b5fd' },
-        { bg: '#3d2a1a', color: '#fdba74' },
-        { bg: '#1a2d3d', color: '#67e8f9' },
-        { bg: '#3d1a1a', color: '#fca5a5' },
+        { bg: '#eef7e0', color: '#2d6b0a' },
+        { bg: '#e0f0f7', color: '#0a4f6b' },
+        { bg: '#f7eef0', color: '#6b0a2d' },
+        { bg: '#f0f7ee', color: '#2d6b0a' },
+        { bg: '#f7f0ee', color: '#6b2d0a' },
+        { bg: '#eef0f7', color: '#0a2d6b' },
     ];
     function colorParaId(id) {
         return COLORES[id % COLORES.length];
@@ -275,7 +275,6 @@
                 <div class="chat-avatar" style="background:${col.bg};color:${col.color}">${iniciales(u.username)}</div>
                 <div class="chat-ci-info">
                     <div class="chat-ci-name">${u.username}</div>
-                    <div class="chat-ci-preview">${u.rol || ''}</div>
                 </div>
             </div>`;
         }).join('');
