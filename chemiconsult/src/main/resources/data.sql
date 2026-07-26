@@ -1,3 +1,8 @@
+-- Recrear constraint de TASK para incluir EN_REVISION
+ALTER TABLE "TASK" DROP CONSTRAINT IF EXISTS "TASK_status_check";
+ALTER TABLE "TASK" ADD CONSTRAINT "TASK_status_check"
+    CHECK (status IN ('TODO', 'IN_PROGRESS', 'EN_REVISION', 'DONE'));
+
 -- Recrear constraints de STOCK_ITEM para reflejar los enums actuales
 ALTER TABLE "STOCK_ITEM" DROP CONSTRAINT IF EXISTS "STOCK_ITEM_nivel_check";
 ALTER TABLE "STOCK_ITEM" DROP CONSTRAINT IF EXISTS "STOCK_ITEM_categoria_check";

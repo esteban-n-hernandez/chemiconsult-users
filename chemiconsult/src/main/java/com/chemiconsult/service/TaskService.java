@@ -81,6 +81,7 @@ public class TaskService {
 
         tarea.setTitle(to.getTitle());
         tarea.setDescription(to.getDescription());
+        tarea.setDueDate(to.getDueDate());
 
         if (to.getUserId() != null) {
             UserDE nuevoUser = userRepository.findById(to.getUserId())

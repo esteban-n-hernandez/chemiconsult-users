@@ -18,5 +18,6 @@ public class TaskTO {
     private boolean archived;
     private LocalDate completedDate;
     private LocalDate archivedDate;
+    private LocalDate dueDate;
 
 }

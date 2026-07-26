@@ -41,4 +41,7 @@ public class TaskDE {
     @Column(name = "ARCHIVED_DATE")
     private LocalDate archivedDate;
 
+    @Column(name = "DUE_DATE")
+    private LocalDate dueDate;
+
 }
