@@ -25,6 +25,7 @@ public class TaskMapper {
                 .archived(task.isArchived())
                 .completedDate(task.getCompletedDate())
                 .archivedDate(task.getArchivedDate())
+                .dueDate(task.getDueDate())
                 .build();
     }
 
@@ -35,6 +36,7 @@ public class TaskMapper {
         taskDE.setStatus(task.getStatus() == null ? TaskStatusEnum.TODO : TaskStatusEnum.valueOf(task.getStatus()));
         taskDE.setCreatedDate(LocalDate.now());
         taskDE.setCompletedDate(taskDE.getStatus() == TaskStatusEnum.DONE ? LocalDate.now() : null);
+        taskDE.setDueDate(task.getDueDate());
         return taskDE;
     }
 

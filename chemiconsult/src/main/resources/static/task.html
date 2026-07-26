@@ -28,6 +28,12 @@
         </div>
     </div>
 
+    <!-- Filtro por persona -->
+    <div id="kb-filter-bar" class="kb-filter">
+        <span class="kb-filter-label">Ver</span>
+        <button class="kb-pill active" data-u="*" onclick="kbFilter(this)">Todos</button>
+    </div>
+
     <div class="row g-3">
         <!-- Columna Pendiente -->
         <div class="col-12 col-lg-3">
@@ -97,6 +103,10 @@
                 <div class="mb-3">
                     <label class="form-label">Descripción</label>
                     <textarea class="form-control" id="description" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fecha límite <span class="text-muted fw-normal" style="font-size:12px;">(opcional)</span></label>
+                    <input type="date" class="form-control" id="dueDate">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Asignar a</label>
