@@ -40,7 +40,6 @@ const tablas = {
 
 // ── Carga inicial ──
 document.addEventListener('DOMContentLoaded', () => {
-    inicializarHeader();
     Object.keys(tablas).forEach(nombre => {
         cargarTabla(nombre);
         document.getElementById(tablas[nombre].filtroId)

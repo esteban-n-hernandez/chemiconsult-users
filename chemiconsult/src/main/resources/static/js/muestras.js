@@ -830,10 +830,10 @@ function renderizarTablaMuestras(lista) {
         const fila = document.createElement("tr");
         const codigo = m.nroProtocolo || m.idMuestra || m.id || "S/N";
         fila.innerHTML = `
-            <td><span class="cod-badge">${codigo}</span></td>
+            <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
             <td>${m.matrizNombre || m.tipoAnalisis || '—'}</td>
-            <td><span class="${badgeClassDetalle(m.estado)}">${labelEstadoDetalle(m.estado)}</span></td>
+            <td><span class="badge-estado ${(m.estado || '').toLowerCase()}">${m.estado || '—'}</span></td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
             <td>
@@ -1206,30 +1206,6 @@ async function onGuardarResultados() {
 async function onGenerarInforme() {
     if (!detalleAnalisisId) return;
 
-    const inputs = document.querySelectorAll(".param-resultado-input");
-    const vacios = [];
-    inputs.forEach(input => {
-        const vacio = !input.value || !input.value.trim();
-        input.style.borderColor = vacio ? "#dc3545" : "";
-        input.style.background  = vacio ? "#fff5f5" : "";
-        if (vacio) {
-            const card = input.closest(".param-card");
-            const nombreEl = card?.querySelector(".param-card-nombre");
-            const nombre = nombreEl
-                ? (nombreEl.childNodes[0]?.textContent?.trim() || nombreEl.textContent.split("(")[0].trim())
-                : `#${input.dataset.parametroId}`;
-            vacios.push(nombre);
-        }
-    });
-
-    if (vacios.length > 0) {
-        const msg = vacios.length <= 3
-            ? `Faltan resultados en: ${vacios.join(", ")}.`
-            : `${vacios.length} parámetros sin resultado. Completá todos los campos antes de generar el informe.`;
-        mostrarToast(msg, true);
-        return;
-    }
-
     const btn = document.getElementById("btnGenerarInforme");
     const textoOriginal = btn.innerHTML;
     btn.disabled = true;
@@ -1270,7 +1246,7 @@ async function onGenerarInforme() {
 }
 
 function init() {
-    inicializarHeader();
+    establecerFechaHoy();
     cargarClientes();
     cargarMatrices();
     cargarMuestrasActivas();
