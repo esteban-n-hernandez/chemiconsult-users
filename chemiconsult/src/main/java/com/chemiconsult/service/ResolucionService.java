@@ -1,9 +1,11 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.MatrizDE;
+import com.chemiconsult.entity.ResolucionDE;
 import com.chemiconsult.entity.ResolucionDestinoDE;
 import com.chemiconsult.repository.MatrizRepository;
 import com.chemiconsult.repository.ResolucionDestinoRepository;
+import com.chemiconsult.repository.ResolucionRepository;
 import com.chemiconsult.to.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 public class ResolucionService {
@@ -20,6 +23,14 @@ public class ResolucionService {
 
     @Autowired
     private MatrizRepository matrizRepository;
+
+    @Autowired
+    private ResolucionRepository resolucionRepository;
+
+    @Transactional(readOnly = true)
+    public List<ResolucionDE> getAll() {
+        return resolucionRepository.findAll();
+    }
 
     @Transactional(readOnly = true)
     public List<ResolucionDestinoTO> listarTodosLosDestinos() {
