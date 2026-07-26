@@ -1,5 +1,6 @@
 package com.chemiconsult.controller;
 
+import com.chemiconsult.entity.ResolucionDE;
 import com.chemiconsult.service.ResolucionService;
 import com.chemiconsult.to.MatrizResolucionesTO;
 import com.chemiconsult.to.ParametroNormaTO;
@@ -18,6 +19,11 @@ public class ResolucionController {
 
     public ResolucionController(ResolucionService resolucionService) {
         this.resolucionService = resolucionService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ResolucionDE>> getAll() {
+        return ResponseEntity.ok(resolucionService.getAll());
     }
 
     // Árbol completo: Matriz → Resoluciones → Destinos → Parámetros

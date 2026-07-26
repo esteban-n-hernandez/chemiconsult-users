@@ -8,12 +8,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 
 @Log4j2
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Recurso estático no encontrado (favicon.ico, rutas inexistentes, etc.)
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorTO> handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {
+        log.debug("Recurso no encontrado: {}", request.getRequestURI());
+        return buildResponse(HttpStatus.NOT_FOUND, "Recurso no encontrado", ex.getMessage(), null, request);
+    }
 
     // Excepciones de negocio lanzadas desde los servicios
     @ExceptionHandler(RuntimeException.class)
