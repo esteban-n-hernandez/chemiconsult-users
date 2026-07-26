@@ -2,6 +2,7 @@ package com.chemiconsult.entity;
 
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,6 +30,7 @@ public class AnalisisDE {
     // NUEVO: relación directa al cliente, independiente de si tiene usuario o no
     @ManyToOne
     @JoinColumn(name = "CLIENTE_ID", nullable = false)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private ClienteDE cliente;
@@ -85,6 +87,7 @@ public class AnalisisDE {
 
     @ManyToOne
     @JoinColumn(name = "CLIENTE_SUCURSAL_ID")
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private ClienteSucursalDE sucursal;
