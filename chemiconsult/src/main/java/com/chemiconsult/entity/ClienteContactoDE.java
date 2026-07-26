@@ -20,6 +20,7 @@ public class ClienteContactoDE {
 
     @ManyToOne
     @JoinColumn(name = "CLIENTE_ID", nullable = false)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private ClienteDE cliente;
