@@ -25,6 +25,7 @@ public class ResolucionDE {
 
     @ManyToOne
     @JoinColumn(name = "MATRIZ_ID", nullable = false)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private MatrizDE matriz;
