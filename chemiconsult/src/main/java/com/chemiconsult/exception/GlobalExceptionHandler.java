@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,12 @@ import java.time.LocalDateTime;
 @Log4j2
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Cliente cerró la conexión antes de recibir la respuesta — no es un error del servidor
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientAbort(AsyncRequestNotUsableException ex) {
+        log.debug("Conexión abortada por el cliente: {}", ex.getMessage());
+    }
 
     // Recurso estático no encontrado (favicon.ico, rutas inexistentes, etc.)
     @ExceptionHandler(NoResourceFoundException.class)
