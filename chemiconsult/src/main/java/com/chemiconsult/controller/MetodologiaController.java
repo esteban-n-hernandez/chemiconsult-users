@@ -1,4 +1,4 @@
-﻿package com.chemiconsult.controller;
+ackage com.chemiconsult.controller;
 
 import com.chemiconsult.entity.MetodologiaDE;
 import com.chemiconsult.service.MetodologiaService;

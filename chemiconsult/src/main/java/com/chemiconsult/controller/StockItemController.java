@@ -1,4 +1,4 @@
-﻿package com.chemiconsult.controller;
+ackage com.chemiconsult.controller;
 
 import com.chemiconsult.service.StockItemService;
 import com.chemiconsult.to.StockItemTO;
