@@ -99,6 +99,11 @@ public class MensajeService {
         return mensajeRepository.countNoLeidos(receptorId);
     }
 
+    public long getUltimoMensajeLeidoId(Long emisorId, Long receptorId) {
+        Long id = mensajeRepository.findUltimoLeidoId(emisorId, receptorId);
+        return id != null ? id : -1L;
+    }
+
     private MensajeTO toTO(MensajeDE m) {
         MensajeTO to = new MensajeTO();
         to.setId(m.getId());

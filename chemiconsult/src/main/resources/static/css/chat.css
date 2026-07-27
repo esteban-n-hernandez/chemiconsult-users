@@ -354,6 +354,22 @@
 .chat-send-btn:hover { background: #4d8c03; }
 .chat-send-btn:active { transform: scale(0.95); }
 
+/* ── Ticks de lectura ── */
+.chat-msg-time.me {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.chat-tick {
+    font-size: 11px;
+    color: #adb5bd;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.chat-tick.leido {
+    color: #5EA504;
+}
+
 /* ── Nueva conversación (buscar empleado) ── */
 .chat-new-conv-header {
     display: flex;

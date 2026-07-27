@@ -79,6 +79,14 @@ public class MensajeController {
         return ResponseEntity.ok(Map.of("total", mensajeService.getNoLeidosCount(miId)));
     }
 
+    @GetMapping("/ultimo-leido/{receptorId}")
+    public ResponseEntity<Map<String, Long>> getUltimoLeido(
+            @PathVariable Long receptorId,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long miId = resolverUserId(principal);
+        return ResponseEntity.ok(Map.of("ultimoLeidoId", mensajeService.getUltimoMensajeLeidoId(miId, receptorId)));
+    }
+
     private Long resolverUserId(UserDetails principal) {
         UserDE user = userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + principal.getUsername()));

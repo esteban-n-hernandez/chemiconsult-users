@@ -55,8 +55,31 @@
     function renderMensaje(m) {
         const esYo = m.emisorId === miUserId();
         const clase = esYo ? 'me' : 'them';
-        return `<span class="chat-msg-time ${clase}">${formatHora(m.fechaEnvio)}</span>
+        const tick = esYo
+            ? `<i class="bi ${m.leido ? 'bi-check2-all chat-tick leido' : 'bi-check2 chat-tick'}" data-msg-id="${m.id}"></i>`
+            : '';
+        return `<span class="chat-msg-time ${clase}">${formatHora(m.fechaEnvio)}${tick}</span>
                 <div class="chat-msg ${clase}" data-id="${m.id}">${escHtml(m.contenido)}</div>`;
+    }
+
+    function actualizarTicks(ultimoLeidoId) {
+        if (ultimoLeidoId < 0) return;
+        document.querySelectorAll('.chat-tick:not(.leido)').forEach(el => {
+            if (parseInt(el.dataset.msgId) <= ultimoLeidoId) {
+                el.classList.remove('bi-check2');
+                el.classList.add('bi-check2-all', 'leido');
+            }
+        });
+    }
+
+    async function pollEstadoLeido() {
+        if (!convActual) return;
+        try {
+            const r = await fetch(`${API}/ultimo-leido/${convActual.id}`, { headers: headers() });
+            if (!r.ok) return;
+            const { ultimoLeidoId } = await r.json();
+            actualizarTicks(ultimoLeidoId);
+        } catch (_) {}
     }
 
     // ── Inyectar HTML ─────────────────────────────────────────────────────────
@@ -209,6 +232,7 @@
         await cargarMensajesIniciales();
         await fetch(API + '/leer/' + userId, { method: 'PUT', headers: headers() });
         actualizarBadge();
+        await pollEstadoLeido();
     }
 
     async function cargarMensajesIniciales() {
@@ -393,6 +417,7 @@
         pollTimer = setInterval(async () => {
             if (vistaActual === 'conv' && convActual) {
                 await pollMensajesNuevos();
+                await pollEstadoLeido();
             } else if (vistaActual === 'lista') {
                 await cargarConversaciones();
                 await actualizarBadge();

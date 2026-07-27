@@ -69,6 +69,13 @@ public interface MensajeRepository extends JpaRepository<MensajeDE, Long> {
         """)
     List<MensajeDE> findTodosDelUsuario(@Param("userId") Long userId);
 
+    // ID del último mensaje enviado por emisorId a receptorId que fue leído
+    @Query("""
+        SELECT MAX(m.id) FROM MensajeDE m
+        WHERE m.emisor.id = :emisorId AND m.receptor.id = :receptorId AND m.leido = true
+        """)
+    Long findUltimoLeidoId(@Param("emisorId") Long emisorId, @Param("receptorId") Long receptorId);
+
     // Para limpieza programada: mensajes leídos más viejos que la fecha dada
     @Modifying
     @Query("DELETE FROM MensajeDE m WHERE m.leido = true AND m.fechaEnvio < :limite")
