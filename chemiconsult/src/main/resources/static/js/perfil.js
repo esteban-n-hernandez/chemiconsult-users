@@ -144,8 +144,8 @@ async function onSubmitDatosCuenta(e) {
         });
 
         if (!response.ok) {
-            const texto = await response.text();
-            throw new Error(texto || `HTTP ${response.status}`);
+            const msg = await response.json().then(d => d.message).catch(() => null) || `HTTP ${response.status}`;
+            throw new Error(msg);
         }
 
         // Actualiza el nombre mostrado en el header/sidebar sin recargar la página
@@ -200,9 +200,8 @@ async function onSubmitPassword(e) {
         });
 
         if (!response.ok) {
-            // El backend devuelve el mensaje de error (ej: "La contraseña actual no es correcta")
-            const texto = await response.text();
-            mostrarErrorServidor(texto || "No se pudo cambiar la contraseña");
+            const msg = await response.json().then(d => d.message).catch(() => null) || "No se pudo cambiar la contraseña";
+            mostrarErrorServidor(msg);
             return;
         }
 

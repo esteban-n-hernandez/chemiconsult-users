@@ -239,8 +239,9 @@ async function submitUsuario() {
         }
 
         if (!res.ok) {
-            const err = await res.text();
-            mostrarErrorServidor('usuarioErrorServidor', err || 'No se pudo guardar el usuario');
+            let msg = 'No se pudo guardar el usuario';
+            try { msg = (await res.json()).message || msg; } catch {}
+            mostrarErrorServidor('usuarioErrorServidor', msg);
             return;
         }
 
@@ -316,8 +317,9 @@ async function confirmarReset() {
         });
 
         if (!res.ok) {
-            const err = await res.text();
-            mostrarErrorServidor('resetErrorServidor', err || 'No se pudo restablecer la contraseña');
+            let msg = 'No se pudo restablecer la contraseña';
+            try { msg = (await res.json()).message || msg; } catch {}
+            mostrarErrorServidor('resetErrorServidor', msg);
             return;
         }
 

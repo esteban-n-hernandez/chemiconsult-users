@@ -355,8 +355,8 @@ async function submitCliente() {
         });
 
         if (!res.ok) {
-            const err = await res.text();
-            throw new Error(err || 'Error al guardar cliente');
+            const msg = await res.json().then(d => d.message).catch(() => null) || 'Error al guardar cliente';
+            throw new Error(msg);
         }
 
         const clienteGuardado = await res.json();
@@ -483,9 +483,8 @@ async function confirmarAsignarUsuario() {
         });
 
         if (!res.ok) {
-            const err = await res.text();
-            // Errores esperables del backend: username ya en uso, cliente ya tiene usuario
-            mostrarErrorServidorAsignar(err || 'No se pudo crear el acceso');
+            const msg = await res.json().then(d => d.message).catch(() => null) || 'No se pudo crear el acceso';
+            mostrarErrorServidorAsignar(msg);
             return;
         }
 
@@ -870,7 +869,7 @@ async function guardarSucursal() {
             },
             body: JSON.stringify(body)
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) throw new Error(await res.json().then(d => d.message).catch(() => null) || 'Error al guardar la sucursal');
 
         cerrarFormSucursal();
         await cargarSucursales();
@@ -1048,7 +1047,7 @@ async function guardarContacto() {
             },
             body: JSON.stringify(body)
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) throw new Error(await res.json().then(d => d.message).catch(() => null) || 'Error al guardar el contacto');
 
         cerrarFormContacto();
         await cargarContactos();

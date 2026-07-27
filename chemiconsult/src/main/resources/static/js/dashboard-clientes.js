@@ -52,23 +52,21 @@ async function cargarEstudios() {
 
         const data = await res.json();
 
-        // Mapear respuesta al formato interno y filtrar solo estudios completados
-        todasLasMuestras = data
-            .filter(e => e.estado === "Completo") // Solo mostrar estudios completados
-            .map(e => ({
-                id:       e.id,
-                codigo:   e.numeroProtocolo || `ID-${e.id}`,
-                tipo:     e.tipo || "—",
-                fecha:    e.createdDate
-                    ? new Date(e.createdDate).toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
-                    : "—",
-                estado:   e.estado || "—",
-                informe:  e.estado === "Completo" // tiene PDF disponible
-            }));
+        // Mapear respuesta al formato interno (se muestran todos los estados)
+        todasLasMuestras = data.map(e => ({
+            id:       e.id,
+            codigo:   e.numeroProtocolo || `ID-${e.id}`,
+            tipo:     e.tipo || "—",
+            fecha:    e.createdDate
+                ? new Date(e.createdDate).toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
+                : "—",
+            estado:   e.estado || "—",
+            informe:  e.estado === "COMPLETO"  // solo COMPLETO tiene PDF disponible
+        }));
 
         // KPIs
         document.getElementById("kpi-total").textContent   = todasLasMuestras.length;
-        document.getElementById("kpi-proceso").textContent = todasLasMuestras.filter(m => m.estado === "EN_PROCESO").length;
+        document.getElementById("kpi-proceso").textContent = todasLasMuestras.filter(m => m.estado === "EN_PROCESO" || m.estado === "DEMORADA").length;
         document.getElementById("kpi-listos").textContent  = todasLasMuestras.filter(m => m.informe).length;
 
         datosFiltrados = [...todasLasMuestras];
@@ -86,9 +84,11 @@ async function cargarEstudios() {
 // ──────────────────────────────────────────
 function badgeHTML(estado) {
     const map = {
-        "EN_PROCESO": `<span class="badge-estado badge-proceso">🔬 En análisis</span>`,
-        "INFORME":    `<span class="badge-estado badge-informe">✅ Informe listo</span>`,
-        "PENDIENTE":  `<span class="badge-estado badge-pendiente">⏳ Pendiente</span>`,
+        "PENDIENTE":            `<span class="badge-estado badge-pendiente">⏳ Pendiente</span>`,
+        "EN_PROCESO":           `<span class="badge-estado badge-proceso">🔬 En análisis</span>`,
+        "DEMORADA":             `<span class="badge-estado badge-demorada">⏸ Demorada</span>`,
+        "COMPLETO_SIN_INFORME": `<span class="badge-estado badge-sin-informe">✔ Analizado</span>`,
+        "COMPLETO":             `<span class="badge-estado badge-informe">📄 Informe listo</span>`,
     };
     return map[estado] || `<span class="badge-estado">${estado}</span>`;
 }
