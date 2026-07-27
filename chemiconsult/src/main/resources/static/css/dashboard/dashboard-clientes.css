@@ -255,8 +255,11 @@ body {
     white-space: nowrap;
 }
 
-.badge-proceso  { background: #cfe2ff; color: #0d6efd; }
-.badge-informe  { background: #d1e7dd; color: #146c43; }
+.badge-pendiente    { background: #fef3c7; color: #92400e; }
+.badge-proceso      { background: #cfe2ff; color: #0d6efd; }
+.badge-demorada     { background: #f3e8ff; color: #7c3aed; }
+.badge-sin-informe  { background: #e0f2fe; color: #075985; }
+.badge-informe      { background: #d1e7dd; color: #146c43; }
 
 /* ── Botón descargar ── */
 .btn-descargar {

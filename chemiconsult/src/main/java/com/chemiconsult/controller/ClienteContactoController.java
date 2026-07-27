@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.service.ClienteContactoService;
 import com.chemiconsult.to.ClienteContactoTO;
@@ -11,18 +11,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clientes")
-@CrossOrigin(origins = "*")
 public class ClienteContactoController {
 
     private final ClienteContactoService contactoService;
 
-    // GET /api/clientes/{clienteId}/contactos — todos los contactos de la empresa
+    // GET /api/clientes/{clienteId}/contactos â€” todos los contactos de la empresa
     @GetMapping("/{clienteId}/contactos")
     public ResponseEntity<List<ClienteContactoTO>> getContactos(@PathVariable Long clienteId) {
         return ResponseEntity.ok(contactoService.getContactosPorCliente(clienteId));
     }
 
-    // GET /api/clientes/sucursales/{sucursalId}/contactos — quiénes reciben avisos de esta sucursal
+    // GET /api/clientes/sucursales/{sucursalId}/contactos â€” quiÃ©nes reciben avisos de esta sucursal
     @GetMapping("/sucursales/{sucursalId}/contactos")
     public ResponseEntity<List<SucursalContactoResumenTO>> getContactosDeSucursal(@PathVariable Long sucursalId) {
         return ResponseEntity.ok(contactoService.getContactosPorSucursal(sucursalId));

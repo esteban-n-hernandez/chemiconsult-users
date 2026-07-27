@@ -23,20 +23,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const esCliente = rol === "ROLE_CLIENTE";
     const esIT      = rol === "ROLE_IT";
 
+    const userModulos = esIT
+        ? null  // IT ve todo — no filtra
+        : JSON.parse(localStorage.getItem("userModulos") || "[]");
+
+    const puedeVer = (modulo) => esIT || (userModulos && userModulos.includes(modulo));
+
     const link = (href, icon, label) => `
         <a href="${href}" class="${paginaActual === href ? 'active' : ''}" title="${label}">
             <i class="bi ${icon}"></i><span class="sidebar-label"> ${label}</span>
         </a>`;
 
     const linksEmpleado = `
-        ${link('dashboard-empleado.html', 'bi-speedometer2',          'Dashboard')}
-        ${link('task.html',               'bi-list-task',              'Tareas')}
-        ${link('muestras.html',           'bi-file-earmark-medical',   'Muestras')}
-        ${link('clientes.html',           'bi-people',                 'Clientes')}
-        ${link('stock.html',              'bi-box-seam',               'Stock')}
-        ${link('panel-tecnico.html',      'bi-gear-fill',              'Panel Técnico')}
-        ${link('facturacion.html',        'bi-receipt',                'Facturación')}
-        ${esIT ? link('usuarios.html',    'bi-shield-lock',            'Usuarios') : ''}
+        ${puedeVer('DASHBOARD')     ? link('dashboard-empleado.html', 'bi-speedometer2',         'Dashboard')     : ''}
+        ${puedeVer('TAREAS')        ? link('task.html',               'bi-list-task',             'Tareas')        : ''}
+        ${puedeVer('MUESTRAS')      ? link('muestras.html',           'bi-file-earmark-medical',  'Muestras')      : ''}
+        ${puedeVer('AGENDA')        ? link('agenda.html',             'bi-calendar-check',        'Agenda')        : ''}
+        ${puedeVer('CLIENTES')      ? link('clientes.html',           'bi-people',                'Clientes')      : ''}
+        ${puedeVer('STOCK')         ? link('stock.html',              'bi-box-seam',              'Stock')         : ''}
+        ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html',      'bi-gear-fill',             'Panel Técnico') : ''}
+        ${puedeVer('FACTURACION')   ? link('facturacion.html',        'bi-receipt',               'Facturación')   : ''}
+        ${puedeVer('USUARIOS')      ? link('usuarios.html',           'bi-shield-lock',           'Usuarios')      : ''}
     `;
 
     const linksCliente = `
@@ -70,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("logout-btn")?.addEventListener("click", (e) => {
         e.preventDefault();
-        ["token", "userEmail", "userRole", "userName"].forEach((k) =>
+        ["token", "userEmail", "userRole", "userName", "userId", "userModulos"].forEach((k) =>
             localStorage.removeItem(k)
         );
         window.location.href = "login.html";

@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.List;
+import java.util.TimeZone;
 
 @SpringBootApplication
 public class ChemiconsultApplication implements CommandLineRunner {
@@ -15,7 +16,8 @@ public class ChemiconsultApplication implements CommandLineRunner {
 
 
     @Override
-    public void run(String... args) throws Exception {
-        System.out.println("App inicializada");
+    public void run(String... args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Argentina/Buenos_Aires"));
+        System.out.println("App Chemiconsult inicializada a las: " + java.time.LocalDateTime.now() + " en la zona horaria: " + TimeZone.getDefault().getID());
     }
 }

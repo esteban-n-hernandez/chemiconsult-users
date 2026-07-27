@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.MetodologiaDE;
 import com.chemiconsult.service.MetodologiaService;
@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/metodologias")
-@CrossOrigin(origins = "*") // Ajustalo según tu configuración de seguridad/CORS
 public class MetodologiaController {
 
     @Autowired
@@ -30,7 +29,7 @@ public class MetodologiaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.bajaLogica(id);
-        // Retornamos 204 No Content indicando que la operación fue exitosa
+        // Retornamos 204 No Content indicando que la operaciÃ³n fue exitosa
         return ResponseEntity.noContent().build();
     }
 }

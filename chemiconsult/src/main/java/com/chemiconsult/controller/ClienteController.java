@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.ClienteDE;
 import com.chemiconsult.service.ClienteService;
@@ -14,7 +14,6 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/clientes")
-@CrossOrigin(origins = "*")
 public class ClienteController {
 
     @Autowired
@@ -24,14 +23,14 @@ public class ClienteController {
 
     private final ClienteService clienteService;
 
-    // GET /api/clientes — solo activos
+    // GET /api/clientes â€” solo activos
     @GetMapping
     public List<ClienteDE> getClientes() {
         log.info("Obteniendo clientes activos");
         return clienteService.getClientes();
     }
 
-    // GET /api/clientes/todos — todos
+    // GET /api/clientes/todos â€” todos
     @GetMapping("/todos")
     public List<ClienteDE> getClientesTodos() {
         log.info("Obteniendo todos los clientes");

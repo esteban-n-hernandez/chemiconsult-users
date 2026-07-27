@@ -49,8 +49,21 @@ body {
 .container-fluid {
     flex: 1;
     padding: 2.5rem !important;
-    overflow-y: auto;
+    overflow: hidden;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* El row del kanban ocupa todo el espacio vertical restante */
+.container-fluid > .row {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.container-fluid > .row > [class*="col-"] {
+    height: 100%;
 }
 
 .page-title {
@@ -85,7 +98,7 @@ body {
     padding: 1.25rem 1rem;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 160px);
+    height: 100%;
     position: relative;
 }
 

@@ -1,0 +1,419 @@
+/* ── Agenda / Calendario de muestreos ── */
+
+/* ─── Layout (body flex = sidebar + contenido lado a lado) ── */
+body {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f0f2f5;
+    background-image: radial-gradient(rgba(26,26,46,.04) 1px, transparent 1px);
+    background-size: 5px 5px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    color: #0f172a;
+}
+
+.container-fluid {
+    flex: 1;
+    padding: 2.5rem !important;
+    overflow-y: auto;
+    height: 100vh;
+}
+
+:root {
+    --color-brand:    #5EA504;
+    --color-brand-lt: #e8f5d0;
+    --color-pending:  #f59e0b;
+    --color-confirm:  #5EA504;
+    --color-done:     #64748b;
+    --color-cancel:   #ef4444;
+    --radius:         10px;
+}
+
+/* ─── Toolbar ─────────────────────────────────────────── */
+.agenda-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.agenda-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.view-btn {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+}
+.view-btn.active,
+.view-btn:hover {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: #fff;
+}
+
+.btn-nuevo-muestreo {
+    background: var(--color-brand);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s;
+}
+.btn-nuevo-muestreo:hover { background: #4a8503; }
+
+/* ─── Leyenda ──────────────────────────────────────────── */
+.agenda-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #6b7280;
+}
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ─── Wrapper del calendario ───────────────────────────── */
+.calendar-wrapper {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+/* Sobreescribir estilos de FullCalendar para armonizar con el diseño */
+.fc .fc-toolbar-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.fc .fc-button {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    font-size: 12px !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    text-transform: none !important;
+}
+.fc .fc-button:hover {
+    background: #e5e7eb !important;
+}
+.fc .fc-button-active {
+    background: var(--color-brand) !important;
+    border-color: var(--color-brand) !important;
+    color: #fff !important;
+}
+
+.fc-event {
+    border-radius: 5px !important;
+    border: none !important;
+    font-size: 12px !important;
+    cursor: pointer;
+    padding: 2px 5px !important;
+}
+
+.fc-daygrid-event-dot { display: none !important; }
+
+.fc-col-header-cell {
+    background: #f9fafb;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.fc-day-today {
+    background: #f0fdf4 !important;
+}
+
+.fc .fc-daygrid-day-number {
+    font-size: 13px;
+    color: #374151;
+}
+
+/* ─── Modal ────────────────────────────────────────────── */
+.modal-header { border-bottom: 1px solid #f3f4f6; }
+.modal-footer { border-top: 1px solid #f3f4f6; }
+
+.estado-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+.estado-PENDIENTE  { background: #fef3c7; color: #92400e; }
+.estado-CONFIRMADO { background: #dcfce7; color: #166534; }
+.estado-REALIZADO  { background: #f1f5f9; color: #475569; }
+.estado-CANCELADO  { background: #fee2e2; color: #991b1b; }
+
+/* ─── Detalle de muestreo (modal ver) ─────────────────── */
+.detalle-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 14px;
+}
+.detalle-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.detalle-value {
+    font-size: 14px;
+    color: #111827;
+}
+
+/* ─── Lista de eventos en vista agenda ─────────────────── */
+.fc-list-event:hover td { background: #f0fdf4 !important; }
+
+/* ─── Pill de carga ────────────────────────────────────── */
+.calendar-wrapper { position: relative; }
+
+.cal-loading-pill {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 6px 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.10);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #374151;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+}
+.cal-loading-pill.visible { opacity: 1; }
+
+.cal-loading-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    border-top-color: var(--color-brand);
+    animation: pillSpin .7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes pillSpin { to { transform: rotate(360deg); } }
+
+/* ─── Modal "Nuevo / Editar muestreo" redesign ─────────── */
+.agenda-modal-dialog { max-width: 540px; }
+
+.agenda-modal-content {
+    border: none;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.14);
+}
+
+.agenda-modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 22px 24px 18px;
+    background: linear-gradient(135deg, #5EA504 0%, #4a8503 100%);
+    position: relative;
+}
+
+.agenda-modal-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.agenda-modal-title {
+    margin: 0 0 2px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+}
+.agenda-modal-subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255,255,255,.8);
+}
+
+.agenda-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,.2);
+    border: none;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .15s;
+    line-height: 1;
+    padding: 0;
+}
+.agenda-modal-close:hover { background: rgba(255,255,255,.35); }
+
+.agenda-modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 65vh;
+    overflow-y: auto;
+    background: #f9fafb;
+}
+
+/* Secciones del formulario */
+.form-section {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.form-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5EA504;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+
+.field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+.required { color: #ef4444; margin-left: 2px; }
+.field-opt {
+    font-weight: 400;
+    color: #9ca3af;
+    margin-left: 4px;
+    font-size: 11px;
+}
+
+.field-input {
+    width: 100%;
+    padding: 7px 11px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #111827;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.field-input:focus {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgba(94,165,4,.12);
+}
+select.field-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+
+.field-textarea { resize: vertical; min-height: 62px; }
+
+/* Footer del modal */
+.agenda-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #e9ecef;
+    background: #fff;
+}
+
+.btn-agenda-cancel {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 8px 18px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+}
+.btn-agenda-cancel:hover { background: #e5e7eb; }
+
+.btn-agenda-save {
+    background: var(--color-brand);
+    border: none;
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s;
+}
+.btn-agenda-save:hover { background: #4a8503; }

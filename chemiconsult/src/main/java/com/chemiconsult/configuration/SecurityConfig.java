@@ -35,8 +35,9 @@ public class SecurityConfig {
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
-    // En local se inyecta desde application-local.properties, en prod desde variables de entorno de Fly.io
-    @Value("${ALLOWED_ORIGINS:}")
+    // Dev local: sobrescribir en application-local.properties
+    // Prod: fly secrets set ALLOWED_ORIGINS=https://tu-app.fly.dev
+    @Value("${ALLOWED_ORIGINS:http://localhost:8080,http://localhost:63343}")
     private String allowedOriginsEnv;
 
 
@@ -95,20 +96,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes base siempre permitidos
-        List<String> origins = new java.util.ArrayList<>(List.of(
-                "http://localhost:63343",
-                "http://localhost:63342",
-                "http://localhost:8080",
-                "https://esteban-n-hernandez.github.io" // QUITAR cuando dejes GitHub Pages
-        ));
-
-        // En prod, Fly.io inyecta ALLOWED_ORIGINS con el dominio real (ej: https://chemiconsult.fly.dev)
-        if (allowedOriginsEnv != null && !allowedOriginsEnv.isBlank()) {
-            for (String origin : allowedOriginsEnv.split(",")) {
-                origins.add(origin.trim());
-            }
-        }
+        List<String> origins = java.util.Arrays.stream(allowedOriginsEnv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
 
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

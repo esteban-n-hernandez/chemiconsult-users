@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.repository.UserRepository;
@@ -18,7 +18,6 @@ import java.util.Map;
 @Log4j2
 @RestController
 @RequestMapping("/api/mensajes")
-@CrossOrigin(origins = "*")
 public class MensajeController {
 
     private final MensajeService mensajeService;
@@ -39,9 +38,18 @@ public class MensajeController {
     @GetMapping("/conversacion/{otroId}")
     public ResponseEntity<List<MensajeTO>> getConversacion(
             @PathVariable Long otroId,
+            @RequestParam(defaultValue = "10") int limite,
+            @RequestParam(required = false) Long antes,
+            @RequestParam(required = false) Long despues,
             @AuthenticationPrincipal UserDetails principal) {
         Long miId = resolverUserId(principal);
-        return ResponseEntity.ok(mensajeService.getConversacion(miId, otroId));
+        if (antes != null) {
+            return ResponseEntity.ok(mensajeService.getMensajesAntesDe(miId, otroId, antes, limite));
+        }
+        if (despues != null) {
+            return ResponseEntity.ok(mensajeService.getMensajesDespuesDe(miId, otroId, despues));
+        }
+        return ResponseEntity.ok(mensajeService.getUltimosMensajes(miId, otroId, limite));
     }
 
     @PostMapping
@@ -68,6 +76,14 @@ public class MensajeController {
     public ResponseEntity<Map<String, Long>> getNoLeidos(@AuthenticationPrincipal UserDetails principal) {
         Long miId = resolverUserId(principal);
         return ResponseEntity.ok(Map.of("total", mensajeService.getNoLeidosCount(miId)));
+    }
+
+    @GetMapping("/ultimo-leido/{receptorId}")
+    public ResponseEntity<Map<String, Long>> getUltimoLeido(
+            @PathVariable Long receptorId,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long miId = resolverUserId(principal);
+        return ResponseEntity.ok(Map.of("ultimoLeidoId", mensajeService.getUltimoMensajeLeidoId(miId, receptorId)));
     }
 
     private Long resolverUserId(UserDetails principal) {

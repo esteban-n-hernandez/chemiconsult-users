@@ -1,22 +1,22 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
-import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.service.UserService;
 import com.chemiconsult.to.CambiarPasswordTO;
 import com.chemiconsult.to.UserCreateTO;
 import com.chemiconsult.to.UserPerfilTO;
 import com.chemiconsult.to.UserTO;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -42,13 +42,13 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // Edita username/email — NO toca password (ver /password abajo)
+    // Edita username/email â€” NO toca password (ver /password abajo)
     @PutMapping("/{id}")
     public ResponseEntity<UserTO> updateUser(@PathVariable Long id, @RequestBody UserPerfilTO to) {
         return ResponseEntity.ok(userService.updatePerfil(id, to));
     }
 
-    // Cambio de contraseña — requiere la contraseña actual
+    // Cambio de contraseÃ±a â€” requiere la contraseÃ±a actual
     @PutMapping("/{id}/password")
     public ResponseEntity<Void> cambiarPassword(@PathVariable Long id, @RequestBody CambiarPasswordTO to) {
         userService.cambiarPassword(id, to);
@@ -60,11 +60,20 @@ public class UserController {
         userService.deleteUser(id);
     }
 
-    // Agregar a UserController:
-
     @GetMapping("/asignables")
     public List<UserTO> getUsersAsignables() {
         return userService.getUsersAsignables();
+    }
+
+    @GetMapping("/me/modulos")
+    public ResponseEntity<Set<ModuloEnum>> getMisModulos(Authentication auth) {
+        return ResponseEntity.ok(userService.getModulosForUser(auth.getName()));
+    }
+
+    @PutMapping("/{id}/modulos")
+    public ResponseEntity<Set<ModuloEnum>> setModulos(@PathVariable Long id,
+                                                       @RequestBody Set<ModuloEnum> modulos) {
+        return ResponseEntity.ok(userService.setModulos(id, modulos));
     }
 
     @Autowired

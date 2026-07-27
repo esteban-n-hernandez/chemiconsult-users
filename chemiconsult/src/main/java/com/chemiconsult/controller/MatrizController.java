@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.MatrizDE;
 import com.chemiconsult.repository.MatrizRepository;
@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/matrices")
-@CrossOrigin(origins = "*")
 public class MatrizController {
 
     private final MatrizRepository matrizRepository;
