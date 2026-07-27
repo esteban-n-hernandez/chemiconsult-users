@@ -370,6 +370,44 @@
     color: #5EA504;
 }
 
+/* ── Chat grupal: avatar ── */
+.chat-avatar-grupo {
+    background: linear-gradient(135deg, #5EA504, #2d6b0a) !important;
+    color: #ffffff !important;
+    font-size: 15px;
+}
+
+/* ── Chat grupal: nombre del emisor en burbujas "them" ── */
+.chat-msg-sender {
+    font-size: 10px;
+    font-weight: 600;
+    color: #5EA504;
+    align-self: flex-start;
+    margin-bottom: -1px;
+    padding-left: 3px;
+    font-family: 'Work Sans', 'Segoe UI', sans-serif;
+}
+
+/* ── Separador lista/individual ── */
+.chat-conv-divider {
+    height: 1px;
+    background: #eef3e6;
+    margin: 4px 8px;
+}
+
+/* ── Botón cargar mensajes anteriores ── */
+.chat-load-more {
+    text-align: center;
+    font-size: 11px;
+    color: #5EA504;
+    cursor: pointer;
+    padding: 6px 0;
+    font-family: 'Work Sans', 'Segoe UI', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+.chat-load-more:hover { text-decoration: underline; }
+
 /* ── Nueva conversación (buscar empleado) ── */
 .chat-new-conv-header {
     display: flex;

@@ -2,12 +2,14 @@
     'use strict';
 
     const API = '/api/mensajes';
+    const API_GRUPO = '/api/mensajes/grupo';
     const POLL_INTERVAL = 15000;
     const LIMITE_MSGS = 10;
 
     let panelAbierto = false;
     let vistaActual = 'lista';
     let convActual = null;
+    let modoGrupo = false;
     let pollTimer = null;
 
     // Estado de paginación de mensajes
@@ -52,6 +54,7 @@
                   .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
+    // ── Render mensajes ───────────────────────────────────────────────────────
     function renderMensaje(m) {
         const esYo = m.emisorId === miUserId();
         const clase = esYo ? 'me' : 'them';
@@ -59,6 +62,17 @@
             ? `<i class="bi ${m.leido ? 'bi-check2-all chat-tick leido' : 'bi-check2 chat-tick'}" data-msg-id="${m.id}"></i>`
             : '';
         return `<span class="chat-msg-time ${clase}">${formatHora(m.fechaEnvio)}${tick}</span>
+                <div class="chat-msg ${clase}" data-id="${m.id}">${escHtml(m.contenido)}</div>`;
+    }
+
+    function renderMensajeGrupo(m) {
+        const esYo = m.emisorId === miUserId();
+        const clase = esYo ? 'me' : 'them';
+        const senderLabel = !esYo
+            ? `<div class="chat-msg-sender">${escHtml(m.emisorNombre)}</div>`
+            : '';
+        return `<span class="chat-msg-time ${clase}">${formatHora(m.fechaEnvio)}</span>
+                ${senderLabel}
                 <div class="chat-msg ${clase}" data-id="${m.id}">${escHtml(m.contenido)}</div>`;
     }
 
@@ -73,7 +87,7 @@
     }
 
     async function pollEstadoLeido() {
-        if (!convActual) return;
+        if (!convActual || modoGrupo) return;
         try {
             const r = await fetch(`${API}/ultimo-leido/${convActual.id}`, { headers: headers() });
             if (!r.ok) return;
@@ -173,49 +187,87 @@
     async function cargarConversaciones() {
         const contenedor = document.getElementById('chatVistaLista');
         if (!contenedor) return;
+
+        // Ítem fijo: Chat General (siempre al tope)
+        const grupoHtml = `<div class="chat-contact-item chat-grupo-item" id="chatGrupoItem">
+            <div class="chat-avatar chat-avatar-grupo"><i class="bi bi-people-fill"></i></div>
+            <div class="chat-ci-info">
+                <div class="chat-ci-name">General</div>
+                <div class="chat-ci-preview">Chat grupal de empleados</div>
+            </div>
+        </div>
+        <div class="chat-conv-divider"></div>`;
+
         try {
             const r = await fetch(API + '/conversaciones', { headers: headers() });
-            if (!r.ok) { contenedor.innerHTML = '<div class="chat-empty"><i class="bi bi-exclamation-circle"></i>Error al cargar</div>'; return; }
-            const convs = await r.json();
-
-            if (convs.length === 0) {
-                contenedor.innerHTML = `<div class="chat-empty">
-                    <i class="bi bi-chat-square-dots"></i>
-                    <span>Sin conversaciones aún.<br>Usá el lápiz para empezar una.</span>
-                </div>`;
+            if (!r.ok) {
+                contenedor.innerHTML = grupoHtml + '<div class="chat-empty"><i class="bi bi-exclamation-circle"></i>Error al cargar</div>';
+                bindGrupoItem();
                 return;
             }
+            const convs = await r.json();
 
-            contenedor.innerHTML = convs.map(c => {
-                const col = colorParaId(c.otroUserId);
-                const ini = iniciales(c.otroUserNombre);
-                const badge = c.noLeidos > 0 ? `<span class="chat-ci-unread">${c.noLeidos}</span>` : '';
-                const preview = c.ultimoMensaje
-                    ? (c.ultimoMensaje.length > 35 ? c.ultimoMensaje.substring(0, 35) + '…' : c.ultimoMensaje)
-                    : '';
-                return `<div class="chat-contact-item" data-id="${c.otroUserId}" data-nombre="${c.otroUserNombre}">
-                    <div class="chat-avatar" style="background:${col.bg};color:${col.color}">${ini}</div>
-                    <div class="chat-ci-info">
-                        <div class="chat-ci-name">${c.otroUserNombre}</div>
-                        <div class="chat-ci-preview">${preview}</div>
-                    </div>
-                    <div class="chat-ci-meta">
-                        <span class="chat-ci-time">${formatHora(c.fechaUltimo)}</span>
-                        ${badge}
-                    </div>
-                </div>`;
-            }).join('');
+            let convHtml = convs.length === 0
+                ? `<div class="chat-empty">
+                    <i class="bi bi-chat-square-dots"></i>
+                    <span>Sin conversaciones privadas.<br>Usá el lápiz para empezar una.</span>
+                   </div>`
+                : convs.map(c => {
+                    const col = colorParaId(c.otroUserId);
+                    const ini = iniciales(c.otroUserNombre);
+                    const badge = c.noLeidos > 0 ? `<span class="chat-ci-unread">${c.noLeidos}</span>` : '';
+                    const preview = c.ultimoMensaje
+                        ? (c.ultimoMensaje.length > 35 ? c.ultimoMensaje.substring(0, 35) + '…' : c.ultimoMensaje)
+                        : '';
+                    return `<div class="chat-contact-item" data-id="${c.otroUserId}" data-nombre="${c.otroUserNombre}">
+                        <div class="chat-avatar" style="background:${col.bg};color:${col.color}">${ini}</div>
+                        <div class="chat-ci-info">
+                            <div class="chat-ci-name">${c.otroUserNombre}</div>
+                            <div class="chat-ci-preview">${preview}</div>
+                        </div>
+                        <div class="chat-ci-meta">
+                            <span class="chat-ci-time">${formatHora(c.fechaUltimo)}</span>
+                            ${badge}
+                        </div>
+                    </div>`;
+                }).join('');
 
-            contenedor.querySelectorAll('.chat-contact-item').forEach(el => {
+            contenedor.innerHTML = grupoHtml + convHtml;
+
+            contenedor.querySelectorAll('.chat-contact-item:not(.chat-grupo-item)').forEach(el => {
                 el.addEventListener('click', () => abrirConversacion(parseInt(el.dataset.id), el.dataset.nombre));
             });
+            bindGrupoItem();
         } catch (_) {
-            contenedor.innerHTML = '<div class="chat-empty"><i class="bi bi-exclamation-circle"></i>Error de red</div>';
+            contenedor.innerHTML = grupoHtml + '<div class="chat-empty"><i class="bi bi-exclamation-circle"></i>Error de red</div>';
+            bindGrupoItem();
         }
     }
 
-    // ── Conversación: carga inicial (últimos N) ───────────────────────────────
+    function bindGrupoItem() {
+        const el = document.getElementById('chatGrupoItem');
+        if (el) el.addEventListener('click', abrirGrupo);
+    }
+
+    // ── Chat grupal ───────────────────────────────────────────────────────────
+    function abrirGrupo() {
+        modoGrupo = true;
+        primerMsgId = null;
+        ultimoMsgId = null;
+        hayMasAnteriores = false;
+        cargandoAnteriores = false;
+
+        const avatar = document.getElementById('chatConvAvatar');
+        avatar.innerHTML = '<i class="bi bi-people-fill"></i>';
+        avatar.className = 'chat-avatar-sm chat-avatar-grupo';
+        document.getElementById('chatConvNombre').textContent = 'General';
+        mostrarVista('conv');
+        cargarMensajesIniciales();
+    }
+
+    // ── Conversación privada ──────────────────────────────────────────────────
     async function abrirConversacion(userId, nombre) {
+        modoGrupo = false;
         convActual = { id: userId, nombre };
         primerMsgId = null;
         ultimoMsgId = null;
@@ -223,24 +275,29 @@
         cargandoAnteriores = false;
 
         const col = colorParaId(userId);
-        document.getElementById('chatConvAvatar').textContent = iniciales(nombre);
-        document.getElementById('chatConvAvatar').style.background = col.bg;
-        document.getElementById('chatConvAvatar').style.color = col.color;
+        const avatar = document.getElementById('chatConvAvatar');
+        avatar.textContent = iniciales(nombre);
+        avatar.className = 'chat-avatar-sm';
+        avatar.style.background = col.bg;
+        avatar.style.color = col.color;
         document.getElementById('chatConvNombre').textContent = nombre;
         mostrarVista('conv');
 
         await cargarMensajesIniciales();
         await fetch(API + '/leer/' + userId, { method: 'PUT', headers: headers() });
         actualizarBadge();
-        await pollEstadoLeido();
     }
 
+    // ── Carga inicial (últimos N) ─────────────────────────────────────────────
     async function cargarMensajesIniciales() {
-        if (!convActual) return;
+        if (!convActual && !modoGrupo) return;
         const contenedor = document.getElementById('chatMensajes');
         contenedor.innerHTML = '';
         try {
-            const r = await fetch(`${API}/conversacion/${convActual.id}?limite=${LIMITE_MSGS}`, { headers: headers() });
+            const url = modoGrupo
+                ? `${API_GRUPO}?limite=${LIMITE_MSGS}`
+                : `${API}/conversacion/${convActual.id}?limite=${LIMITE_MSGS}`;
+            const r = await fetch(url, { headers: headers() });
             if (!r.ok) return;
             const msgs = await r.json();
 
@@ -254,9 +311,10 @@
             primerMsgId = msgs[0].id;
             ultimoMsgId = msgs[msgs.length - 1].id;
 
+            const renderFn = modoGrupo ? renderMensajeGrupo : renderMensaje;
             contenedor.innerHTML =
                 (hayMasAnteriores ? '<div class="chat-load-more" id="chatLoadMore">Ver mensajes anteriores</div>' : '') +
-                msgs.map(renderMensaje).join('');
+                msgs.map(renderFn).join('');
 
             contenedor.scrollTop = contenedor.scrollHeight;
             bindScrollListener(contenedor);
@@ -275,14 +333,17 @@
     }
 
     async function cargarMensajesAnteriores() {
-        if (!convActual || !primerMsgId || cargandoAnteriores) return;
+        if (!primerMsgId || cargandoAnteriores) return;
         cargandoAnteriores = true;
 
         const contenedor = document.getElementById('chatMensajes');
         const alturaAntes = contenedor.scrollHeight;
 
         try {
-            const r = await fetch(`${API}/conversacion/${convActual.id}?antes=${primerMsgId}&limite=${LIMITE_MSGS}`, { headers: headers() });
+            const url = modoGrupo
+                ? `${API_GRUPO}?antes=${primerMsgId}&limite=${LIMITE_MSGS}`
+                : `${API}/conversacion/${convActual.id}?antes=${primerMsgId}&limite=${LIMITE_MSGS}`;
+            const r = await fetch(url, { headers: headers() });
             if (!r.ok) { cargandoAnteriores = false; return; }
             const msgs = await r.json();
 
@@ -293,11 +354,11 @@
 
             if (msgs.length > 0) {
                 primerMsgId = msgs[0].id;
+                const renderFn = modoGrupo ? renderMensajeGrupo : renderMensaje;
                 const nuevoHtml =
                     (hayMasAnteriores ? '<div class="chat-load-more" id="chatLoadMore">Ver mensajes anteriores</div>' : '') +
-                    msgs.map(renderMensaje).join('');
+                    msgs.map(renderFn).join('');
                 contenedor.insertAdjacentHTML('afterbegin', nuevoHtml);
-                // Mantener posición de scroll
                 contenedor.scrollTop = contenedor.scrollHeight - alturaAntes;
 
                 if (hayMasAnteriores) {
@@ -311,9 +372,12 @@
 
     // ── Polling incremental: solo mensajes nuevos ─────────────────────────────
     async function pollMensajesNuevos() {
-        if (!convActual || ultimoMsgId === null) return;
+        if (ultimoMsgId === null) return;
         try {
-            const r = await fetch(`${API}/conversacion/${convActual.id}?despues=${ultimoMsgId}`, { headers: headers() });
+            const url = modoGrupo
+                ? `${API_GRUPO}?despues=${ultimoMsgId}`
+                : `${API}/conversacion/${convActual.id}?despues=${ultimoMsgId}`;
+            const r = await fetch(url, { headers: headers() });
             if (!r.ok) return;
             const msgs = await r.json();
             if (msgs.length === 0) return;
@@ -321,32 +385,40 @@
             const contenedor = document.getElementById('chatMensajes');
             const alFondo = contenedor.scrollHeight - contenedor.scrollTop - contenedor.clientHeight < 60;
 
-            contenedor.insertAdjacentHTML('beforeend', msgs.map(renderMensaje).join(''));
+            const renderFn = modoGrupo ? renderMensajeGrupo : renderMensaje;
+            contenedor.insertAdjacentHTML('beforeend', msgs.map(renderFn).join(''));
             ultimoMsgId = msgs[msgs.length - 1].id;
 
             if (alFondo) contenedor.scrollTop = contenedor.scrollHeight;
 
-            await fetch(API + '/leer/' + convActual.id, { method: 'PUT', headers: headers() });
+            if (!modoGrupo) {
+                await fetch(API + '/leer/' + convActual.id, { method: 'PUT', headers: headers() });
+            }
         } catch (_) {}
     }
 
     // ── Enviar mensaje ────────────────────────────────────────────────────────
     async function enviarMensaje() {
-        if (!convActual) return;
+        if (!convActual && !modoGrupo) return;
         const input = document.getElementById('chatInput');
         const texto = input.value.trim();
         if (!texto) return;
         input.value = '';
         try {
-            const r = await fetch(API, {
+            const url = modoGrupo ? API_GRUPO : API;
+            const body = modoGrupo
+                ? { contenido: texto }
+                : { receptorId: convActual.id, contenido: texto };
+            const r = await fetch(url, {
                 method: 'POST',
                 headers: headers(),
-                body: JSON.stringify({ receptorId: convActual.id, contenido: texto })
+                body: JSON.stringify(body)
             });
             if (!r.ok) return;
             const msg = await r.json();
             const contenedor = document.getElementById('chatMensajes');
-            contenedor.insertAdjacentHTML('beforeend', renderMensaje(msg));
+            const renderFn = modoGrupo ? renderMensajeGrupo : renderMensaje;
+            contenedor.insertAdjacentHTML('beforeend', renderFn(msg));
             ultimoMsgId = msg.id;
             contenedor.scrollTop = contenedor.scrollHeight;
         } catch (_) {}
@@ -405,6 +477,7 @@
         panelAbierto = false;
         document.getElementById('chatPanel').classList.remove('chat-open');
         convActual = null;
+        modoGrupo = false;
         primerMsgId = null;
         ultimoMsgId = null;
         detenerPolling();
@@ -415,7 +488,7 @@
     function iniciarPolling() {
         detenerPolling();
         pollTimer = setInterval(async () => {
-            if (vistaActual === 'conv' && convActual) {
+            if (vistaActual === 'conv' && (convActual || modoGrupo)) {
                 await pollMensajesNuevos();
                 await pollEstadoLeido();
             } else if (vistaActual === 'lista') {
@@ -441,6 +514,7 @@
         document.getElementById('chatCerrarBtn').addEventListener('click', cerrarPanel);
         document.getElementById('chatConvBack').addEventListener('click', () => {
             convActual = null;
+            modoGrupo = false;
             primerMsgId = null;
             ultimoMsgId = null;
             mostrarVista('lista');
