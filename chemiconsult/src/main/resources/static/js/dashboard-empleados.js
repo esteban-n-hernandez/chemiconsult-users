@@ -1253,10 +1253,31 @@ document.addEventListener("click", function (e) {
     }
 });
 
+async function cargarMustreosKPI() {
+    try {
+        const r = await fetchDash(`${API_BASE}/api/muestreos`);
+        if (!r.ok) return;
+        const muestreos = await r.json();
+        const pendientes  = muestreos.filter(m => m.estado === "PENDIENTE").length;
+        const confirmados = muestreos.filter(m => m.estado === "CONFIRMADO").length;
+        const total = pendientes + confirmados;
+
+        const el    = document.getElementById("kpi-muestreos");
+        const elSub = document.getElementById("kpi-muestreos-sub");
+        if (el) el.textContent = total;
+        if (elSub) {
+            elSub.innerHTML = confirmados > 0
+                ? `<i class="bi bi-check2-circle"></i> ${confirmados} confirmados`
+                : `<i class="bi bi-calendar-plus"></i> Ninguno confirmado aún`;
+        }
+    } catch { /* no bloquea el dashboard */ }
+}
+
 // Cargar al iniciar
 cargarEstudios();
 cargarTareasKPI();
 cargarStockKPI();
+cargarMustreosKPI();
 
 // ════════════════════════════════
 //  PANEL VISIBILITY MANAGER
@@ -1273,6 +1294,7 @@ const DP_META = {
     tareas:        { type: "kpi",   icon: "bi-list-check",       label: "Tareas pendientes" },
     stock:         { type: "kpi",   icon: "bi-box-seam",         label: "Stock bajo" },
     demoradas:     { type: "kpi",   icon: "bi-clock-history",    label: "Demoradas" },
+    muestreos:     { type: "kpi",   icon: "bi-calendar-check",   label: "Muestreos pendientes" },
 };
 
 function dpLoad() {
