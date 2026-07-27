@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/task/task.css">
+    <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/ui.css">
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="TAREAS"></script>
 </head>
@@ -103,10 +104,16 @@
 <!-- Modal nueva tarea -->
 <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form class="modal-content" id="taskForm">
+        <form class="modal-content modal-alta" id="taskForm">
             <div class="modal-header">
-                <h5 class="modal-title" id="taskModalTitle">Nueva tarea</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="mh-icon"><i class="bi bi-check2-square"></i></div>
+                <div class="mh-info">
+                    <div class="mh-eyebrow">Tarea</div>
+                    <h5 class="modal-title" id="taskModalTitle">Nueva tarea</h5>
+                </div>
+                <button type="button" class="modal-close" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="taskId">
@@ -139,8 +146,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn btn-primary" type="submit" id="taskSubmitBtn">Guardar</button>
+                <button class="btn-cancelar" type="button" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn-guardar" type="submit" id="taskSubmitBtn">Guardar</button>
             </div>
         </form>
     </div>

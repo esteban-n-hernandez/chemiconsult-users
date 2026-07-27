@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/muestras/muestras.css"/>
+    <link rel="stylesheet" href="css/modal.css"/>
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="MUESTRAS"></script>
     <style>
         /* Fallback local: opacar el bloque de normativas cuando "Sin normativa" está tildado.
@@ -107,7 +108,11 @@
     <div class="modal-box">
 
         <div class="modal-header">
-            <h5 id="modalTitulo"><i class="bi bi-flask"></i> Alta de muestra</h5>
+            <div class="mh-icon"><i class="bi bi-flask"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Muestra</div>
+                <h5 id="modalTitulo">Alta de muestra</h5>
+            </div>
             <button class="modal-close" id="modalClose">
                 <i class="bi bi-x-lg"></i>
             </button>

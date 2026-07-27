@@ -166,7 +166,7 @@ function renderPaginacion() {
 function abrirModal() {
     limpiarFormulario();
     itemEditandoId = null;
-    modalTitulo.innerHTML = '<i class="bi bi-box-seam"></i> Nuevo ítem';
+    modalTitulo.textContent = 'Nuevo ítem';
     abrirOverlay(modalStock);
 }
 
@@ -174,7 +174,7 @@ function abrirEdicion(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
     itemEditandoId = id;
-    modalTitulo.innerHTML = '<i class="bi bi-pencil"></i> Editar ítem';
+    modalTitulo.textContent = 'Editar ítem';
     inputNombre.value = item.nombre;
     inputCategoria.value = item.categoria;
     inputDescripcion.value = item.descripcion || '';

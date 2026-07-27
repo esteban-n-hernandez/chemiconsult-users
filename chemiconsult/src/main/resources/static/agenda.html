@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
     <link rel="stylesheet" href="css/agenda/agenda.css"/>
+    <link rel="stylesheet" href="css/modal.css"/>
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="AGENDA"></script>
 </head>
 <body>
@@ -159,23 +160,21 @@
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="modal fade" id="formModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered agenda-modal-dialog">
-        <form class="modal-content agenda-modal-content" id="muestreoForm">
+        <form class="modal-content modal-alta" id="muestreoForm">
 
             <!-- Header -->
-            <div class="agenda-modal-header">
-                <div class="agenda-modal-icon">
-                    <i class="bi bi-calendar-plus"></i>
+            <div class="modal-header">
+                <div class="mh-icon"><i class="bi bi-calendar-plus"></i></div>
+                <div class="mh-info">
+                    <div class="mh-eyebrow">Muestreo</div>
+                    <h5 class="modal-title" id="formModalTitle">Nuevo muestreo</h5>
                 </div>
-                <div>
-                    <h5 class="agenda-modal-title" id="formModalTitle">Nuevo muestreo</h5>
-                    <p class="agenda-modal-subtitle">Completá los datos del muestreo a agendar</p>
-                </div>
-                <button type="button" class="agenda-modal-close" data-bs-dismiss="modal" aria-label="Cerrar">
+                <button type="button" class="modal-close" data-bs-dismiss="modal" aria-label="Cerrar">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
 
-            <div class="agenda-modal-body">
+            <div class="modal-body agenda-modal-body">
 
                 <!-- Sección: Cliente -->
                 <div class="form-section">
@@ -252,9 +251,9 @@
             </div>
 
             <!-- Footer -->
-            <div class="agenda-modal-footer">
-                <button type="button" class="btn-agenda-cancel" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn-agenda-save">
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn-guardar">
                     <i class="bi bi-check-lg"></i> Guardar muestreo
                 </button>
             </div>
