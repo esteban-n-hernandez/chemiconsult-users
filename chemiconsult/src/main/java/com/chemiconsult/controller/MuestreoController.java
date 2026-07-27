@@ -1,4 +1,4 @@
-ackage com.chemiconsult.controller;
+package com.chemiconsult.controller;
 
 import com.chemiconsult.enums.EstadoMuestreoEnum;
 import com.chemiconsult.service.MuestreoService;

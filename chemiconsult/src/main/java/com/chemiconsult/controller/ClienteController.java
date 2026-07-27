@@ -1,4 +1,4 @@
-ackage com.chemiconsult.controller;
+package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.ClienteDE;
 import com.chemiconsult.service.ClienteService;
