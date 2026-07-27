@@ -1,6 +1,7 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.mapper.UserMapper;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.CambiarPasswordTO;
@@ -12,7 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -120,8 +123,23 @@ public class UserService {
         return UserMapper.mapEntityToUserTOList(userRepository.findByRolIn(rolesPermitidos));
     }
 
+    public Set<ModuloEnum> getModulosForUser(String email) {
+        UserDE user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
+        // IT siempre recibe todos los módulos
+        if ("ROLE_IT".equalsIgnoreCase(user.getRol()) || "IT".equalsIgnoreCase(user.getRol())) {
+            return EnumSet.allOf(ModuloEnum.class);
+        }
+        return user.getModulos();
+    }
 
-
+    public Set<ModuloEnum> setModulos(Long id, Set<ModuloEnum> modulos) {
+        UserDE user = getUserById(id);
+        user.getModulos().clear();
+        if (modulos != null) user.getModulos().addAll(modulos);
+        user.setUpdateDate(LocalDate.now());
+        return userRepository.save(user).getModulos();
+    }
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {

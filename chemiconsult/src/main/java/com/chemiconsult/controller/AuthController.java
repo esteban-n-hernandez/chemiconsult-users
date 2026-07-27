@@ -1,9 +1,11 @@
 package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.security.JwtUtil;
 import com.chemiconsult.service.JwtUserDetailsService;
+import com.chemiconsult.service.UserService;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Set;
+
 @RestController
 public class AuthController {
 
@@ -24,6 +28,7 @@ public class AuthController {
     private final JwtUserDetailsService jwtUserDetailsService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
@@ -45,8 +50,9 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(userDetails.getUsername(), user.getId());
 
-        // FIX: agregamos username — el front lo necesita para mostrar el nombre correcto
-        return ResponseEntity.ok(new AuthResponse(token, role, user.getId(), user.getUsername()));
+        Set<ModuloEnum> modulos = userService.getModulosForUser(email);
+
+        return ResponseEntity.ok(new AuthResponse(token, role, user.getId(), user.getUsername(), modulos));
     }
 
     @Setter
@@ -56,22 +62,25 @@ public class AuthController {
         private String role;
         private Long userId;
         private String username;
+        private Set<ModuloEnum> modulos;
 
-        public AuthResponse(String token, String role, Long userId, String username) {
+        public AuthResponse(String token, String role, Long userId, String username, Set<ModuloEnum> modulos) {
             this.token = token;
             this.role = role;
             this.userId = userId;
             this.username = username;
+            this.modulos = modulos;
         }
     }
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUserDetailsService jwtUserDetailsService, JwtUtil jwtUtil,
-                          UserRepository userRepository) {
+                          UserRepository userRepository, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtUserDetailsService = jwtUserDetailsService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.userService = userService;
     }
 }

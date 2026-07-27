@@ -1,18 +1,19 @@
 package com.chemiconsult.controller;
 
-import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.service.UserService;
 import com.chemiconsult.to.CambiarPasswordTO;
 import com.chemiconsult.to.UserCreateTO;
 import com.chemiconsult.to.UserPerfilTO;
 import com.chemiconsult.to.UserTO;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -60,11 +61,20 @@ public class UserController {
         userService.deleteUser(id);
     }
 
-    // Agregar a UserController:
-
     @GetMapping("/asignables")
     public List<UserTO> getUsersAsignables() {
         return userService.getUsersAsignables();
+    }
+
+    @GetMapping("/me/modulos")
+    public ResponseEntity<Set<ModuloEnum>> getMisModulos(Authentication auth) {
+        return ResponseEntity.ok(userService.getModulosForUser(auth.getName()));
+    }
+
+    @PutMapping("/{id}/modulos")
+    public ResponseEntity<Set<ModuloEnum>> setModulos(@PathVariable Long id,
+                                                       @RequestBody Set<ModuloEnum> modulos) {
+        return ResponseEntity.ok(userService.setModulos(id, modulos));
     }
 
     @Autowired
