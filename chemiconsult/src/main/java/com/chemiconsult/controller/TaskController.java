@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.enums.TaskStatusEnum;
 import com.chemiconsult.service.TaskService;
@@ -13,7 +13,6 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/task")
-@CrossOrigin(origins = "*")
 public class TaskController {
 
     TaskService taskService;
@@ -33,7 +32,7 @@ public class TaskController {
         return ResponseEntity.status(201).body(creada);
     }
 
-    // PUT /api/task/{id} — edición completa (título, descripción, asignado)
+    // PUT /api/task/{id} â€” ediciÃ³n completa (tÃ­tulo, descripciÃ³n, asignado)
     @PutMapping("/{id}")
     public ResponseEntity<TaskTO> updateTask(@PathVariable Long id, @RequestBody TaskTO task) {
         log.info("Actualizando tarea con ID: {}", id);

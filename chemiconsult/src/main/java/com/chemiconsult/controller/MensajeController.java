@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.repository.UserRepository;
@@ -18,7 +18,6 @@ import java.util.Map;
 @Log4j2
 @RestController
 @RequestMapping("/api/mensajes")
-@CrossOrigin(origins = "*")
 public class MensajeController {
 
     private final MensajeService mensajeService;

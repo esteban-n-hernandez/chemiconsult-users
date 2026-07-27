@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.AnalisisDE;
 import com.chemiconsult.enums.EstadoMuestraEnum;
@@ -27,7 +27,6 @@ import java.util.Optional;
 @Log4j2
 @RestController
 @RequestMapping("/api/estudios")
-@CrossOrigin(origins = "*")
 public class AnalisisController {
 
     private final AnalisisService analisisService;

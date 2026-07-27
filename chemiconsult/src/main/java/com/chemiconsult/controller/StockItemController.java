@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.service.StockItemService;
 import com.chemiconsult.to.StockItemTO;
@@ -12,7 +12,6 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/stock")
-@CrossOrigin(origins = "*")
 public class StockItemController {
 
     private final StockItemService stockItemService;
@@ -25,28 +24,28 @@ public class StockItemController {
     // GET /api/stock
     @GetMapping
     public ResponseEntity<List<StockItemTO>> getAll() {
-        log.info("Obteniendo todos los ítems de stock");
+        log.info("Obteniendo todos los Ã­tems de stock");
         return ResponseEntity.ok(stockItemService.getAll());
     }
 
     // POST /api/stock
     @PostMapping
     public ResponseEntity<StockItemTO> create(@RequestBody StockItemTO to) {
-        log.info("Creando ítem de stock: {}", to.getNombre());
+        log.info("Creando Ã­tem de stock: {}", to.getNombre());
         return ResponseEntity.status(201).body(stockItemService.create(to));
     }
 
     // PUT /api/stock/{id}
     @PutMapping("/{id}")
     public ResponseEntity<StockItemTO> update(@PathVariable Long id, @RequestBody StockItemTO to) {
-        log.info("Actualizando ítem de stock con ID: {}", id);
+        log.info("Actualizando Ã­tem de stock con ID: {}", id);
         return ResponseEntity.ok(stockItemService.update(id, to));
     }
 
     // DELETE /api/stock/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("Eliminando ítem de stock con ID: {}", id);
+        log.info("Eliminando Ã­tem de stock con ID: {}", id);
         stockItemService.delete(id);
         return ResponseEntity.noContent().build();
     }

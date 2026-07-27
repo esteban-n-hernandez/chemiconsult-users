@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.service.UserService;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -43,13 +42,13 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // Edita username/email — NO toca password (ver /password abajo)
+    // Edita username/email â€” NO toca password (ver /password abajo)
     @PutMapping("/{id}")
     public ResponseEntity<UserTO> updateUser(@PathVariable Long id, @RequestBody UserPerfilTO to) {
         return ResponseEntity.ok(userService.updatePerfil(id, to));
     }
 
-    // Cambio de contraseña — requiere la contraseña actual
+    // Cambio de contraseÃ±a â€” requiere la contraseÃ±a actual
     @PutMapping("/{id}/password")
     public ResponseEntity<Void> cambiarPassword(@PathVariable Long id, @RequestBody CambiarPasswordTO to) {
         userService.cambiarPassword(id, to);

@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.TipoMuestraDE;
 import com.chemiconsult.service.TipoMuestraService;
@@ -12,19 +12,18 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tipos-muestra")
-@CrossOrigin(origins = "*")
 public class TipoMuestraController {
 
 
     TipoMuestraService tipoMuestraService;
 
-    // GET /api/tipos-muestra — solo activos
+    // GET /api/tipos-muestra â€” solo activos
     @GetMapping
     public List<TipoMuestraDE> getTiposMuestra() {
         return tipoMuestraService.getTiposMuestra();
     }
 
-    // GET /api/tipos-muestra/todos — todos
+    // GET /api/tipos-muestra/todos â€” todos
     @GetMapping("/todos")
     public List<TipoMuestraDE> getTiposMuestraTodos() {
         return tipoMuestraService.getTiposMuestraTodos();

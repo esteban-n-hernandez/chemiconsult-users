@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.enums.EstadoMuestreoEnum;
 import com.chemiconsult.service.MuestreoService;
@@ -15,7 +15,6 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/muestreos")
-@CrossOrigin(origins = "*")
 public class MuestreoController {
 
     private final MuestreoService muestreoService;
@@ -25,7 +24,7 @@ public class MuestreoController {
         this.muestreoService = muestreoService;
     }
 
-    // GET /api/muestreos  — todos, o filtrados por rango de fechas
+    // GET /api/muestreos  â€” todos, o filtrados por rango de fechas
     @GetMapping
     public ResponseEntity<List<MuestreoTO>> getAll(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,

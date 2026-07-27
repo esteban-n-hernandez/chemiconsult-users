@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.repository.UserRepository;
@@ -15,7 +15,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/mensajes/grupo")
-@CrossOrigin(origins = "*")
 public class MensajeGrupoController {
 
     private final MensajeGrupoService mensajeGrupoService;

@@ -1,4 +1,4 @@
-package com.chemiconsult.controller;
+﻿package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.ParametroDE;
 import com.chemiconsult.service.ParametroService;
@@ -12,18 +12,17 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/parametros")
-@CrossOrigin(origins = "*")
 public class ParametroController {
 
     ParametroService parametroService;
 
-    // GET /api/parametros — solo activos
+    // GET /api/parametros â€” solo activos
     @GetMapping
     public List<ParametroDE> getParametros() {
         return parametroService.getParametros();
     }
 
-    // GET /api/parametros/todos — todos incluyendo inactivos
+    // GET /api/parametros/todos â€” todos incluyendo inactivos
     @GetMapping("/todos")
     public List<ParametroDE> getParametrosTodos() {
         return parametroService.getParametrosTodos();
@@ -54,14 +53,14 @@ public class ParametroController {
         return ResponseEntity.ok(actualizado);
     }
 
-    // PATCH /api/parametros/{id}/desactivar — baja lógica
+    // PATCH /api/parametros/{id}/desactivar â€” baja lÃ³gica
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<Void> desactivarParametro(@PathVariable Long id) {
         parametroService.desactivarParametro(id);
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE /api/parametros/{id} — baja física
+    // DELETE /api/parametros/{id} â€” baja fÃ­sica
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteParametro(@PathVariable Long id) {
         parametroService.deleteParametro(id);
