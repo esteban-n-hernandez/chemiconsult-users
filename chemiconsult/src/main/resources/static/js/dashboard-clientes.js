@@ -165,46 +165,33 @@ function renderTabla() {
 }
 
 // ──────────────────────────────────────────
-// PDF SIDE PANEL
+// MODAL PDF
 // ──────────────────────────────────────────
-const pdfPanel   = document.getElementById("pdfPanel");
-const pdfOverlay = document.getElementById("pdfOverlay");
 const pdfIframe  = document.getElementById("pdfIframe");
 const pdfLoading = document.getElementById("pdfLoading");
 
 function abrirPDF(estudioId, protocolo) {
     const url = `${API_CLIENTES_BASE}/estudios/${estudioId}/resultado`;
 
-    // Actualizar título y links
-    document.getElementById("pdfPanelTitulo").textContent = `Informe ${protocolo}`;
-    document.getElementById("btnDescargarPdf").href = url;
+    document.getElementById("pdfModalTitulo").textContent = `Informe ${protocolo}`;
+    document.getElementById("btnDescargarPdf").href     = url;
     document.getElementById("btnDescargarPdf").download = `resultado_${protocolo}.pdf`;
-    document.getElementById("btnAbrirNueva").href = url;
+    document.getElementById("btnAbrirNueva").href       = url;
 
-    // Mostrar loading
-    pdfLoading.style.display  = "flex";
-    pdfIframe.style.display   = "none";
-    pdfIframe.src             = "";
+    pdfLoading.style.display = "flex";
+    pdfLoading.innerHTML     = `<div class="spinner"></div><span>Cargando informe...</span>`;
+    pdfIframe.style.display  = "none";
+    pdfIframe.src            = "";
 
-    // Abrir panel
-    pdfPanel.classList.add("open");
-    pdfOverlay.classList.add("open");
-    document.body.style.overflow = "hidden";
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("pdfModal")).show();
 
-    // Cargar iframe con token en header no es posible directo,
-    // usamos blob URL para evitar problemas de auth
     fetch(url, { headers: { "Authorization": `Bearer ${token}` } })
-        .then(res => {
-            if (!res.ok) throw new Error("No se pudo cargar el PDF");
-            return res.blob();
-        })
+        .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
         .then(blob => {
-            const blobUrl        = URL.createObjectURL(blob);
-            pdfIframe.src        = blobUrl;
-            pdfIframe.style.display = "block";
+            const blobUrl = URL.createObjectURL(blob);
+            pdfIframe.src = blobUrl;
+            pdfIframe.style.display  = "block";
             pdfLoading.style.display = "none";
-
-            // Actualizar links con blob para descarga directa
             document.getElementById("btnDescargarPdf").href = blobUrl;
             document.getElementById("btnAbrirNueva").href   = blobUrl;
         })
@@ -214,15 +201,9 @@ function abrirPDF(estudioId, protocolo) {
         });
 }
 
-function cerrarPanel() {
-    pdfPanel.classList.remove("open");
-    pdfOverlay.classList.remove("open");
-    document.body.style.overflow = "";
-    setTimeout(() => { pdfIframe.src = ""; }, 300);
-}
-
-document.getElementById("btnCerrarPanel").addEventListener("click", cerrarPanel);
-pdfOverlay.addEventListener("click", cerrarPanel);
+document.getElementById("pdfModal").addEventListener("hidden.bs.modal", () => {
+    pdfIframe.src = "";
+});
 
 // ── Buscador ──
 document.getElementById("buscadorProtocolo").addEventListener("input", function () {
