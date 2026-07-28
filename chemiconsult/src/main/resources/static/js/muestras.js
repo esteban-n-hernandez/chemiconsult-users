@@ -846,7 +846,7 @@ function renderizarTablaMuestras(lista) {
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
             <td>${m.matrizNombre || m.tipoAnalisis || '—'}</td>
-            <td><span class="badge-estado ${(m.estado || '').toLowerCase()}">${m.estado || '—'}</span></td>
+            <td><span class="${badgeClassDetalle(m.estado)}">${labelEstadoDetalle(m.estado)}</span></td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
             <td class="acciones-celda">
