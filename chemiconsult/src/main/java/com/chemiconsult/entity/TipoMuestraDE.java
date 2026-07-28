@@ -1,13 +1,11 @@
 package com.chemiconsult.entity;
 
-
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
 @Table(name = "TIPO_MUESTRA")
@@ -19,7 +17,7 @@ public class TipoMuestraDE {
     private Long id;
 
     @Column(name = "NOMBRE", nullable = false, unique = true)
-    private String nombre; // "Agua potable", "Efluente industrial"
+    private String nombre;
 
     @Column(name = "DESCRIPCION")
     private String descripcion;
@@ -33,14 +31,9 @@ public class TipoMuestraDE {
     @Column(name = "UPDATE_DATE")
     private LocalDate updateDate;
 
-    // Parámetros por defecto para este tipo
-    @ManyToMany
-    @JoinTable(
-            name = "TIPO_MUESTRA_PARAM",
-            joinColumns = @JoinColumn(name = "TIPO_MUESTRA_ID"),
-            inverseJoinColumns = @JoinColumn(name = "PARAMETRO_ID")
-    )
+    @ManyToOne
+    @JoinColumn(name = "MATRIZ_ID", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<ParametroDE> parametrosPorDefecto;
+    private MatrizDE matriz;
 }

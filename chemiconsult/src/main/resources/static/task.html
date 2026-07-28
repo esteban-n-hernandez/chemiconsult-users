@@ -1,0 +1,246 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Tareas | Chemiconsult</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/sidebar.css"/>
+    <link rel="stylesheet" href="css/task/task.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="TAREAS"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar-container"></div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container-fluid py-4">
+    <div class="page-header">
+        <div>
+            <h1>Tareas</h1>
+            <p id="fecha-hoy"></p>
+        </div>
+        <div class="header-user">
+            <div class="header-user-info">
+                <p class="header-user-name" id="header-nombre">—</p>
+                <p class="header-user-role" id="header-rol">—</p>
+            </div>
+            <div class="avatar-circle" id="header-avatar">--</div>
+        </div>
+    </div>
+    <!-- Filtro + acciones en la misma fila -->
+    <div class="kb-toolbar">
+        <div id="kb-filter-bar" class="kb-filter">
+            <span class="kb-filter-label">Ver</span>
+            <button class="kb-pill active" data-u="*" onclick="kbFilter(this)">Todos</button>
+        </div>
+        <div class="kb-toolbar-actions">
+            <button class="btn-kb btn-kb-outline" data-bs-toggle="modal" data-bs-target="#archivedModal">
+                <i class="bi bi-archive"></i> Archivo
+            </button>
+            <button class="btn-kb btn-kb-solid" data-bs-toggle="modal" data-bs-target="#taskModal">
+                <i class="bi bi-plus-lg"></i> Nueva tarea
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Columna Pendiente -->
+        <div class="col-12 col-lg-3">
+            <div class="kanban-col" data-status="TODO">
+                <div class="kanban-header">
+                    <h6 class="m-0">Pendiente</h6>
+                    <span class="badge" id="count-todo">0</span>
+                </div>
+                <div id="col-todo" class="dropzone"></div>
+            </div>
+        </div>
+
+        <!-- Columna En Progreso -->
+        <div class="col-12 col-lg-3">
+            <div class="kanban-col" data-status="IN_PROGRESS">
+                <div class="kanban-header">
+                    <h6 class="m-0">En progreso</h6>
+                    <span class="badge" id="count-inprogress">0</span>
+                </div>
+                <div id="col-inprogress" class="dropzone"></div>
+            </div>
+        </div>
+
+        <!-- Columna En Revisión -->
+        <div class="col-12 col-lg-3">
+            <div class="kanban-col" data-status="EN_REVISION">
+                <div class="kanban-header">
+                    <h6 class="m-0">En revisión</h6>
+                    <span class="badge" id="count-revision">0</span>
+                </div>
+                <div id="col-revision" class="dropzone"></div>
+            </div>
+        </div>
+
+        <!-- Columna Finalizadas -->
+        <div class="col-12 col-lg-3">
+            <div class="kanban-col" data-status="DONE">
+                <div class="kanban-header">
+                    <h6 class="m-0">Finalizadas</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge" id="count-done">0</span>
+                        <button class="btn btn-link-secondary btn-sm p-0" title="Archivar todas las finalizadas" onclick="archiveAllDone()">
+                            <i class="bi bi-archive"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="col-done" class="dropzone"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal nueva tarea -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content modal-alta" id="taskForm">
+            <div class="modal-header">
+                <div class="mh-icon"><i class="bi bi-check2-square"></i></div>
+                <div class="mh-info">
+                    <div class="mh-eyebrow">Tarea</div>
+                    <h5 class="modal-title" id="taskModalTitle">Nueva tarea</h5>
+                </div>
+                <button type="button" class="modal-close" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="taskId">
+
+                <div class="form-group">
+                    <label>Título <span class="required">*</span></label>
+                    <input type="text" class="form-control-custom" id="title" required/>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción <span class="task-opt">opcional</span></label>
+                    <textarea class="form-control-custom textarea-vertical" id="description" rows="3"
+                              placeholder="Contexto, pasos o links relevantes…"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha límite <span class="task-opt">opcional</span></label>
+                        <input type="date" class="form-control-custom" id="dueDate"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Asignar a</label>
+                        <select class="form-control-custom" id="asignadoUserId">
+                            <option value="">Sin asignar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" id="statusGroup">
+                    <label>Estado inicial</label>
+                    <div class="estado-picker">
+                        <label class="estado-option">
+                            <input type="radio" name="task-status" value="TODO" checked/>
+                            <span class="estado-dot todo"></span> Pendiente
+                        </label>
+                        <label class="estado-option">
+                            <input type="radio" name="task-status" value="IN_PROGRESS"/>
+                            <span class="estado-dot in-progress"></span> En progreso
+                        </label>
+                        <label class="estado-option">
+                            <input type="radio" name="task-status" value="EN_REVISION"/>
+                            <span class="estado-dot en-revision"></span> En revisión
+                        </label>
+                        <label class="estado-option">
+                            <input type="radio" name="task-status" value="DONE"/>
+                            <span class="estado-dot done"></span> Finalizada
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar" type="button" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn-guardar" type="submit" id="taskSubmitBtn">
+                    <i class="bi bi-check-lg"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal archivo -->
+<div class="modal fade" id="archivedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content archive-modal-content">
+            <div class="archive-modal-header">
+                <div class="archive-header-left">
+                    <div class="archive-icon-wrap">
+                        <i class="bi bi-archive"></i>
+                    </div>
+                    <div>
+                        <h5 class="archive-title">Tareas archivadas</h5>
+                        <span class="archive-subtitle" id="archivedCount"></span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="archive-modal-body">
+                <!-- Buscador -->
+                <div class="archive-search-wrap">
+                    <i class="bi bi-search archive-search-icon"></i>
+                    <input type="text" id="archivedSearch" class="archive-search-input" placeholder="Buscar por título…" oninput="onArchivedSearch(this.value)">
+                </div>
+
+                <!-- Estado vacío -->
+                <div id="archivedEmpty" class="archive-empty" style="display:none;">
+                    <i class="bi bi-archive" style="font-size:2rem; opacity:.25;"></i>
+                    <p class="mt-2 mb-0">No hay tareas archivadas todavía</p>
+                </div>
+
+                <!-- Tabla -->
+                <div id="archivedTableWrap" style="display:none;">
+                    <table class="archive-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Asignada a</th>
+                                <th>Completada</th>
+                                <th>Archivada</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="archivedTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="archive-modal-footer">
+                <div class="archive-pagination" id="archivedPagination" style="display:none;">
+                    <button class="archive-page-btn" id="prevPage" onclick="changePage(-1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span class="archive-page-info" id="pageInfo">1 / 1</span>
+                    <button class="archive-page-btn" id="nextPage" onclick="changePage(1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/task.js"></script>
+<script src="js/sidebar.js"></script>
+</body>
+</html>

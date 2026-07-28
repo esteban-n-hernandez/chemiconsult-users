@@ -1,0 +1,472 @@
+/* ==========================================================================
+   Sidebar compartida — Chemiconsult
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Work+Sans:wght@400;500;600&display=swap');
+
+/* ── Variables globales ── */
+:root {
+    /* Brand */
+    --verde:             #5EA504;
+    --verde-oscuro:      #4a8403;
+    --verde-suave:       #f2f7e9;
+    --verde-suave-hover: #e9f2db;
+    --verde-light:       #eaf5d3;
+
+    /* Aliases legacy */
+    --gris:  #6c757d;
+    --borde: #dee2e6;
+
+    /* Text */
+    --color-text-secondary: #6c757d;
+    --color-text-tertiary:  #adb5bd;
+    --color-text-info:      #0d6efd;
+    --color-text-success:   #146c43;
+    --color-text-warning:   #856404;
+    --color-text-danger:    #842029;
+
+    /* Semantic backgrounds */
+    --color-background-info:    #cfe2ff;
+    --color-background-success: #d1e7dd;
+    --color-background-warning: #fff3cd;
+    --color-background-danger:  #f8d7da;
+
+    /* Borders */
+    --color-border-tertiary: #dee2e6;
+    --color-border-soft:     #eceef0;
+
+    /* Surfaces & text */
+    --bg-app:     #f0f2f5;
+    --bg-surface: #ffffff;
+    --bg-subtle:  #f8f9fa;
+    --text-main:  #1a1a2e;
+
+    /* Typography */
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-body:    'Work Sans', 'Segoe UI', sans-serif;
+    --font-mono:    'Space Mono', monospace;
+}
+
+/* ── Dark mode — tokens ── */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --bg-app:     #0d1117;
+        --bg-surface: #161b27;
+        --bg-subtle:  #1e2535;
+        --text-main:  #e2e8f0;
+
+        --verde-suave:       #182d09;
+        --verde-suave-hover: #1e3a0c;
+        --verde-light:       #182d09;
+
+        --gris:  #94a3b8;
+        --borde: #2d3748;
+        --color-text-secondary: #94a3b8;
+        --color-text-tertiary:  #64748b;
+        --color-text-info:      #60a5fa;
+        --color-text-success:   #4ade80;
+        --color-text-warning:   #fbbf24;
+        --color-text-danger:    #f87171;
+
+        --color-background-info:    #1e3a5f;
+        --color-background-success: #14532d;
+        --color-background-warning: #451a03;
+        --color-background-danger:  #450a0a;
+
+        --color-border-tertiary: #2d3748;
+        --color-border-soft:     #1e2535;
+    }
+}
+
+/* Toggle manual: dark */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-app:     #0d1117;
+    --bg-surface: #161b27;
+    --bg-subtle:  #1e2535;
+    --text-main:  #e2e8f0;
+
+    --verde-suave:       #182d09;
+    --verde-suave-hover: #1e3a0c;
+    --verde-light:       #182d09;
+
+    --gris:  #94a3b8;
+    --borde: #2d3748;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary:  #64748b;
+    --color-text-info:      #60a5fa;
+    --color-text-success:   #4ade80;
+    --color-text-warning:   #fbbf24;
+    --color-text-danger:    #f87171;
+
+    --color-background-info:    #1e3a5f;
+    --color-background-success: #14532d;
+    --color-background-warning: #451a03;
+    --color-background-danger:  #450a0a;
+
+    --color-border-tertiary: #2d3748;
+    --color-border-soft:     #1e2535;
+}
+
+/* Toggle manual: light (fuerza claro aunque el OS esté en dark) */
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg-app:     #f0f2f5;
+    --bg-surface: #ffffff;
+    --bg-subtle:  #f8f9fa;
+    --text-main:  #1a1a2e;
+
+    --verde-suave:       #f2f7e9;
+    --verde-suave-hover: #e9f2db;
+    --verde-light:       #eaf5d3;
+
+    --gris:  #6c757d;
+    --borde: #dee2e6;
+    --color-text-secondary: #6c757d;
+    --color-text-tertiary:  #adb5bd;
+    --color-text-info:      #0d6efd;
+    --color-text-success:   #146c43;
+    --color-text-warning:   #856404;
+    --color-text-danger:    #842029;
+
+    --color-background-info:    #cfe2ff;
+    --color-background-success: #d1e7dd;
+    --color-background-warning: #fff3cd;
+    --color-background-danger:  #f8d7da;
+
+    --color-border-tertiary: #dee2e6;
+    --color-border-soft:     #eceef0;
+}
+
+/* Normalización base — garantiza consistencia con o sin Bootstrap */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    font-family: 'Work Sans', 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-app);
+    color: var(--text-main);
+}
+
+.content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+    width: 232px;
+    background: #5EA504;
+    border-radius: 18px;
+    padding: 1.75rem 0.875rem;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: calc(100vh - 4rem);
+    margin: 2rem 0 2rem 1.5rem;
+    box-shadow: 0 8px 24px rgba(94, 165, 4, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Reflejo interior sutil en la parte superior */
+.sidebar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
+    pointer-events: none;
+    border-radius: 18px 18px 0 0;
+}
+
+/* ── Logo ── */
+.sidebar-logo {
+    padding: 0 0.625rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.sidebar-logo h2 {
+    font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.3;
+}
+
+.sidebar-logo h2::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.9);
+    flex-shrink: 0;
+}
+
+.sidebar-logo p {
+    font-family: 'Work Sans', 'Segoe UI', sans-serif;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 4px 0 0 16px;
+    padding: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    line-height: 1.4;
+}
+
+/* ── Nav principal ── */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.sidebar-nav::-webkit-scrollbar { display: none; }
+
+/* ── Links ── */
+.sidebar a {
+    font-family: 'Work Sans', 'Segoe UI', sans-serif;
+    color: rgba(255, 255, 255, 0.88);
+    text-decoration: none;
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar a:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #ffffff;
+}
+
+.sidebar a.active {
+    background: #ffffff;
+    color: #5EA504;
+    font-weight: 600;
+}
+
+.sidebar a.active i {
+    color: #5EA504;
+}
+
+.sidebar a i {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.15s ease;
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+}
+
+.sidebar a:hover i {
+    color: #ffffff;
+}
+
+/* ── Sección inferior (Perfil + Logout) ── */
+.sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    margin: 0.75rem 0.25rem;
+}
+
+/* Logout diferenciado */
+.sidebar-bottom a[href="#"] {
+    color: rgba(255, 255, 255, 0.6);
+}
+.sidebar-bottom a[href="#"] i {
+    color: rgba(255, 255, 255, 0.5);
+}
+.sidebar-bottom a[href="#"]:hover {
+    background: rgba(0, 0, 0, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+}
+.sidebar-bottom a[href="#"]:hover i {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Collapse button ── */
+.sidebar-collapse-btn {
+    font-family: 'Work Sans', 'Segoe UI', sans-serif;
+    color: rgba(255, 255, 255, 0.88);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-collapse-btn:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #ffffff;
+}
+
+.sidebar-collapse-btn i {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.75);
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    transition: color 0.15s ease;
+}
+
+.sidebar-collapse-btn:hover i { color: #ffffff; }
+
+/* ── Sidebar collapsed ── */
+.sidebar.collapsed {
+    width: 64px;
+    padding: 1.75rem 0.5rem;
+}
+
+.sidebar.collapsed .sidebar-logo,
+.sidebar.collapsed .sidebar-label,
+.sidebar.collapsed .sidebar-divider { display: none; }
+
+.sidebar.collapsed .sidebar-nav a,
+.sidebar.collapsed .sidebar-bottom a,
+.sidebar.collapsed .sidebar-collapse-btn {
+    justify-content: center;
+    padding: 0.6rem;
+    gap: 0;
+}
+
+.sidebar.collapsed .sidebar-nav a i,
+.sidebar.collapsed .sidebar-bottom a i,
+.sidebar.collapsed .sidebar-collapse-btn i { width: auto; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        overflow: auto;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        border-radius: 0;
+        margin: 0;
+        padding: 0.6rem 1rem;
+        justify-content: space-around;
+    }
+
+    .sidebar::before { display: none; }
+    .sidebar-logo,
+    .sidebar-divider,
+    .sidebar-bottom { display: none; }
+
+    .sidebar-nav {
+        flex-direction: row;
+        flex: unset;
+    }
+}
+
+/* ── Page actions (toolbar de botones debajo del header) ── */
+.page-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+/* ── Page header card compartido ── */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.75rem;
+    background: var(--bg-surface);
+    border-radius: 18px;
+    border-left: 4px solid #5EA504;
+    padding: 1.1rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.page-header h1 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 2px 0 0;
+}
+
+/* ── Header de usuario compartido ── */
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-user-info {
+    text-align: right;
+}
+
+.header-user-name {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.header-user-role {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #eef7e0;
+    color: #2d6b0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+}

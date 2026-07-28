@@ -1,21 +1,48 @@
 package com.chemiconsult.mapper;
 
 import com.chemiconsult.entity.TaskDE;
+import com.chemiconsult.enums.TaskStatusEnum;
 import com.chemiconsult.to.TaskTO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class TaskMapper {
     public static List<TaskTO> mapTaskEntityToTO(List<TaskDE> taskList) {
-        return taskList.stream().map(task ->
-                        TaskTO.builder()
-                                .id(task.getId())
-                                .title(task.getTitle())
-                                .description(task.getDescription())
-                                .build())
-                .toList();
+        return taskList.stream().map(TaskMapper::mapTaskEntityToTO).toList();
     }
 
-    public static void mapTaskTOToEntity(TaskTO task) {
+    // FIX: faltaba .userName() — causaba que el front mostrara el avatar del usuario
+    // logueado en vez del asignado real, cada vez que se creaba o movía una tarea.
+    public static TaskTO mapTaskEntityToTO(TaskDE task) {
+        return TaskTO.builder()
+                .id(task.getId())
+                .title(task.getTitle())
+                .description(task.getDescription())
+                .status(task.getStatus() != null ? task.getStatus().name() : null)
+                .userId(task.getUser() != null ? task.getUser().getId() : null)
+                .userName(task.getUser() != null ? task.getUser().getUsername() : null)
+                .archived(task.isArchived())
+                .completedDate(task.getCompletedDate())
+                .archivedDate(task.getArchivedDate())
+                .dueDate(task.getDueDate())
+                .build();
+    }
+
+    public static TaskDE mapTaskTOToEntity(TaskTO task) {
+        TaskDE taskDE = new TaskDE();
+        taskDE.setTitle(task.getTitle());
+        taskDE.setDescription(task.getDescription());
+        taskDE.setStatus(task.getStatus() == null ? TaskStatusEnum.TODO : TaskStatusEnum.valueOf(task.getStatus()));
+        taskDE.setCreatedDate(LocalDate.now());
+        taskDE.setCompletedDate(taskDE.getStatus() == TaskStatusEnum.DONE ? LocalDate.now() : null);
+        taskDE.setDueDate(task.getDueDate());
+        return taskDE;
+    }
+
+    public static TaskDE applyStatus(TaskDE task, TaskStatusEnum status) {
+        task.setStatus(status);
+        task.setCompletedDate(status == TaskStatusEnum.DONE ? LocalDate.now() : null);
+        return task;
     }
 }

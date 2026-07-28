@@ -5,6 +5,7 @@ import com.chemiconsult.enums.TipoClienteEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ClienteRepository extends JpaRepository<ClienteDE, Long> {
 
@@ -17,4 +18,6 @@ public interface ClienteRepository extends JpaRepository<ClienteDE, Long> {
     boolean existsByDni(String dni);
 
     List<ClienteDE> findByTipoCliente(TipoClienteEnum tipoCliente);
+
+    Optional<ClienteDE> findByUser_Id(Long userId);
 }

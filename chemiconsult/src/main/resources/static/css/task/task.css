@@ -1,0 +1,760 @@
+/* ==========================================================================
+   Variables - Minimalismo con Acento Corporativo Chemiconsult
+   ========================================================================== */
+:root {
+    --bg-main: #f8fafc;
+    --bg-sidebar: #ffffff;
+
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border-flat: #e2e8f0;
+
+    /* Estados del Tablero */
+    --status-todo: #94a3b8;
+    --status-inprogress: #3b82f6;
+    --status-revision: #d97706;
+    --status-done: var(--verde);
+
+    /* Fondos suaves para los badges de estado (coherentes con cada color) */
+    --status-todo-bg: #f1f5f9;
+    --status-todo-text: #64748b;
+    --status-inprogress-bg: #eff6ff;
+    --status-inprogress-text: #2563eb;
+    --status-revision-bg: #fffbeb;
+    --status-revision-text: #b45309;
+    --status-done-bg: #f0fdf4;
+    --status-done-text: var(--verde-oscuro);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main:    #0d1117;
+        --bg-sidebar: #161b27;
+        --text-primary:   #e2e8f0;
+        --text-secondary: #94a3b8;
+        --text-muted:     #64748b;
+        --border-flat:    #2d3748;
+        --status-todo-bg:         #1e293b;
+        --status-todo-text:       #94a3b8;
+        --status-inprogress-bg:   #1e3a5f;
+        --status-inprogress-text: #60a5fa;
+        --status-revision-bg:     #451a03;
+        --status-revision-text:   #fbbf24;
+        --status-done-bg:         #14532d;
+        --status-done-text:       #4ade80;
+    }
+}
+:root[data-theme="dark"] {
+    --bg-main:    #0d1117;
+    --bg-sidebar: #161b27;
+    --text-primary:   #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted:     #64748b;
+    --border-flat:    #2d3748;
+    --status-todo-bg:         #1e293b;
+    --status-todo-text:       #94a3b8;
+    --status-inprogress-bg:   #1e3a5f;
+    --status-inprogress-text: #60a5fa;
+    --status-revision-bg:     #451a03;
+    --status-revision-text:   #fbbf24;
+    --status-done-bg:         #14532d;
+    --status-done-text:       #4ade80;
+}
+:root[data-theme="light"] {
+    --bg-main:    #f8fafc;
+    --bg-sidebar: #ffffff;
+    --text-primary:   #0f172a;
+    --text-secondary: #64748b;
+    --text-muted:     #94a3b8;
+    --border-flat:    #e2e8f0;
+    --status-todo-bg:         #f1f5f9;
+    --status-todo-text:       #64748b;
+    --status-inprogress-bg:   #eff6ff;
+    --status-inprogress-text: #2563eb;
+    --status-revision-bg:     #fffbeb;
+    --status-revision-text:   #b45309;
+    --status-done-bg:         #f0fdf4;
+    --status-done-text:       var(--verde-oscuro);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-image: radial-gradient(rgba(26,26,46,.04) 1px, transparent 1px);
+    background-size: 5px 5px;
+    color: var(--text-primary);
+}
+
+/* ── Contenedor y Encabezados ── */
+.container-fluid {
+    flex: 1;
+    padding: 2rem !important;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* El row del kanban ocupa todo el espacio vertical restante */
+.container-fluid > .row {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.container-fluid > .row > [class*="col-"] {
+    height: 100%;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+}
+
+.btn-primary {
+    background-color: var(--verde) !important;
+    border: none !important;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    box-shadow: none !important;
+    transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--verde-oscuro) !important;
+}
+
+/* ==========================================================================
+   Tablero Kanban — ahora con 4 columnas
+   ========================================================================== */
+.kanban-col {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-flat);
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+.kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.kanban-header h6 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.kanban-header h6::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.kanban-col[data-status="TODO"] .kanban-header h6::before { background: var(--status-todo); }
+.kanban-col[data-status="IN_PROGRESS"] .kanban-header h6::before { background: var(--status-inprogress); }
+.kanban-col[data-status="EN_REVISION"] .kanban-header h6::before { background: var(--status-revision); }
+.kanban-col[data-status="DONE"] .kanban-header h6::before { background: var(--status-done); }
+
+.kanban-header .badge {
+    font-weight: 500;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.kanban-col[data-status="TODO"] .kanban-header .badge {
+    background: var(--bg-subtle) !important;
+    color: var(--text-secondary) !important;
+}
+
+.kanban-col[data-status="IN_PROGRESS"] .kanban-header .badge {
+    background: var(--status-inprogress-bg) !important;
+    color: var(--status-inprogress-text) !important;
+}
+
+.kanban-col[data-status="EN_REVISION"] .kanban-header .badge {
+    background: var(--status-revision-bg) !important;
+    color: var(--status-revision-text) !important;
+}
+
+.kanban-col[data-status="DONE"] .kanban-header .badge {
+    background: var(--status-done-bg) !important;
+    color: var(--status-done-text) !important;
+}
+
+.dropzone {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dropzone.drag-over {
+    background: var(--bg-subtle);
+    border: 1px dashed var(--text-muted);
+    border-radius: 8px;
+}
+
+/* ==========================================================================
+   Tarjetas — Estilo 3: franja lateral compacta
+   ========================================================================== */
+.kanban-card {
+    position: relative;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-flat);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.kanban-card.done { opacity: 0.65; }
+.kanban-card.done .kanban-card-title { text-decoration: line-through; color: var(--text-muted); }
+
+.kanban-card:hover {
+    border-color: var(--color-border-tertiary);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    transform: translateY(-2px);
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+}
+
+.kanban-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+/* Fila superior: título + avatar */
+.kanban-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.kanban-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
+    flex: 1;
+    margin: 0;
+}
+
+.kanban-card-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.kanban-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-width: 0;
+}
+
+.kanban-card-assignee {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.assignee-name {
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kanban-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.kanban-card:hover .kanban-card-actions {
+    opacity: 1;
+}
+
+.creator-avatar {
+    width: 20px;
+    height: 20px;
+    background-color: var(--bg-subtle);
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 600;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-flat);
+    letter-spacing: 0.5px;
+    cursor: default;
+    flex-shrink: 0;
+}
+
+.kanban-card.done .creator-avatar {
+    background-color: var(--status-done-bg);
+    color: var(--status-done-text);
+    border-color: #bbf7d0;
+}
+
+.btn-link-danger {
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    font-size: 13px;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.btn-link-danger:hover {
+    color: #ef4444;
+}
+
+.btn-link-secondary {
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    font-size: 13px;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.btn-link-secondary:hover {
+    color: var(--text-secondary);
+}
+
+/* ── Deadline badges ── */
+.dl-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dl-over, .dl-hoy { background: #fef2f2; color: #dc2626; }
+.dl-tom            { background: #fff7ed; color: #ea580c; }
+.dl-soon           { background: #eff6ff; color: #2563eb; }
+.dl-ok             { background: var(--bg-subtle); color: var(--text-secondary); }
+
+/* ── Toolbar: filtro + acciones ── */
+.kb-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 8px;
+}
+
+.kb-toolbar-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* ── Filtro personas ── */
+.kb-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.kb-filter-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    margin-right: 2px;
+}
+
+.kb-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid #daeacd;
+    background: var(--bg-surface);
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--verde);
+    cursor: pointer;
+    transition: all .15s ease;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.kb-pill:hover { border-color: var(--verde); background: #f3fbe8; }
+
+.kb-pill.active {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: #ffffff;
+}
+
+.kb-pill-av {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #c5e6a0;
+    color: var(--verde-oscuro);
+    font-size: 8px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kb-pill.active .kb-pill-av { background: rgba(255,255,255,.25); color: #ffffff; }
+
+.btn-kb {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    border-radius: 7px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all .18s ease;
+    white-space: nowrap;
+}
+
+.btn-kb-outline {
+    background: var(--bg-surface);
+    border-color: #daeacd;
+    color: var(--verde);
+}
+.btn-kb-outline:hover { background: var(--verde); border-color: var(--verde); color: white; }
+
+.btn-kb-solid {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+.btn-kb-solid:hover { background: var(--verde-oscuro); border-color: var(--verde-oscuro); }
+
+.kanban-card.kb-hidden { display: none; }
+
+/* ==========================================================================
+   Modal Archivo
+   ========================================================================== */
+.archive-modal-content {
+    border-radius: 14px;
+    border: 1px solid var(--border-flat);
+    box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+}
+
+.archive-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 18px;
+    border-bottom: 1px solid var(--border-flat);
+    background: var(--bg-subtle);
+}
+
+.archive-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.archive-icon-wrap {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-flat);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.archive-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+}
+
+.archive-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Body con altura fija y scroll interno */
+.archive-modal-body {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 0;
+}
+
+/* Buscador */
+.archive-search-wrap {
+    position: relative;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border-flat);
+    background: var(--bg-surface);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.archive-search-icon {
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%) translateY(2px);
+    color: var(--text-muted);
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.archive-search-input {
+    width: 100%;
+    border: 1px solid var(--border-flat);
+    border-radius: 7px;
+    background: var(--bg-subtle);
+    padding: 7px 12px 7px 32px;
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.archive-search-input:focus {
+    border-color: var(--verde);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
+}
+
+.archive-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.archive-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Tabla */
+.archive-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.archive-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-subtle);
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-flat);
+    white-space: nowrap;
+}
+
+.archive-table tbody tr {
+    border-bottom: 1px solid var(--color-border-soft);
+    transition: background 0.12s ease;
+}
+
+.archive-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.archive-table tbody tr:hover {
+    background: var(--bg-subtle);
+}
+
+.archive-table td {
+    padding: 12px 16px;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.archive-task-title {
+    font-weight: 500;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.archive-assignee {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.archive-date {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.archive-restore-btn {
+    background: none;
+    border: 1px solid var(--border-flat);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.archive-restore-btn:hover {
+    border-color: var(--verde);
+    color: var(--verde);
+    background: #f0fdf4;
+}
+
+/* Footer con paginación */
+.archive-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border-flat);
+    background: var(--bg-subtle);
+}
+
+.archive-pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.archive-page-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border-flat);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.archive-page-btn:hover:not(:disabled) {
+    border-color: var(--verde);
+    color: var(--verde);
+}
+
+.archive-page-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.archive-page-info {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 48px;
+    text-align: center;
+}
+
+/* ==========================================================================
+   Modales Planos
+   ========================================================================== */
+.modal-content {
+    border-radius: 12px;
+    border: 1px solid var(--border-flat);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.form-control, .form-select {
+    border-radius: 6px;
+    border: 1px solid var(--border-flat);
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--bg-surface);
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
+}
+
+/* ── Dots de estado del picker de tarea ── */
+.estado-dot.todo        { background: #f59e0b; }
+.estado-dot.in-progress { background: #3b82f6; }
+.estado-dot.en-revision { background: #f97316; }
+.estado-dot.done        { background: var(--verde); }

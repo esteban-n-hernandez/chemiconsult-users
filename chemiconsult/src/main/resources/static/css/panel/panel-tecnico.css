@@ -1,0 +1,276 @@
+
+* {
+    box-sizing: border-box;
+}
+
+
+
+
+/* ── Sistema de Navegación por Filtros/Pestañas ── */
+.filtros-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn-custom {
+    padding: 6px 18px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border-tertiary);
+    background: var(--bg-surface);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab-btn-custom:hover,
+.tab-btn-custom.active {
+    background: var(--verde);
+    color: white;
+    border-color: var(--verde);
+}
+
+/* ── Estructura de Paneles en Grilla de Entrada de Datos ── */
+.tab-content-panel {
+    display: none;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.tab-content-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.main-row-config {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.panel-custom {
+    background: var(--bg-surface);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    height: fit-content;
+}
+
+.panel-header-custom {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border-tertiary);
+}
+
+.panel-header-custom h5 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-body-custom {
+    padding: 1.25rem;
+}
+
+/* ── Formularios e Inputs Estilizados ── */
+.form-group-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 1.1rem;
+}
+
+.form-group-custom label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.form-control-custom {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    background: var(--bg-surface);
+}
+
+.form-control-custom:focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
+}
+
+.btn-guardar-custom {
+    width: 100%;
+    padding: 9px 22px;
+    background: var(--verde);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s;
+    margin-top: 0.5rem;
+}
+
+.btn-guardar-custom:hover {
+    background: var(--verde-oscuro);
+}
+
+/* ── Tablas de Consulta Estilo Muestras ── */
+.tabla-config {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+
+.tabla-config thead th {
+    background: var(--bg-subtle);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--color-border-tertiary);
+}
+
+.tabla-config tbody tr {
+    border-bottom: 1px solid var(--color-border-soft);
+    transition: background 0.15s;
+}
+
+.tabla-config tbody tr:hover {
+    background: var(--bg-subtle);
+}
+
+.tabla-config td {
+    padding: 12px 14px;
+    vertical-align: middle;
+    color: var(--text-main);
+}
+
+.btn-accion-danger {
+    background: none;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: all 0.2s;
+}
+
+.btn-accion-danger:hover {
+    background: var(--color-background-danger);
+    color: var(--color-text-danger);
+    border-color: var(--color-background-danger);
+}
+
+/* ── Panel header con buscador ── */
+.panel-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.tabla-filtro {
+    padding: 5px 10px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-main);
+    outline: none;
+    width: 180px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--bg-subtle);
+}
+
+.tabla-filtro:focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
+    background: var(--bg-surface);
+}
+
+/* ── Paginador ── */
+.tabla-paginador {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid var(--color-border-soft);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    min-height: 44px;
+}
+
+.pag-info {
+    flex: 1;
+}
+
+.pag-controles {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pag-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: all 0.15s;
+    font-weight: 500;
+}
+
+.pag-btn:hover:not(:disabled) {
+    background: var(--verde);
+    color: white;
+    border-color: var(--verde);
+}
+
+.pag-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pag-pagina {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    padding: 0 4px;
+}
+
+@media (max-width: 1100px) {
+    .main-row-config {
+        grid-template-columns: 1fr;
+    }
+}

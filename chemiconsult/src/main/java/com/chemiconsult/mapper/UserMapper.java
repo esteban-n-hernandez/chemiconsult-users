@@ -25,6 +25,7 @@ public class UserMapper {
                 .username(userDE.getUsername())
                 .email(userDE.getEmail())
                 .rol(userDE.getRol())
+                .modulos(userDE.getModulos())
                 .build();
     }
 

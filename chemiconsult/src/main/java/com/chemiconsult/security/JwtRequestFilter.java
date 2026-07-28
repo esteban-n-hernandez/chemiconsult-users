@@ -30,7 +30,16 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_PATHS = Arrays.asList(
             "/login",
             "/authenticate",
-            "/api/auth"
+            "/api/auth",
+            "/actuator/health",
+            "/js/",
+            "/css/",
+            "/img/",
+            "/fonts/"
+    );
+
+    private static final List<String> PUBLIC_EXTENSIONS = Arrays.asList(
+            ".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"
     );
 
     @Override
@@ -38,17 +47,19 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
 
-        String requestPath = request.getRequestURI();
-        System.out.println("JwtRequestFilter - Request path: " + requestPath);
+        // Preflight OPTIONS — pasar sin tocar
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
 
+        String requestPath = request.getRequestURI();
 
         // Si es una ruta pública, permitir el paso sin validar JWT
         if (isPublicPath(requestPath)) {
             chain.doFilter(request, response);
             return;
         }
-
-        System.out.println("JwtRequestFilter - Protected path, checking JWT");
 
         final String authorizationHeader = request.getHeader("Authorization");
 
@@ -67,9 +78,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.jwtUserDetailsService.loadUserByUsername(username);
 
-            System.out.println(userDetails.getUsername());
-            System.out.println(userDetails.getPassword());
-
             if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -82,6 +90,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicPath(String requestPath) {
-        return PUBLIC_PATHS.stream().anyMatch(requestPath::startsWith);
+        if (PUBLIC_PATHS.stream().anyMatch(requestPath::startsWith)) return true;
+        return PUBLIC_EXTENSIONS.stream().anyMatch(requestPath::endsWith);
     }
 }

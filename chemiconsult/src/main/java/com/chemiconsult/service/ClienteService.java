@@ -80,12 +80,28 @@ public class ClienteService {
         clienteRepository.save(cliente);
     }
 
+    // ── Reactivar ──
+    public void reactivarCliente(Long id) {
+        ClienteDE cliente = getCliente(id);
+        cliente.setActivo(true);
+        cliente.setUpdateDate(LocalDate.now());
+        clienteRepository.save(cliente);
+    }
+
     // ── Eliminar físico ──
     public void deleteCliente(Long id) {
         if (!clienteRepository.existsById(id)) {
             throw new RuntimeException("Cliente no encontrado con ID: " + id);
         }
         clienteRepository.deleteById(id);
+    }
+
+    // ── Cliente por usuario logueado ──
+    public ClienteDE getClientePorEmail(String email) {
+        UserDE user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
+        return clienteRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new RuntimeException("No hay cliente asociado a este usuario"));
     }
 
     // ── Asignar usuario al cliente ──
@@ -97,13 +113,13 @@ public class ClienteService {
             throw new RuntimeException("El cliente ya tiene un usuario asignado");
         }
 
-        // Verificar que el username no exista
-        if (userRepository.existsByUsername(to.getUsername())) {
-            throw new RuntimeException("El username ya está en uso: " + to.getUsername());
+        // Verificar que el email del cliente no esté ya registrado como usuario
+        if (userRepository.existsByEmail(cliente.getEmail())) {
+            throw new RuntimeException("El email del cliente ya tiene un usuario registrado");
         }
 
         UserDE user = new UserDE();
-        user.setUsername(to.getUsername());
+        user.setUsername(cliente.getNombre());
         user.setPassword(passwordEncoder.encode(to.getPassword()));
         user.setEmail(cliente.getEmail());
         user.setRol(RolEnum.ROLE_CLIENTE.name());

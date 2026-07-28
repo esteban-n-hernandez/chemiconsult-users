@@ -1,7 +1,8 @@
 package com.chemiconsult.entity;
 
-
+import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,20 +25,25 @@ public class AnalisisDE {
     @JsonBackReference("user-estudios")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private UserDE user;
+    private UserDE user; // nullable — se completa solo si el cliente tiene acceso al sistema
+
+    // NUEVO: relación directa al cliente, independiente de si tiene usuario o no
+    @ManyToOne
+    @JoinColumn(name = "CLIENTE_ID", nullable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ClienteDE cliente;
 
     @Column(name = "ANALYSIS_TYPE")
     private String tipo;
 
-    @Column(name = "STATUS")
-    private String estado;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS", nullable = false)
+    private EstadoMuestraEnum estado = EstadoMuestraEnum.PENDIENTE;
 
     @Column(name = "PDF_URL")
     private String archivoUrl;
-
-    @Column(name = "PDF", columnDefinition = "bytea")
-    @Basic(fetch = FetchType.LAZY)
-    private byte[] archivo;
 
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
@@ -46,16 +52,25 @@ public class AnalisisDE {
     private LocalDate updateDate;
 
     @Column(name = "NUMERO_PROTOCOLO", unique = true)
-    private String numeroProtocolo; // "CHQ-2026-014"
+    private String numeroProtocolo;
 
     @Column(name = "ID_MUESTRA")
-    private String idMuestra; // "M-001"
+    private String idMuestra;
+
+    @Column(name = "PUNTO_MUESTREO")
+    private String puntoMuestreo;
+
+    @Column(name = "FECHA_INGRESO")
+    private LocalDate fechaIngreso;
+
+    @Column(name = "FECHA_ENTREGA")
+    private LocalDate fechaEntrega;
 
     @ManyToOne
-    @JoinColumn(name = "TIPO_MUESTRA_ID")
+    @JoinColumn(name = "MATRIZ_ID", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TipoMuestraDE tipoMuestra;
+    private MatrizDE matriz;
 
     @Column(name = "OBSERVACIONES")
     private String observaciones;
@@ -65,4 +80,15 @@ public class AnalisisDE {
     @EqualsAndHashCode.Exclude
     private List<AnalisisParametroDE> parametros;
 
-}
+    @OneToMany(mappedBy = "analisis", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<AnalisisResolucionDestinoDE> resolucionesAplicadas;
+
+    @ManyToOne
+    @JoinColumn(name = "CLIENTE_SUCURSAL_ID")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ClienteSucursalDE sucursal;
+    }

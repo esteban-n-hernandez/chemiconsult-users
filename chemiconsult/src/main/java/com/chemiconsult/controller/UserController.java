@@ -1,71 +1,79 @@
 package com.chemiconsult.controller;
 
-import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.service.UserService;
-import com.chemiconsult.to.UserPasswordTO;
+import com.chemiconsult.to.CambiarPasswordTO;
+import com.chemiconsult.to.UserCreateTO;
+import com.chemiconsult.to.UserPerfilTO;
 import com.chemiconsult.to.UserTO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 public class UserController {
 
-    UserService userService;
+    private final UserService userService;
 
-    // ✅ Obtener todos los usuarios
     @GetMapping
     public List<UserTO> getUsers() {
         return userService.getUsers();
     }
 
-    // ✅ Obtener usuario por ID
     @GetMapping("/{id}")
-    public UserDE getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public ResponseEntity<UserTO> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserTOById(id));
     }
 
-    // ✅ Crear un nuevo usuario
-    public UserDE createUser(@RequestBody UserDE user) {
-        return userService.createUser(user);
+    @PostMapping
+    public ResponseEntity<UserTO> createEmpleado(@RequestBody UserCreateTO to) {
+        return ResponseEntity.status(201).body(userService.createEmpleado(to));
     }
 
+    @PatchMapping("/{id}/reset-password")
+    public ResponseEntity<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        userService.resetPassword(id, body.get("passwordNueva"));
+        return ResponseEntity.noContent().build();
+    }
+
+    // Edita username/email â€” NO toca password (ver /password abajo)
     @PutMapping("/{id}")
-    public UserDE updateUser(@PathVariable Long id, @RequestBody UserDE user) {
-
-        Optional<UserDE> optional = Optional.ofNullable(userService.getUserById(id));
-        if (optional.isPresent()) {
-            UserDE existing = optional.get();
-            existing.setUsername(user.getUsername());
-            existing.setEmail(user.getEmail());
-            existing.setPassword(user.getPassword());
-            existing.setRol(user.getRol());
-
-            return userService.createUser(existing);
-        }
-        throw new RuntimeException("Usuario no encontrado con ID: " + id);
+    public ResponseEntity<UserTO> updateUser(@PathVariable Long id, @RequestBody UserPerfilTO to) {
+        return ResponseEntity.ok(userService.updatePerfil(id, to));
     }
 
+    // Cambio de contraseÃ±a â€” requiere la contraseÃ±a actual
     @PutMapping("/{id}/password")
-    public UserDE updateUserPassword(@PathVariable Long id, @RequestBody UserPasswordTO userPasswordTO) {
-
-        Optional<UserDE> optional = Optional.ofNullable(userService.getUserById(id));
-        if (optional.isPresent()) {
-            UserDE existing = optional.get();
-            existing.setPassword(userPasswordTO.getNewPassword());
-
-            return userService.createUser(existing);
-        }
-        throw new RuntimeException("Usuario no encontrado con ID: " + id);
+    public ResponseEntity<Void> cambiarPassword(@PathVariable Long id, @RequestBody CambiarPasswordTO to) {
+        userService.cambiarPassword(id, to);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+    }
+
+    @GetMapping("/asignables")
+    public List<UserTO> getUsersAsignables() {
+        return userService.getUsersAsignables();
+    }
+
+    @GetMapping("/me/modulos")
+    public ResponseEntity<Set<ModuloEnum>> getMisModulos(Authentication auth) {
+        return ResponseEntity.ok(userService.getModulosForUser(auth.getName()));
+    }
+
+    @PutMapping("/{id}/modulos")
+    public ResponseEntity<Set<ModuloEnum>> setModulos(@PathVariable Long id,
+                                                       @RequestBody Set<ModuloEnum> modulos) {
+        return ResponseEntity.ok(userService.setModulos(id, modulos));
     }
 
     @Autowired

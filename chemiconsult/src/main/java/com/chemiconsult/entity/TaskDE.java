@@ -1,6 +1,6 @@
 package com.chemiconsult.entity;
 
-import com.chemiconsult.enums.TaskStatus;
+import com.chemiconsult.enums.TaskStatusEnum;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,6 +15,10 @@ public class TaskDE {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "USER_ID")
+    private UserDE user;
+
     @Column(nullable = false)
     private String title;
 
@@ -23,12 +27,21 @@ public class TaskDE {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TaskStatus status = TaskStatus.TODO;
+    private TaskStatusEnum status = TaskStatusEnum.TODO;
 
     @Column(name = "CREATED_DATE", nullable = false)
     private LocalDate createdDate;
 
     @Column(name = "COMPLETED_DATE")
     private LocalDate completedDate;
+
+    @Column(name = "ARCHIVED", nullable = false)
+    private boolean archived = false;
+
+    @Column(name = "ARCHIVED_DATE")
+    private LocalDate archivedDate;
+
+    @Column(name = "DUE_DATE")
+    private LocalDate dueDate;
 
 }

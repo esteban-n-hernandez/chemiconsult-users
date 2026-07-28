@@ -1,9 +1,11 @@
 package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.UserDE;
+import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.security.JwtUtil;
 import com.chemiconsult.service.JwtUserDetailsService;
+import com.chemiconsult.service.UserService;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,20 +19,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Set;
+
 @RestController
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-
     private final JwtUserDetailsService jwtUserDetailsService;
-
     private final JwtUtil jwtUtil;
-
-    UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
-        System.out.println("Login endpoint called - email: " + email);
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
@@ -49,31 +50,37 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(userDetails.getUsername(), user.getId());
 
-        return ResponseEntity.ok(new AuthResponse(token, role));
+        Set<ModuloEnum> modulos = userService.getModulosForUser(email);
+
+        return ResponseEntity.ok(new AuthResponse(token, role, user.getId(), user.getUsername(), modulos));
     }
 
-    // Clase interna para la respuesta
     @Setter
     @Getter
     static class AuthResponse {
         private String token;
         private String role;
+        private Long userId;
+        private String username;
+        private Set<ModuloEnum> modulos;
 
-        public AuthResponse(String token, String role) {
+        public AuthResponse(String token, String role, Long userId, String username, Set<ModuloEnum> modulos) {
             this.token = token;
             this.role = role;
+            this.userId = userId;
+            this.username = username;
+            this.modulos = modulos;
         }
     }
-
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUserDetailsService jwtUserDetailsService, JwtUtil jwtUtil,
-                          UserRepository userRepository) {
+                          UserRepository userRepository, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtUserDetailsService = jwtUserDetailsService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.userService = userService;
     }
-
 }
