@@ -152,6 +152,51 @@
     color: white;
 }
 
+/* ── Botones de acción en la tabla ── */
+.acciones-celda {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-accion {
+    background: var(--bg-surface);
+    border: 1px solid var(--color-border-tertiary);
+    color: var(--text-secondary);
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.btn-accion:hover {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+
+.btn-accion-verde {
+    border-color: #c5e6a0;
+    color: var(--verde);
+}
+
+.btn-accion-verde:hover {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+
+.btn-accion-gris {
+    color: var(--color-text-tertiary);
+}
+
 .cod-badge {
     font-family: var(--font-mono);
     font-size: 12px;
