@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pintarFechaHoy();
     pintarHeaderUsuario();
     cargarDatosCuenta();
+    cargarDatosEmpresa();
     vincularEventos();
 });
 
@@ -101,6 +102,9 @@ async function cargarDatosCuenta() {
         document.getElementById("inputUsername").value = user.username || "";
         document.getElementById("inputEmail").value = user.email || "";
         document.getElementById("inputRol").value = formatearRol(user.rol);
+
+        const esCliente = (localStorage.getItem("userRole") || "").toUpperCase() === "ROLE_CLIENTE";
+        if (esCliente) document.getElementById("rolFormGroup").style.display = "none";
 
         loading.classList.add("d-none");
         form.classList.remove("d-none");
@@ -224,6 +228,42 @@ function mostrarErrorServidor(mensaje) {
 
 function ocultarErrorServidor() {
     document.getElementById("passwordErrorServidor").classList.add("d-none");
+}
+
+// ============================================================
+// 4. Panel Mi empresa (solo ROLE_CLIENTE)
+// ============================================================
+async function cargarDatosEmpresa() {
+    const esCliente = (localStorage.getItem("userRole") || "").toUpperCase() === "ROLE_CLIENTE";
+    if (!esCliente) return;
+
+    document.getElementById("panelMiEmpresa").classList.remove("d-none");
+
+    try {
+        const response = await fetchConAuth(`${API_URL}/clientes/mi-cliente`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const c = await response.json();
+
+        const nombre = c.tipoCliente === "EMPRESA"
+            ? (c.razonSocial || "—")
+            : [c.nombre, c.apellido].filter(Boolean).join(" ") || "—";
+
+        document.getElementById("empNombre").textContent   = nombre;
+        document.getElementById("empCuit").textContent     = c.cuit || c.dni || "—";
+        document.getElementById("empTelefono").textContent = c.celular || c.telefono || "—";
+        document.getElementById("empEmail").textContent    = c.email || "—";
+        document.getElementById("empDireccion").textContent = c.direccion || "—";
+        document.getElementById("empLocalidad").textContent = [c.localidad, c.provincia]
+            .filter(Boolean).join(", ") || "—";
+
+        document.getElementById("empresaLoading").classList.add("d-none");
+        document.getElementById("empresaData").classList.remove("d-none");
+
+    } catch (error) {
+        console.error("Error al cargar datos de empresa:", error);
+        document.getElementById("empresaLoading").innerHTML =
+            '<span class="text-danger">No se pudieron cargar los datos de la empresa.</span>';
+    }
 }
 
 // ============================================================

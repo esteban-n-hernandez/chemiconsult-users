@@ -1,3 +1,9 @@
+// Aplicar tema lo antes posible para evitar flash (default: claro)
+(function () {
+    const saved = localStorage.getItem('chemiconsult_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("sidebar-container");
     if (!container) return;
@@ -63,6 +69,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div class="sidebar-bottom">
                 <hr class="sidebar-divider"/>
+                <button class="sidebar-collapse-btn" id="themeToggle" title="Cambiar tema">
+                    <i class="bi bi-moon"></i>
+                    <span class="sidebar-label"> Modo oscuro</span>
+                </button>
                 <button class="sidebar-collapse-btn" id="sidebarToggle" title="Colapsar">
                     <i class="bi bi-chevron-left"></i>
                     <span class="sidebar-label"> Colapsar</span>
@@ -83,7 +93,32 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "login.html";
     });
 
+    const THEME_KEY   = "chemiconsult_theme";
     const SIDEBAR_KEY = "chemiconsult_sidebar_collapsed";
+
+    function getEffectiveTheme() {
+        return localStorage.getItem(THEME_KEY) || 'light';
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(THEME_KEY, theme);
+        const btn   = document.getElementById('themeToggle');
+        if (!btn) return;
+        const icon  = btn.querySelector('i');
+        const label = btn.querySelector('.sidebar-label');
+        const isDark = theme === 'dark';
+        if (icon)  icon.className   = `bi ${isDark ? 'bi-sun' : 'bi-moon'}`;
+        if (label) label.textContent = isDark ? ' Modo claro' : ' Modo oscuro';
+        btn.title = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', () => {
+        const current = getEffectiveTheme();
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    applyTheme(getEffectiveTheme());
 
     function applySidebarCollapse() {
         const collapsed = localStorage.getItem(SIDEBAR_KEY) === "1";
@@ -117,5 +152,6 @@ function inicializarHeader() {
     if (el('header-rol'))    el('header-rol').textContent    = rol === 'ROLE_IT' ? 'IT' : 'Empleado';
     if (el('header-avatar')) el('header-avatar').textContent = iniciales;
     if (el('fecha-hoy'))     el('fecha-hoy').textContent     = hoy.charAt(0).toUpperCase() + hoy.slice(1);
+
 }
 

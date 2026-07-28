@@ -1,46 +1,7 @@
-:root {
-    --verde:       #5EA504;
-    --verde-light: #eaf5d3;
-    --gris:        #6c757d;
-    --borde:       #dee2e6;
-}
 
 * { box-sizing: border-box; }
 
-body {
-    background: #f0f2f5;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    font-family: 'Segoe UI', sans-serif;
-}
-/* ── Contenido ── */
-.content {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
-}
 
-/* ── Header ── */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.75rem;
-}
-
-.page-header h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin: 0;
-}
-
-.page-header p {
-    font-size: 13px;
-    color: var(--gris);
-    margin: 2px 0 0;
-}
 
 .avatar-circle {
     width: 38px;
@@ -94,7 +55,7 @@ body {
 }
 
 .kpi-card {
-    background: white;
+    background: var(--bg-surface);
     border-radius: 14px;
     padding: 1.25rem 1.5rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -134,7 +95,7 @@ body {
     font-weight: 700;
     margin: 0;
     line-height: 1;
-    color: #1a1a2e;
+    color: var(--text-main);
 }
 
 .kpi-data p {
@@ -143,33 +104,7 @@ body {
     margin: 4px 0 0;
 }
 
-/* ── Panel ── */
-.panel {
-    background: white;
-    border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    overflow: hidden;
-    margin-bottom: 1rem;
-}
-
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--borde);
-    flex-wrap: wrap;
-    gap: 0.75rem;
-}
-
-.panel-header h5 {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-    color: #1a1a2e;
-}
-
-.panel-body { padding: 1rem 1.25rem; }
+.panel { margin-bottom: 1rem; }
 
 /* ── Buscador ── */
 .search-wrapper {
@@ -195,7 +130,8 @@ body {
     font-size: 13px;
     outline: none;
     transition: border-color 0.2s;
-    color: #1a1a2e;
+    color: var(--text-main);
+    background: var(--bg-surface);
 }
 
 .search-input:focus {
@@ -213,7 +149,7 @@ body {
 }
 
 .tabla-muestras thead th {
-    background: #f8f9fa;
+    background: var(--bg-subtle);
     color: var(--gris);
     font-weight: 600;
     padding: 8px 12px;
@@ -229,7 +165,7 @@ body {
     transition: background 0.15s;
 }
 
-.tabla-muestras tbody tr:hover { background: #f8f9fa; }
+.tabla-muestras tbody tr:hover { background: var(--bg-subtle); }
 .tabla-muestras tbody tr:last-child { border-bottom: none; }
 
 .tabla-muestras td {
@@ -240,10 +176,10 @@ body {
 .cod-badge {
     font-family: monospace;
     font-size: 12px;
-    background: #f0f2f5;
+    background: var(--bg-subtle);
     padding: 2px 7px;
     border-radius: 4px;
-    color: #495057;
+    color: var(--color-text-secondary);
     letter-spacing: 0.3px;
 }
 
@@ -325,13 +261,13 @@ body {
     height: 32px;
     border-radius: 6px;
     border: 1px solid var(--borde);
-    background: white;
+    background: var(--bg-surface);
     font-size: 13px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #495057;
+    color: var(--color-text-secondary);
     transition: all 0.2s;
 }
 
@@ -380,7 +316,7 @@ body {
     top: 0; right: -100%;
     width: min(700px, 100vw);
     height: 100vh;
-    background: #fff;
+    background: var(--bg-surface);
     z-index: 1001;
     display: flex;
     flex-direction: column;
@@ -394,21 +330,21 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f9fafb;
+    border-bottom: 1px solid var(--color-border-tertiary);
+    background: var(--bg-subtle);
 }
 .pdf-panel-header h6 {
     margin: 0;
     font-size: 15px;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-main);
 }
 .pdf-panel-header .btn-close-panel {
     background: none;
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     line-height: 1;
 }
 .pdf-panel-header .btn-close-panel:hover { color: #111; }
@@ -417,8 +353,8 @@ body {
     display: flex;
     gap: 8px;
     padding: 10px 20px;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f9fafb;
+    border-bottom: 1px solid var(--color-border-tertiary);
+    background: var(--bg-subtle);
 }
 .pdf-panel-actions a {
     display: inline-flex;
@@ -459,8 +395,8 @@ body {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    background: #fff;
-    color: #6b7280;
+    background: var(--bg-surface);
+    color: var(--color-text-secondary);
     font-size: 14px;
 }
 .spinner {

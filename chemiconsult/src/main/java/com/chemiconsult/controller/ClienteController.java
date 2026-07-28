@@ -7,6 +7,8 @@ import com.chemiconsult.to.ClienteTO;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,14 +25,21 @@ public class ClienteController {
 
     private final ClienteService clienteService;
 
-    // GET /api/clientes â€” solo activos
+    // GET /api/clientes - solo activos
     @GetMapping
     public List<ClienteDE> getClientes() {
         log.info("Obteniendo clientes activos");
         return clienteService.getClientes();
     }
 
-    // GET /api/clientes/todos â€” todos
+    // GET /api/clientes/mi-cliente - cliente del usuario autenticado
+    @GetMapping("/mi-cliente")
+    public ResponseEntity<ClienteDE> getMiCliente(@AuthenticationPrincipal UserDetails principal) {
+        log.info("Obteniendo cliente del usuario: {}", principal.getUsername());
+        return ResponseEntity.ok(clienteService.getClientePorEmail(principal.getUsername()));
+    }
+
+    // GET /api/clientes/todos - todos
     @GetMapping("/todos")
     public List<ClienteDE> getClientesTodos() {
         log.info("Obteniendo todos los clientes");

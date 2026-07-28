@@ -253,7 +253,7 @@ function setupForm() {
 
         // El estado inicial solo aplica al crear — al editar no se toca (se cambia arrastrando)
         if (!esEdicion) {
-            payload.status = document.getElementById("status").value;
+            payload.status = document.querySelector('input[name="task-status"]:checked')?.value || 'TODO';
         }
 
         try {
