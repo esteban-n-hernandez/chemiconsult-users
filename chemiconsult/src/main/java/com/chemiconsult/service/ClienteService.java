@@ -96,6 +96,14 @@ public class ClienteService {
         clienteRepository.deleteById(id);
     }
 
+    // ── Cliente por usuario logueado ──
+    public ClienteDE getClientePorEmail(String email) {
+        UserDE user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
+        return clienteRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new RuntimeException("No hay cliente asociado a este usuario"));
+    }
+
     // ── Asignar usuario al cliente ──
     public ClienteDE asignarUsuario(Long id, AsignarUsuarioTO to) {
         ClienteDE cliente = getCliente(id);

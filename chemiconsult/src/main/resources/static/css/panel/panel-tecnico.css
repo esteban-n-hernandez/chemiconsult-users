@@ -1,94 +1,10 @@
-/* Estilos e Inyección de Variables Corporativas provistas por el usuario */
-:root {
-    --verde: #5EA504;
-    --verde-oscuro: #4a8403;
-    --color-text-secondary: #6c757d;
-    --color-text-tertiary: #adb5bd;
-    --color-text-info: #0d6efd;
-    --color-text-success: #146c43;
-    --color-text-warning: #856404;
-    --color-text-danger: #842029;
-    --color-background-info: #cfe2ff;
-    --color-background-success: #d1e7dd;
-    --color-background-warning: #fff3cd;
-    --color-background-danger: #f8d7da;
-    --color-border-tertiary: #dee2e6;
-}
 
 * {
     box-sizing: border-box;
 }
 
-body {
-    background: #f0f2f5;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-}
 
-.content {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
-}
 
-/* ── Header ── */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.75rem;
-}
-
-.page-header h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin: 0;
-}
-
-.page-header p {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    margin: 2px 0 0;
-}
-
-.header-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.header-user-info {
-    text-align: right;
-}
-
-.header-user-name {
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0;
-}
-
-.header-user-role {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    margin: 0;
-}
-
-.avatar-circle {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--verde-suave);
-    color: var(--verde-oscuro);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 13px;
-}
 
 /* ── Sistema de Navegación por Filtros/Pestañas ── */
 .filtros-tabs {
@@ -102,7 +18,7 @@ body {
     padding: 6px 18px;
     border-radius: 20px;
     border: 1px solid var(--color-border-tertiary);
-    background: white;
+    background: var(--bg-surface);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -143,7 +59,7 @@ body {
 }
 
 .panel-custom {
-    background: white;
+    background: var(--bg-surface);
     border-radius: 14px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     overflow: hidden;
@@ -159,7 +75,7 @@ body {
     font-size: 14px;
     font-weight: 600;
     margin: 0;
-    color: #1a1a2e;
+    color: var(--text-main);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -180,21 +96,21 @@ body {
 .form-group-custom label {
     font-size: 11px;
     font-weight: 600;
-    color: #495057;
+    color: var(--color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.4px;
 }
 
 .form-control-custom {
     padding: 8px 12px;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--color-border-tertiary);
     border-radius: 8px;
     font-size: 13px;
-    color: #1a1a2e;
+    color: var(--text-main);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     width: 100%;
-    background: white;
+    background: var(--bg-surface);
 }
 
 .form-control-custom:focus {
@@ -232,7 +148,7 @@ body {
 }
 
 .tabla-config thead th {
-    background: #f8f9fa;
+    background: var(--bg-subtle);
     color: var(--color-text-secondary);
     font-weight: 600;
     padding: 10px 14px;
@@ -244,18 +160,18 @@ body {
 }
 
 .tabla-config tbody tr {
-    border-bottom: 1px solid #f1f3f5;
+    border-bottom: 1px solid var(--color-border-soft);
     transition: background 0.15s;
 }
 
 .tabla-config tbody tr:hover {
-    background: #f8f9fa;
+    background: var(--bg-subtle);
 }
 
 .tabla-config td {
     padding: 12px 14px;
     vertical-align: middle;
-    color: #334155;
+    color: var(--text-main);
 }
 
 .btn-accion-danger {
@@ -286,20 +202,20 @@ body {
 
 .tabla-filtro {
     padding: 5px 10px;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--color-border-tertiary);
     border-radius: 8px;
     font-size: 12px;
-    color: #1a1a2e;
+    color: var(--text-main);
     outline: none;
     width: 180px;
     transition: border-color 0.2s, box-shadow 0.2s;
-    background: #f8f9fa;
+    background: var(--bg-subtle);
 }
 
 .tabla-filtro:focus {
     border-color: var(--verde);
     box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
-    background: white;
+    background: var(--bg-surface);
 }
 
 /* ── Paginador ── */
@@ -308,7 +224,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 10px 14px;
-    border-top: 1px solid #f1f3f5;
+    border-top: 1px solid var(--color-border-soft);
     font-size: 12px;
     color: var(--color-text-secondary);
     min-height: 44px;
@@ -328,10 +244,10 @@ body {
     padding: 4px 12px;
     border: 1px solid var(--color-border-tertiary);
     border-radius: 6px;
-    background: white;
+    background: var(--bg-surface);
     font-size: 12px;
     cursor: pointer;
-    color: #334155;
+    color: var(--text-main);
     transition: all 0.15s;
     font-weight: 500;
 }

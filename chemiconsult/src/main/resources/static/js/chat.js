@@ -5,6 +5,7 @@
     const API_GRUPO = '/api/mensajes/grupo';
     const POLL_INTERVAL = 15000;
     const LIMITE_MSGS = 10;
+    const GRUPO_LAST_KEY = 'chatGrupoLastMsgId';
 
     let panelAbierto = false;
     let vistaActual = 'lista';
@@ -48,6 +49,33 @@
         { bg: '#eef0f7', color: '#0a2d6b' },
     ];
     function colorParaId(id) { return COLORES[id % COLORES.length]; }
+
+    function getGrupoLastMsgId() {
+        const v = localStorage.getItem(GRUPO_LAST_KEY);
+        return v ? parseInt(v) : null;
+    }
+    function setGrupoLastMsgId(id) {
+        if (id != null) localStorage.setItem(GRUPO_LAST_KEY, String(id));
+    }
+
+    async function contarNoLeidosGrupo() {
+        if (!token()) return 0;
+        try {
+            const lastId = getGrupoLastMsgId();
+            if (lastId === null) {
+                // Primera visita: inicializar sin mostrar unread
+                const r = await fetch(`${API_GRUPO}?limite=1`, { headers: headers() });
+                if (!r.ok) return 0;
+                const msgs = await r.json();
+                if (msgs.length > 0) setGrupoLastMsgId(msgs[msgs.length - 1].id);
+                return 0;
+            }
+            const r = await fetch(`${API_GRUPO}?despues=${lastId}`, { headers: headers() });
+            if (!r.ok) return 0;
+            const msgs = await r.json();
+            return msgs.length;
+        } catch (_) { return 0; }
+    }
 
     function escHtml(str) {
         return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -169,13 +197,17 @@
     async function actualizarBadge() {
         if (!token()) return;
         try {
-            const r = await fetch(API + '/no-leidos', { headers: headers() });
+            const [r, grupoCount] = await Promise.all([
+                fetch(API + '/no-leidos', { headers: headers() }),
+                contarNoLeidosGrupo()
+            ]);
             if (!r.ok) return;
             const { total } = await r.json();
             const badge = document.getElementById('chatBadge');
             if (!badge) return;
-            if (total > 0) {
-                badge.textContent = total > 99 ? '99+' : total;
+            const totalFinal = total + grupoCount;
+            if (totalFinal > 0) {
+                badge.textContent = totalFinal > 99 ? '99+' : totalFinal;
                 badge.style.display = 'flex';
             } else {
                 badge.style.display = 'none';
@@ -189,12 +221,17 @@
         if (!contenedor) return;
 
         // Ítem fijo: Chat General (siempre al tope)
+        const grupoNoLeidos = await contarNoLeidosGrupo();
+        const grupoBadge = grupoNoLeidos > 0
+            ? `<div class="chat-ci-meta"><span class="chat-ci-unread">${grupoNoLeidos > 99 ? '99+' : grupoNoLeidos}</span></div>`
+            : '';
         const grupoHtml = `<div class="chat-contact-item chat-grupo-item" id="chatGrupoItem">
             <div class="chat-avatar chat-avatar-grupo"><i class="bi bi-people-fill"></i></div>
             <div class="chat-ci-info">
                 <div class="chat-ci-name">General</div>
                 <div class="chat-ci-preview">Chat grupal de empleados</div>
             </div>
+            ${grupoBadge}
         </div>
         <div class="chat-conv-divider"></div>`;
 
@@ -262,7 +299,9 @@
         avatar.className = 'chat-avatar-sm chat-avatar-grupo';
         document.getElementById('chatConvNombre').textContent = 'General';
         mostrarVista('conv');
-        cargarMensajesIniciales();
+        cargarMensajesIniciales().then(() => {
+            if (modoGrupo && ultimoMsgId !== null) setGrupoLastMsgId(ultimoMsgId);
+        });
     }
 
     // ── Conversación privada ──────────────────────────────────────────────────
@@ -391,7 +430,9 @@
 
             if (alFondo) contenedor.scrollTop = contenedor.scrollHeight;
 
-            if (!modoGrupo) {
+            if (modoGrupo) {
+                setGrupoLastMsgId(ultimoMsgId);
+            } else {
                 await fetch(API + '/leer/' + convActual.id, { method: 'PUT', headers: headers() });
             }
         } catch (_) {}
@@ -420,6 +461,7 @@
             const renderFn = modoGrupo ? renderMensajeGrupo : renderMensaje;
             contenedor.insertAdjacentHTML('beforeend', renderFn(msg));
             ultimoMsgId = msg.id;
+            if (modoGrupo) setGrupoLastMsgId(ultimoMsgId);
             contenedor.scrollTop = contenedor.scrollHeight;
         } catch (_) {}
     }

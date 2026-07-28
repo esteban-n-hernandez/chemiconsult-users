@@ -2,20 +2,14 @@
 
 /* ─── Layout (body flex = sidebar + contenido lado a lado) ── */
 body {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    background-color: #f0f2f5;
     background-image: radial-gradient(rgba(26,26,46,.04) 1px, transparent 1px);
     background-size: 5px 5px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 0;
-    color: #0f172a;
+    color: var(--text-main);
 }
 
 .container-fluid {
     flex: 1;
-    padding: 2.5rem !important;
+    padding: 2rem !important;
     overflow-y: auto;
     height: 100vh;
 }
@@ -48,9 +42,9 @@ body {
 }
 
 .view-btn {
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #374151;
+    border: 1px solid var(--color-border-tertiary);
+    background: var(--bg-surface);
+    color: var(--color-text-secondary);
     padding: 6px 14px;
     border-radius: 6px;
     font-size: 13px;
@@ -92,7 +86,7 @@ body {
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: #6b7280;
+    color: var(--color-text-secondary);
 }
 .legend-dot {
     width: 10px;
@@ -103,8 +97,8 @@ body {
 
 /* ─── Wrapper del calendario ───────────────────────────── */
 .calendar-wrapper {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--bg-surface);
+    border: 1px solid var(--color-border-tertiary);
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: 0 1px 4px rgba(0,0,0,.05);
@@ -114,13 +108,13 @@ body {
 .fc .fc-toolbar-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--text-main);
 }
 
 .fc .fc-button {
-    background: #f3f4f6 !important;
-    border: 1px solid #d1d5db !important;
-    color: #374151 !important;
+    background: var(--bg-subtle) !important;
+    border: 1px solid var(--color-border-tertiary) !important;
+    color: var(--color-text-secondary) !important;
     font-size: 12px !important;
     padding: 4px 10px !important;
     border-radius: 6px !important;
@@ -128,7 +122,8 @@ body {
     text-transform: none !important;
 }
 .fc .fc-button:hover {
-    background: #e5e7eb !important;
+    background: var(--bg-subtle) !important;
+    filter: brightness(0.95);
 }
 .fc .fc-button-active {
     background: var(--color-brand) !important;
@@ -147,10 +142,10 @@ body {
 .fc-daygrid-event-dot { display: none !important; }
 
 .fc-col-header-cell {
-    background: #f9fafb;
+    background: var(--bg-subtle);
     font-size: 12px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     text-transform: uppercase;
     letter-spacing: .4px;
 }
@@ -161,12 +156,12 @@ body {
 
 .fc .fc-daygrid-day-number {
     font-size: 13px;
-    color: #374151;
+    color: var(--color-text-secondary);
 }
 
 /* ─── Modal ────────────────────────────────────────────── */
-.modal-header { border-bottom: 1px solid #f3f4f6; }
-.modal-footer { border-top: 1px solid #f3f4f6; }
+.modal-header { border-bottom: 1px solid var(--color-border-soft); }
+.modal-footer { border-top: 1px solid var(--color-border-soft); }
 
 .estado-badge {
     display: inline-flex;
@@ -192,13 +187,13 @@ body {
 .detalle-label {
     font-size: 11px;
     font-weight: 700;
-    color: #9ca3af;
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: .5px;
 }
 .detalle-value {
     font-size: 14px;
-    color: #111827;
+    color: var(--text-main);
 }
 
 /* ─── Lista de eventos en vista agenda ─────────────────── */
@@ -215,14 +210,14 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--bg-surface);
+    border: 1px solid var(--color-border-tertiary);
     border-radius: 999px;
     padding: 6px 16px;
     box-shadow: 0 4px 16px rgba(0,0,0,.10);
     font-size: 12.5px;
     font-weight: 500;
-    color: #374151;
+    color: var(--color-text-secondary);
     z-index: 10;
     opacity: 0;
     pointer-events: none;
@@ -314,13 +309,13 @@ body {
     gap: 16px;
     max-height: 65vh;
     overflow-y: auto;
-    background: #f9fafb;
+    background: var(--bg-subtle);
 }
 
 /* Secciones del formulario */
 .form-section {
-    background: #fff;
-    border: 1px solid #e9ecef;
+    background: var(--bg-surface);
+    border: 1px solid var(--color-border-tertiary);
     border-radius: 10px;
     padding: 14px 16px;
 }
@@ -348,7 +343,7 @@ body {
 .field-label {
     font-size: 12px;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text-secondary);
 }
 .required { color: #ef4444; margin-left: 2px; }
 .field-opt {
@@ -361,11 +356,11 @@ body {
 .field-input {
     width: 100%;
     padding: 7px 11px;
-    border: 1.5px solid #e5e7eb;
+    border: 1.5px solid var(--color-border-tertiary);
     border-radius: 7px;
     font-size: 13px;
-    color: #111827;
-    background: #fff;
+    color: var(--text-main);
+    background: var(--bg-surface);
     transition: border-color .15s, box-shadow .15s;
     outline: none;
     appearance: none;
@@ -385,14 +380,14 @@ select.field-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='htt
     justify-content: flex-end;
     gap: 10px;
     padding: 16px 24px;
-    border-top: 1px solid #e9ecef;
-    background: #fff;
+    border-top: 1px solid var(--color-border-tertiary);
+    background: var(--bg-surface);
 }
 
 .btn-agenda-cancel {
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    color: #374151;
+    background: var(--bg-subtle);
+    border: 1px solid var(--color-border-tertiary);
+    color: var(--color-text-secondary);
     padding: 8px 18px;
     border-radius: 7px;
     font-size: 13.5px;
@@ -400,7 +395,7 @@ select.field-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='htt
     cursor: pointer;
     transition: background .15s;
 }
-.btn-agenda-cancel:hover { background: #e5e7eb; }
+.btn-agenda-cancel:hover { background: var(--bg-subtle); filter: brightness(0.95); }
 
 .btn-agenda-save {
     background: var(--color-brand);
@@ -417,3 +412,143 @@ select.field-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='htt
     transition: background .15s;
 }
 .btn-agenda-save:hover { background: #4a8503; }
+
+/* ─── Estado picker (formulario nuevo/editar muestreo) ──── */
+.estado-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.estado-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-tertiary);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.estado-option input[type="radio"] { display: none; }
+
+.estado-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.estado-dot.pendiente  { background: #f59e0b; }
+.estado-dot.confirmado { background: #5EA504; }
+.estado-dot.realizado  { background: #64748b; }
+.estado-dot.cancelado  { background: #ef4444; }
+
+.estado-option:has(input:checked) { border-width: 2px; }
+.estado-option:has(input[value="PENDIENTE"]:checked)  { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+.estado-option:has(input[value="CONFIRMADO"]:checked) { background: #eaf5d3; border-color: #5EA504; color: #3b6d11; }
+.estado-option:has(input[value="REALIZADO"]:checked)  { background: var(--bg-subtle); border-color: #64748b; color: var(--color-text-secondary); }
+.estado-option:has(input[value="CANCELADO"]:checked)  { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+/* ─── Dark mode — FullCalendar ──────────────────────────── */
+@media (prefers-color-scheme: dark) {
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+        border-color: var(--color-border-soft) !important;
+    }
+    .fc .fc-scrollgrid {
+        border-color: var(--color-border-soft) !important;
+    }
+    .fc-daygrid-day {
+        background: var(--bg-surface) !important;
+    }
+    .fc-daygrid-day.fc-day-other {
+        background: var(--bg-subtle) !important;
+    }
+    .fc-daygrid-day-number,
+    .fc .fc-daygrid-day-number {
+        color: var(--color-text-secondary) !important;
+    }
+    .fc-timegrid-slot,
+    .fc-timegrid-slot-lane {
+        background: var(--bg-surface) !important;
+    }
+    .fc-list-event td {
+        background: var(--bg-surface) !important;
+        color: var(--text-main) !important;
+    }
+    .fc-list-event:hover td {
+        background: var(--bg-subtle) !important;
+    }
+    .fc-list-day th {
+        background: var(--bg-subtle) !important;
+    }
+    .fc-list-day-text,
+    .fc-list-day-side-text {
+        color: var(--color-text-secondary) !important;
+    }
+    .fc-list-empty {
+        background: var(--bg-surface) !important;
+        color: var(--color-text-secondary) !important;
+    }
+    .fc-timegrid-axis {
+        background: var(--bg-surface) !important;
+    }
+    .fc-timegrid-axis-cushion,
+    .fc-timegrid-slot-label-cushion {
+        color: var(--color-text-secondary) !important;
+    }
+}
+
+:root[data-theme="dark"] .fc-theme-standard td,
+:root[data-theme="dark"] .fc-theme-standard th {
+    border-color: var(--color-border-soft) !important;
+}
+:root[data-theme="dark"] .fc .fc-scrollgrid {
+    border-color: var(--color-border-soft) !important;
+}
+:root[data-theme="dark"] .fc-daygrid-day {
+    background: var(--bg-surface) !important;
+}
+:root[data-theme="dark"] .fc-daygrid-day.fc-day-other {
+    background: var(--bg-subtle) !important;
+}
+:root[data-theme="dark"] .fc-daygrid-day-number,
+:root[data-theme="dark"] .fc .fc-daygrid-day-number {
+    color: var(--color-text-secondary) !important;
+}
+:root[data-theme="dark"] .fc-timegrid-slot,
+:root[data-theme="dark"] .fc-timegrid-slot-lane {
+    background: var(--bg-surface) !important;
+}
+:root[data-theme="dark"] .fc-list-event td {
+    background: var(--bg-surface) !important;
+    color: var(--text-main) !important;
+}
+:root[data-theme="dark"] .fc-list-event:hover td {
+    background: var(--bg-subtle) !important;
+}
+:root[data-theme="dark"] .fc-list-day th {
+    background: var(--bg-subtle) !important;
+}
+:root[data-theme="dark"] .fc-list-day-text,
+:root[data-theme="dark"] .fc-list-day-side-text {
+    color: var(--color-text-secondary) !important;
+}
+:root[data-theme="dark"] .fc-list-empty {
+    background: var(--bg-surface) !important;
+    color: var(--color-text-secondary) !important;
+}
+:root[data-theme="dark"] .fc-timegrid-axis {
+    background: var(--bg-surface) !important;
+}
+:root[data-theme="dark"] .fc-timegrid-axis-cushion,
+:root[data-theme="dark"] .fc-timegrid-slot-label-cushion {
+    color: var(--color-text-secondary) !important;
+}

@@ -209,12 +209,24 @@
                         </div>
                         <div class="form-field">
                             <label class="field-label">Estado</label>
-                            <select class="field-input" id="form-estado">
-                                <option value="PENDIENTE">🟡 Pendiente</option>
-                                <option value="CONFIRMADO">🟢 Confirmado</option>
-                                <option value="REALIZADO">⚫ Realizado</option>
-                                <option value="CANCELADO">🔴 Cancelado</option>
-                            </select>
+                            <div class="estado-picker">
+                                <label class="estado-option">
+                                    <input type="radio" name="form-estado" value="PENDIENTE" checked/>
+                                    <span class="estado-dot pendiente"></span> Pendiente
+                                </label>
+                                <label class="estado-option">
+                                    <input type="radio" name="form-estado" value="CONFIRMADO"/>
+                                    <span class="estado-dot confirmado"></span> Confirmado
+                                </label>
+                                <label class="estado-option">
+                                    <input type="radio" name="form-estado" value="REALIZADO"/>
+                                    <span class="estado-dot realizado"></span> Realizado
+                                </label>
+                                <label class="estado-option">
+                                    <input type="radio" name="form-estado" value="CANCELADO"/>
+                                    <span class="estado-dot cancelado"></span> Cancelado
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>

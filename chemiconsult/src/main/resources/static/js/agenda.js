@@ -153,10 +153,11 @@ async function abrirFormulario(m = {}) {
     muestreoEditandoId = m.id || null;
 
     document.getElementById('formModalTitle').textContent = m.id ? 'Editar muestreo' : 'Nuevo muestreo';
-    document.getElementById('form-fecha').value      = m.fechaHora ? m.fechaHora.substring(0, 16) : '';
-    document.getElementById('form-direccion').value  = m.direccion || '';
-    document.getElementById('form-obs').value             = m.observaciones || '';
-    document.getElementById('form-estado').value          = m.estado || 'PENDIENTE';
+    document.getElementById('form-fecha').value     = m.fechaHora ? m.fechaHora.substring(0, 16) : '';
+    document.getElementById('form-direccion').value = m.direccion || '';
+    document.getElementById('form-obs').value        = m.observaciones || '';
+    const radioEstado = document.querySelector(`input[name="form-estado"][value="${m.estado || 'PENDIENTE'}"]`);
+    if (radioEstado) radioEstado.checked = true;
 
     const selCliente = document.getElementById('form-cliente');
     selCliente.innerHTML = '<option value="">Seleccionar cliente…</option>'
@@ -234,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             responsableId: responsableVal ? Number(responsableVal) : null,
             direccion:       document.getElementById('form-direccion').value || null,
             observaciones:   document.getElementById('form-obs').value || null,
-            estado:          document.getElementById('form-estado').value
+            estado:          document.querySelector('input[name="form-estado"]:checked')?.value || 'PENDIENTE'
         };
 
         try {

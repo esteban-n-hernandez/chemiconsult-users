@@ -2,8 +2,6 @@
    Variables - Minimalismo con Acento Corporativo Chemiconsult
    ========================================================================== */
 :root {
-    --verde: #5EA504;
-    --verde-oscuro: #4a8403;
     --bg-main: #f8fafc;
     --bg-sidebar: #ffffff;
 
@@ -29,26 +27,71 @@
     --status-done-text: var(--verde-oscuro);
 }
 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main:    #0d1117;
+        --bg-sidebar: #161b27;
+        --text-primary:   #e2e8f0;
+        --text-secondary: #94a3b8;
+        --text-muted:     #64748b;
+        --border-flat:    #2d3748;
+        --status-todo-bg:         #1e293b;
+        --status-todo-text:       #94a3b8;
+        --status-inprogress-bg:   #1e3a5f;
+        --status-inprogress-text: #60a5fa;
+        --status-revision-bg:     #451a03;
+        --status-revision-text:   #fbbf24;
+        --status-done-bg:         #14532d;
+        --status-done-text:       #4ade80;
+    }
+}
+:root[data-theme="dark"] {
+    --bg-main:    #0d1117;
+    --bg-sidebar: #161b27;
+    --text-primary:   #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted:     #64748b;
+    --border-flat:    #2d3748;
+    --status-todo-bg:         #1e293b;
+    --status-todo-text:       #94a3b8;
+    --status-inprogress-bg:   #1e3a5f;
+    --status-inprogress-text: #60a5fa;
+    --status-revision-bg:     #451a03;
+    --status-revision-text:   #fbbf24;
+    --status-done-bg:         #14532d;
+    --status-done-text:       #4ade80;
+}
+:root[data-theme="light"] {
+    --bg-main:    #f8fafc;
+    --bg-sidebar: #ffffff;
+    --text-primary:   #0f172a;
+    --text-secondary: #64748b;
+    --text-muted:     #94a3b8;
+    --border-flat:    #e2e8f0;
+    --status-todo-bg:         #f1f5f9;
+    --status-todo-text:       #64748b;
+    --status-inprogress-bg:   #eff6ff;
+    --status-inprogress-text: #2563eb;
+    --status-revision-bg:     #fffbeb;
+    --status-revision-text:   #b45309;
+    --status-done-bg:         #f0fdf4;
+    --status-done-text:       var(--verde-oscuro);
+}
+
 * {
     box-sizing: border-box;
 }
 
 body {
-    background-color: #f0f2f5;
     background-image: radial-gradient(rgba(26,26,46,.04) 1px, transparent 1px);
     background-size: 5px 5px;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 0;
     color: var(--text-primary);
 }
 
 /* ── Contenedor y Encabezados ── */
 .container-fluid {
     flex: 1;
-    padding: 2.5rem !important;
+    padding: 2rem !important;
     overflow: hidden;
     height: 100vh;
     display: flex;
@@ -92,7 +135,7 @@ body {
    Tablero Kanban — ahora con 4 columnas
    ========================================================================== */
 .kanban-col {
-    background: #ffffff;
+    background: var(--bg-surface);
     border: 1px solid var(--border-flat);
     border-radius: 12px;
     padding: 1.25rem 1rem;
@@ -142,7 +185,7 @@ body {
 }
 
 .kanban-col[data-status="TODO"] .kanban-header .badge {
-    background: #f1f5f9 !important;
+    background: var(--bg-subtle) !important;
     color: var(--text-secondary) !important;
 }
 
@@ -171,7 +214,7 @@ body {
 }
 
 .dropzone.drag-over {
-    background: #f8fafc;
+    background: var(--bg-subtle);
     border: 1px dashed var(--text-muted);
     border-radius: 8px;
 }
@@ -181,7 +224,7 @@ body {
    ========================================================================== */
 .kanban-card {
     position: relative;
-    background: #ffffff;
+    background: var(--bg-surface);
     border: 1px solid var(--border-flat);
     border-radius: 10px;
     padding: 12px 14px;
@@ -195,7 +238,7 @@ body {
 .kanban-card.done .kanban-card-title { text-decoration: line-through; color: var(--text-muted); }
 
 .kanban-card:hover {
-    border-color: #cbd5e1;
+    border-color: var(--color-border-tertiary);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
     transform: translateY(-2px);
 }
@@ -278,7 +321,7 @@ body {
 .creator-avatar {
     width: 20px;
     height: 20px;
-    background-color: #f1f5f9;
+    background-color: var(--bg-subtle);
     color: var(--text-secondary);
     font-size: 9px;
     font-weight: 600;
@@ -339,7 +382,7 @@ body {
 .dl-over, .dl-hoy { background: #fef2f2; color: #dc2626; }
 .dl-tom            { background: #fff7ed; color: #ea580c; }
 .dl-soon           { background: #eff6ff; color: #2563eb; }
-.dl-ok             { background: #f1f5f9; color: var(--text-secondary); }
+.dl-ok             { background: var(--bg-subtle); color: var(--text-secondary); }
 
 /* ── Toolbar: filtro + acciones ── */
 .kb-toolbar {
@@ -380,7 +423,7 @@ body {
     padding: 4px 12px;
     border-radius: 20px;
     border: 1px solid #daeacd;
-    background: #ffffff;
+    background: var(--bg-surface);
     font-size: 12px;
     font-family: inherit;
     color: var(--verde);
@@ -430,7 +473,7 @@ body {
 }
 
 .btn-kb-outline {
-    background: white;
+    background: var(--bg-surface);
     border-color: #daeacd;
     color: var(--verde);
 }
@@ -461,7 +504,7 @@ body {
     align-items: center;
     padding: 20px 24px 18px;
     border-bottom: 1px solid var(--border-flat);
-    background: #fafbfc;
+    background: var(--bg-subtle);
 }
 
 .archive-header-left {
@@ -473,7 +516,7 @@ body {
 .archive-icon-wrap {
     width: 40px;
     height: 40px;
-    background: #f1f5f9;
+    background: var(--bg-subtle);
     border: 1px solid var(--border-flat);
     border-radius: 10px;
     display: flex;
@@ -508,7 +551,7 @@ body {
     position: relative;
     padding: 14px 16px 10px;
     border-bottom: 1px solid var(--border-flat);
-    background: #fff;
+    background: var(--bg-surface);
     position: sticky;
     top: 0;
     z-index: 2;
@@ -528,7 +571,7 @@ body {
     width: 100%;
     border: 1px solid var(--border-flat);
     border-radius: 7px;
-    background: #f8fafc;
+    background: var(--bg-subtle);
     padding: 7px 12px 7px 32px;
     font-size: 13px;
     color: var(--text-primary);
@@ -538,7 +581,7 @@ body {
 
 .archive-search-input:focus {
     border-color: var(--verde);
-    background: #fff;
+    background: var(--bg-surface);
     box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
 }
 
@@ -567,7 +610,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: #f8fafc;
+    background: var(--bg-subtle);
     padding: 10px 16px;
     font-size: 11px;
     font-weight: 600;
@@ -579,7 +622,7 @@ body {
 }
 
 .archive-table tbody tr {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--color-border-soft);
     transition: background 0.12s ease;
 }
 
@@ -588,7 +631,7 @@ body {
 }
 
 .archive-table tbody tr:hover {
-    background: #f8fafc;
+    background: var(--bg-subtle);
 }
 
 .archive-table td {
@@ -645,7 +688,7 @@ body {
     align-items: center;
     padding: 14px 24px;
     border-top: 1px solid var(--border-flat);
-    background: #fafbfc;
+    background: var(--bg-subtle);
 }
 
 .archive-pagination {
@@ -659,7 +702,7 @@ body {
     height: 30px;
     border: 1px solid var(--border-flat);
     border-radius: 6px;
-    background: #fff;
+    background: var(--bg-surface);
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -698,13 +741,20 @@ body {
 .form-control, .form-select {
     border-radius: 6px;
     border: 1px solid var(--border-flat);
-    background-color: #f8fafc;
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
     font-size: 13px;
     padding: 8px 12px;
 }
 
 .form-control:focus, .form-select:focus {
-    background-color: #ffffff;
+    background-color: var(--bg-surface);
     border-color: var(--verde);
     box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.12);
 }
+
+/* ── Dots de estado del picker de tarea ── */
+.estado-dot.todo        { background: #f59e0b; }
+.estado-dot.in-progress { background: #3b82f6; }
+.estado-dot.en-revision { background: #f97316; }
+.estado-dot.done        { background: var(--verde); }
