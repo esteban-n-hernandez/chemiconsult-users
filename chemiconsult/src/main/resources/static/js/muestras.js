@@ -251,11 +251,12 @@ function vincularEventos() {
         if (e.target === document.getElementById("modalDetalleMuestra")) cerrarModalDetalle();
     });
 
-    // Cerrar con Escape (cualquiera de los dos modales)
+    // Cerrar con Escape (cualquier modal abierto)
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             cerrarModal();
             cerrarModalDetalle();
+            cerrarAltaInforme();
         }
     });
 
@@ -292,13 +293,22 @@ function vincularEventos() {
     // — Generar informe PDF —
     document.getElementById("btnGenerarInforme").addEventListener("click", onGenerarInforme);
 
-    // Live re-evaluation of cumple badges as user types a result
+    // Live re-evaluation of cumple badges + enable/disable generar informe as user types
     document.getElementById("detalleParametros").addEventListener("input", e => {
         if (!e.target.classList.contains("param-resultado-input")) return;
         e.target.closest(".param-card").querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
             actualizarBadge(badge, e.target.value);
         });
+        recalcularEstadoBtnGenerarInforme();
     });
+
+    // — Modal Alta Informe —
+    document.getElementById("altaInformeClose").addEventListener("click", cerrarAltaInforme);
+    document.getElementById("altaInformeCancelar").addEventListener("click", cerrarAltaInforme);
+    document.getElementById("modalAltaInforme").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("modalAltaInforme")) cerrarAltaInforme();
+    });
+    document.getElementById("btnUploadAltaInforme").addEventListener("click", onUploadAltaInforme);
 }
 
 
@@ -829,6 +839,9 @@ function renderizarTablaMuestras(lista) {
     pagina.forEach(m => {
         const fila = document.createElement("tr");
         const codigo = m.nroProtocolo || m.idMuestra || m.id || "S/N";
+        const puedeGenerar = m.estado === "COMPLETO_SIN_INFORME";
+        const yaCompleto   = m.estado === "COMPLETO";
+        const protocolo    = (m.nroProtocolo || m.idMuestra || m.id || "").toString().replace(/'/g, "");
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
@@ -836,11 +849,21 @@ function renderizarTablaMuestras(lista) {
             <td><span class="badge-estado ${(m.estado || '').toLowerCase()}">${m.estado || '—'}</span></td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
-            <td>
-                <button class="btn btn-sm btn-light" title="Ver detalle"
+            <td class="acciones-celda">
+                <button class="btn-accion" title="Ver detalle"
                         onclick="verDetalleMuestra(${m.id})">
                     <i class="bi bi-eye"></i>
                 </button>
+                ${puedeGenerar ? `
+                <button class="btn-accion btn-accion-verde" title="Generar informe PDF"
+                        onclick="onGenerarInformeDesdeTabla(${m.id})">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                </button>` : ''}
+                ${!yaCompleto ? `
+                <button class="btn-accion btn-accion-gris" title="Subir informe desde PC"
+                        onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
+                    <i class="bi bi-upload"></i>
+                </button>` : ''}
             </td>
         `;
         tbody.appendChild(fila);
@@ -999,9 +1022,18 @@ function labelEstadoDetalle(estado) {
 function renderizarDetalleMuestra(d) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || d.idMuestra || `#${d.id}`;
 
-    // El botón "Generar informe" se oculta si la muestra ya está COMPLETO
+    // El botón "Generar informe" se oculta si ya está COMPLETO,
+    // y se deshabilita si algún parámetro no tiene resultado cargado
     const btnGenerar = document.getElementById("btnGenerarInforme");
-    btnGenerar.style.display = (d.estado === "COMPLETO") ? "none" : "";
+    if (d.estado === "COMPLETO") {
+        btnGenerar.style.display = "none";
+    } else {
+        btnGenerar.style.display = "";
+        const todosCompletos = d.parametros && d.parametros.length > 0 &&
+            d.parametros.every(p => p.valorResultado && p.valorResultado.trim() !== "");
+        btnGenerar.disabled = !todosCompletos;
+        btnGenerar.title = todosCompletos ? "" : "Faltan resultados en uno o más parámetros";
+    }
 
     // Estado badge
     const estadoEl = document.getElementById("detalleEstado");
@@ -1239,6 +1271,87 @@ async function onGenerarInforme() {
     } catch (err) {
         console.error("Error generando informe:", err);
         mostrarToast(`Error al generar el informe: ${err.message}`, true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+}
+
+// Recalcula si el botón "Generar informe" debe estar habilitado
+// según si todos los inputs de resultado tienen valor
+function recalcularEstadoBtnGenerarInforme() {
+    const btnGenerar = document.getElementById("btnGenerarInforme");
+    if (!btnGenerar || btnGenerar.style.display === "none") return;
+    const inputs = document.querySelectorAll(".param-resultado-input");
+    const todosCompletos = inputs.length > 0 &&
+        Array.from(inputs).every(inp => inp.value && inp.value.trim() !== "");
+    btnGenerar.disabled = !todosCompletos;
+    btnGenerar.title = todosCompletos ? "" : "Faltan resultados en uno o más parámetros";
+}
+
+// Genera el informe directamente desde la fila de la tabla (sin abrir el modal)
+window.onGenerarInformeDesdeTabla = async function(id) {
+    detalleAnalisisId = id;
+    await onGenerarInforme();
+};
+
+// ============================================================
+// ALTA DE INFORME (subir PDF desde PC)
+// ============================================================
+let altaInformeAnalisisId = null;
+
+window.abrirAltaInforme = function(id, protocolo) {
+    altaInformeAnalisisId = id;
+    document.getElementById("altaInformeTitulo").textContent = `Alta de informe — ${protocolo}`;
+    document.getElementById("inputAltaInformePdf").value = "";
+    document.getElementById("altaInformeError").style.display = "none";
+    document.getElementById("modalAltaInforme").classList.add("visible");
+};
+
+function cerrarAltaInforme() {
+    document.getElementById("modalAltaInforme").classList.remove("visible");
+    altaInformeAnalisisId = null;
+}
+
+async function onUploadAltaInforme() {
+    const fileInput = document.getElementById("inputAltaInformePdf");
+    const errEl = document.getElementById("altaInformeError");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        errEl.textContent = "Seleccioná un archivo PDF.";
+        errEl.style.display = "block";
+        return;
+    }
+    if (file.type && file.type !== "application/pdf") {
+        errEl.textContent = "El archivo debe ser un PDF.";
+        errEl.style.display = "block";
+        return;
+    }
+
+    errEl.style.display = "none";
+    const btn = document.getElementById("btnUploadAltaInforme");
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Subiendo...`;
+
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const resp = await fetchConAuth(`${API_URL}/estudios/${altaInformeAnalisisId}/documento`, {
+            method: "POST",
+            body: formData
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        mostrarToast("Informe subido correctamente.");
+        cerrarAltaInforme();
+        await cargarMuestrasActivas();
+    } catch (err) {
+        console.error("Error al subir informe:", err);
+        errEl.textContent = "Error al subir el informe. Intentá nuevamente.";
+        errEl.style.display = "block";
     } finally {
         btn.disabled = false;
         btn.innerHTML = textoOriginal;

@@ -329,8 +329,41 @@
                 <i class="bi bi-floppy"></i> Guardar resultados
             </button>
             <button type="button" class="btn-guardar" id="btnGenerarInforme"
-                    style="background: #1a6b3a; margin-left: 8px;">
+                    style="background: #1a6b3a; margin-left: 8px;" disabled>
                 <i class="bi bi-file-earmark-pdf-fill"></i> Generar informe
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =============================================
+     MODAL ALTA DE INFORME (subir PDF desde PC)
+     ============================================= -->
+<div class="modal-overlay" id="modalAltaInforme">
+    <div class="modal-box" style="max-width: 480px;">
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-upload"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Informe</div>
+                <h5 id="altaInformeTitulo">Alta de informe</h5>
+            </div>
+            <button class="modal-close" id="altaInformeClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Archivo PDF <span class="required">*</span></label>
+                <input type="file" id="inputAltaInformePdf" class="form-control-custom"
+                       accept=".pdf,application/pdf"/>
+                <span class="field-error" id="altaInformeError" style="display:none;"></span>
+            </div>
+            <p class="text-muted small mt-2" style="font-size:12px;">
+                El archivo se sube directamente al portal del cliente y marca la muestra como completada.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="altaInformeCancelar">Cancelar</button>
+            <button type="button" class="btn-guardar" id="btnUploadAltaInforme">
+                <i class="bi bi-upload me-1"></i> Subir informe
             </button>
         </div>
     </div>
