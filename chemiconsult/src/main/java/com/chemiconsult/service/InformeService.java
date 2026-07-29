@@ -141,7 +141,10 @@ public class InformeService {
 
         // Campos con línea separadora bajo cada uno
         addCampoConLinea(doc, "Cliente", upper(d.getCliente()), fLabel, fValor);
-        addCampoConLinea(doc, "Muestra", nvl(d.getIdMuestra()), fLabel, fValor);
+        addCampoConLinea(doc, "Punto de muestreo", nvl(d.getPuntoMuestreo()), fLabel, fValor);
+        if (d.getTipoMuestraNombre() != null) {
+            addCampoConLinea(doc, "Tipo de muestra", d.getTipoMuestraNombre(), fLabel, fValor);
+        }
         addCampoConLinea(doc, "Protocolo de analisis", "N°" + nvl(d.getNroProtocolo()), fLabel, fValor);
         addCampoConLinea(doc, "Fecha recepcion de la muestra", formatFecha(d.getFechaIngreso()), fLabel, fValor);
 

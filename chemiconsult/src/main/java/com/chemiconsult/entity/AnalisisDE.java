@@ -54,11 +54,15 @@ public class AnalisisDE {
     @Column(name = "NUMERO_PROTOCOLO", unique = true)
     private String numeroProtocolo;
 
-    @Column(name = "ID_MUESTRA")
-    private String idMuestra;
-
     @Column(name = "PUNTO_MUESTREO")
     private String puntoMuestreo;
+
+    @ManyToOne
+    @JoinColumn(name = "TIPO_MUESTRA_ID")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private TipoMuestraDE tipoMuestra;
 
     @Column(name = "FECHA_INGRESO")
     private LocalDate fechaIngreso;
@@ -76,13 +80,17 @@ public class AnalisisDE {
     private String observaciones;
 
     @OneToMany(mappedBy = "analisis", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @org.hibernate.annotations.BatchSize(size = 25)
     private List<AnalisisParametroDE> parametros;
 
     @OneToMany(mappedBy = "analisis", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @org.hibernate.annotations.BatchSize(size = 25)
     private List<AnalisisResolucionDestinoDE> resolucionesAplicadas;
 
     @ManyToOne

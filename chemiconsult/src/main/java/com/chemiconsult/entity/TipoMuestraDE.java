@@ -1,5 +1,6 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +34,7 @@ public class TipoMuestraDE {
 
     @ManyToOne
     @JoinColumn(name = "MATRIZ_ID", nullable = false)
+    @JsonIgnoreProperties({"resoluciones", "hibernateLazyInitializer", "handler"})
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private MatrizDE matriz;

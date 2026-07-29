@@ -45,6 +45,9 @@
         <button class="tab-btn-custom" onclick="cambiarPestaña('metodologias')">
             <i class="bi bi-journal-bookmark"></i> Metodologías Analíticas
         </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('tiposmuestra')">
+            <i class="bi bi-layers"></i> Tipos de Muestra
+        </button>
     </div>
 
     <!-- ==========================================
@@ -62,6 +65,12 @@
                             <label>Nombre de la Norma</label>
                             <input type="text" id="resNombre" class="form-control-custom"
                                    placeholder="Ej: CAA Art 982 - Agua" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Matriz Analítica</label>
+                            <select id="resMatriz" class="form-control-custom" required>
+                                <option value="">Seleccionar matriz...</option>
+                            </select>
                         </div>
                         <div class="form-group-custom">
                             <label>Organismo Emisor</label>
@@ -119,11 +128,7 @@
                             <input type="text" id="paramNombre" class="form-control-custom"
                                    placeholder="Ej: pH, Turbidez, Arsénico" required>
                         </div>
-                        <div class="form-group-custom">
-                            <label>Unidad de Medida</label>
-                            <input type="text" id="paramUnidad" class="form-control-custom"
-                                   placeholder="Ej: mg/L, U.N.T" required>
-                        </div>
+                        <p class="params-hint">La unidad se define al asignar el parámetro a cada resolución, ya que varía según la matriz analítica.</p>
                         <button type="submit" class="btn-guardar-custom"><i class="bi bi-check-lg"></i> Guardar
                             Parámetro
                         </button>
@@ -142,7 +147,6 @@
                         <thead>
                         <tr>
                             <th>Parámetro</th>
-                            <th>Unidad de Medida</th>
                             <th>Acción</th>
                         </tr>
                         </thead>
@@ -192,7 +196,6 @@
                     <table class="tabla-config">
                         <thead>
                         <tr>
-                            <th>Nombre</th>
                             <th>Técnica / Método</th>
                             <th>Referencia</th>
                             <th>Acción</th>
@@ -201,6 +204,58 @@
                         <tbody id="tablaMetodologiasBody"></tbody>
                     </table>
                     <div class="tabla-paginador" id="paginadorMetodologias"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PÁGINA / SECCIÓN: TIPOS DE MUESTRA
+         ========================================== -->
+    <div id="tab-tiposmuestra" class="tab-content-panel">
+        <div class="main-row-config">
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <h5><i class="bi bi-plus-circle text-success"></i> Nuevo Tipo de Muestra</h5>
+                </div>
+                <div class="panel-body-custom">
+                    <form id="formTipoMuestra">
+                        <div class="form-group-custom">
+                            <label>Nombre del tipo</label>
+                            <input type="text" id="tmNombre" class="form-control-custom"
+                                   placeholder="Ej: Barro, Comprimido, Suelo" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Matriz analítica</label>
+                            <select id="tmMatriz" class="form-control-custom" required>
+                                <option value="">Seleccionar matriz...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-guardar-custom">
+                            <i class="bi bi-check-lg"></i> Guardar tipo
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <div class="panel-header-row">
+                        <h5><i class="bi bi-table text-primary"></i> Tipos registrados</h5>
+                        <input type="text" id="filtroTiposMuestra" class="tabla-filtro" placeholder="Buscar...">
+                    </div>
+                </div>
+                <div class="panel-body-custom" style="padding:0;">
+                    <table class="tabla-config">
+                        <thead>
+                        <tr>
+                            <th>Tipo de muestra</th>
+                            <th>Matriz</th>
+                            <th>Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaTiposMuestraBody"></tbody>
+                    </table>
+                    <div class="tabla-paginador" id="paginadorTiposMuestra"></div>
                 </div>
             </div>
         </div>
@@ -217,6 +272,62 @@
         event.currentTarget.classList.add('active');
     }
 </script>
+
+<!-- Modal: parámetros de resolución -->
+<div class="params-overlay" id="paramsOverlay" onclick="cerrarModalParams(event)">
+    <div class="params-modal">
+        <div class="params-modal-header">
+            <h5 id="paramsModalTitulo"></h5>
+            <button class="params-modal-close" onclick="document.getElementById('paramsOverlay').classList.remove('visible')" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="params-modal-body" id="paramsModalCuerpo"></div>
+    </div>
+</div>
+
+<!-- Modal: editor de límite de parámetro -->
+<div class="params-overlay limite-overlay" id="limiteOverlay" onclick="cerrarLimiteOverlay(event)">
+    <div class="params-modal" style="max-width:420px;">
+        <div class="params-modal-header">
+            <h5 id="limiteModalTitulo">Límite</h5>
+            <button class="params-modal-close" onclick="document.getElementById('limiteOverlay').classList.remove('visible')" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="params-modal-body">
+            <input type="hidden" id="limiteParamId">
+            <div class="form-group-custom">
+                <label>Tipo de límite</label>
+                <select id="limiteTipo" class="form-control-custom" onchange="onTipoLimiteCambio()">
+                    <option value="NE">No exigido</option>
+                    <option value="NL">No legislado (—)</option>
+                    <option value="MAX">Máximo admitido (≤ valor)</option>
+                    <option value="MIN">Mínimo exigido (≥ valor)</option>
+                    <option value="RANGO">Rango (entre min y max)</option>
+                    <option value="AUSENCIA">Ausencia (no debe estar presente)</option>
+                    <option value="TEXTO">Texto libre</option>
+                </select>
+            </div>
+            <div class="form-group-custom" id="limiteGrupoMax" style="display:none;">
+                <label>Valor máximo</label>
+                <input type="number" id="limiteMax" class="form-control-custom" step="any" placeholder="ej: 10">
+            </div>
+            <div class="form-group-custom" id="limiteGrupoMin" style="display:none;">
+                <label>Valor mínimo</label>
+                <input type="number" id="limiteMin" class="form-control-custom" step="any" placeholder="ej: 0.5">
+            </div>
+            <div class="form-group-custom" id="limiteGrupoTexto" style="display:none;">
+                <label>Texto del límite</label>
+                <input type="text" id="limiteTextoInput" class="form-control-custom" placeholder="ej: Ausencia de sabores extraños">
+            </div>
+            <button type="button" class="btn-guardar-custom" onclick="guardarLimiteParam()">
+                <i class="bi bi-check-lg"></i> Guardar límite
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/sidebar.js"></script>

@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface TipoMuestraRepository extends JpaRepository<TipoMuestraDE, Long> {
     List<TipoMuestraDE> findByActivoTrue();
+    List<TipoMuestraDE> findByMatrizIdAndActivoTrue(Long matrizId);
 
     boolean existsByNombreIgnoreCase(String nombre);
 

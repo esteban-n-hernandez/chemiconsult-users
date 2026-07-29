@@ -106,7 +106,18 @@
      Fuera del .content para evitar herencia de CSS
      ============================================= -->
 <div class="modal-overlay" id="modalAltaMuestra">
-    <div class="modal-box">
+    <div class="modal-box modal-box-md">
+
+        <!-- Loading overlay: visible solo al abrir en modo edición -->
+        <div id="modalAltaLoading" class="modal-loading-overlay d-none">
+            <div class="tube-loader">
+                <div class="tube-cap"></div>
+                <div class="tube-body">
+                    <div class="tube-liquid"></div>
+                </div>
+            </div>
+            <span class="modal-loading-label">Cargando datos...</span>
+        </div>
 
         <div class="modal-header">
             <div class="mh-icon"><i class="bi bi-flask"></i></div>
@@ -122,12 +133,12 @@
         <form id="formAltaMuestra" novalidate>
             <div class="modal-body">
 
-                <!-- Fila 1: Protocolo + Fechas -->
+                <!-- Fila 1: Protocolo + Fecha ingreso -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>N° Protocolo <span class="required">*</span></label>
                         <input type="text" id="inputProtocolo" class="form-control-custom"
-                               placeholder="CHQ-2026-001" autocomplete="off"/>
+                               placeholder="1234" autocomplete="off"/>
                         <span class="field-error" id="errProtocolo">Campo requerido</span>
                     </div>
                     <div class="form-group">
@@ -135,40 +146,42 @@
                         <input type="date" id="inputFecha" class="form-control-custom"/>
                         <span class="field-error" id="errFecha">Campo requerido</span>
                     </div>
-                    <div class="form-group">
-                        <label>Fecha estimada de entrega</label>
-                        <input type="date" id="inputFechaEntrega" class="form-control-custom"/>
-                    </div>
                 </div>
 
-                <!-- Fila 2: Cliente (SELECT) + ID Muestra + Punto de muestreo -->
+                <!-- Fila 2: Cliente + Tipo de muestra -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Cliente <span class="required">*</span></label>
-                        <!-- FIX: select cargado desde la API en vez de input texto libre -->
                         <select id="inputCliente" class="form-control-custom">
                             <option value="">Cargando clientes...</option>
                         </select>
                         <span class="field-error" id="errCliente">Seleccioná un cliente</span>
                     </div>
                     <div class="form-group">
-                        <label>ID de muestra <span class="required">*</span></label>
-                        <input type="text" id="inputIdMuestra" class="form-control-custom"
-                               placeholder="Ej: M-001" autocomplete="off"/>
-                        <span class="field-error" id="errIdMuestra">Campo requerido</span>
+                        <label>Tipo de muestra</label>
+                        <select id="inputTipoMuestraEspecifica" class="form-control-custom">
+                            <option value="">— sin especificar —</option>
+                        </select>
                     </div>
+                </div>
+
+                <!-- Fila 3: Punto de muestreo + Fecha estimada de entrega -->
+                <div class="form-row">
                     <div class="form-group">
-                        <!-- NUEVO: punto de muestreo -->
                         <label>Punto de muestreo</label>
                         <input type="text" id="inputPuntoMuestreo" class="form-control-custom"
                                placeholder="Ej: Pozo norte, Salida planta..." autocomplete="off"/>
                     </div>
+                    <div class="form-group">
+                        <label>Fecha estimada de entrega</label>
+                        <input type="date" id="inputFechaEntrega" class="form-control-custom"/>
+                    </div>
                 </div>
 
-                <!-- Fila 3: Matriz -->
+                <!-- Fila 4: Matriz -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Tipo de muestra (Matriz) <span class="required">*</span></label>
+                        <label>Matriz <span class="required">*</span></label>
                         <select id="inputTipoMuestra" class="form-control-custom">
                             <option value="">Seleccioná una matriz...</option>
                         </select>
@@ -177,7 +190,7 @@
                 </div>
 
                 <!-- Fila 4: Normativas / Destinos de vuelco (múltiple) -->
-                <div class="form-group mt-2">
+                <div class="form-group mt-2" id="seccionNormativas">
                     <div class="d-flex justify-content-between align-items-center">
                         <label class="fw-bold mb-0">Normativa / Destino de vuelco</label>
                         <div class="form-check">
@@ -193,7 +206,7 @@
                 </div>
 
                 <!-- Parámetros a analizar -->
-                <div class="form-group mt-3">
+                <div class="form-group mt-3" id="seccionParametros">
                     <div class="parametros-header">
                         <label class="fw-bold">Parámetros a analizar</label>
                         <button type="button" class="btn-add-param" id="btnAddParam">
@@ -264,8 +277,14 @@
         </div>
 
         <div class="modal-body">
-            <div id="detalleLoading" class="text-center text-muted py-4">
-                <span class="spinner-border spinner-border-sm me-2"></span> Cargando detalle...
+            <div id="detalleLoading" class="d-flex flex-column align-items-center justify-content-center py-5 gap-3">
+                <div class="tube-loader">
+                    <div class="tube-cap"></div>
+                    <div class="tube-body">
+                        <div class="tube-liquid"></div>
+                    </div>
+                </div>
+                <span class="modal-loading-label">Cargando detalle...</span>
             </div>
 
             <div id="detalleContenido" class="d-none">
@@ -282,16 +301,16 @@
                         <span id="detalleCliente">—</span>
                     </div>
                     <div class="detalle-info-campo">
-                        <label>ID Muestra</label>
-                        <span id="detalleIdMuestra">—</span>
-                    </div>
-                    <div class="detalle-info-campo">
                         <label>Matriz</label>
                         <span id="detalleMatrizTipo">—</span>
                     </div>
                     <div class="detalle-info-campo">
                         <label>Punto de muestreo</label>
                         <span id="detallePuntoMuestreo">—</span>
+                    </div>
+                    <div class="detalle-info-campo">
+                        <label>Tipo de muestra</label>
+                        <span id="detalleTipoMuestra">—</span>
                     </div>
                     <div class="detalle-info-campo">
                         <label>Ingreso → Entrega</label>

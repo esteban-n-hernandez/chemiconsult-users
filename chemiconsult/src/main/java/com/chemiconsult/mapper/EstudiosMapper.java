@@ -16,7 +16,6 @@ public class EstudiosMapper {
         entity.setMatriz(matriz);
         entity.setSucursal(sucursal);
         entity.setNumeroProtocolo(estudio.getNroProtocolo());
-        entity.setIdMuestra(estudio.getIdMuestra());
         entity.setPuntoMuestreo(estudio.getPuntoMuestreo());
         entity.setObservaciones(estudio.getObservaciones());
         entity.setEstado(EstadoMuestraEnum.PENDIENTE);
@@ -42,7 +41,6 @@ public class EstudiosMapper {
                 .userId(entity.getUser() != null ? entity.getUser().getId() : null)
                 .userMail(entity.getUser() != null ? entity.getUser().getEmail() : null)
                 .nroProtocolo(entity.getNumeroProtocolo())
-                .idMuestra(entity.getIdMuestra())
                 .fechaIngreso(entity.getFechaIngreso() != null ? entity.getFechaIngreso().toString() : null)
                 .fechaEntrega(entity.getFechaEntrega() != null ? entity.getFechaEntrega().toString() : null)
                 .createdDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
@@ -68,9 +66,10 @@ public class EstudiosMapper {
         return AnalisisDetalleTO.builder()
                 .id(entity.getId())
                 .nroProtocolo(entity.getNumeroProtocolo())
-                .idMuestra(entity.getIdMuestra())
+                .tipoMuestraNombre(entity.getTipoMuestra() != null ? entity.getTipoMuestra().getNombre() : null)
                 .estado(entity.getEstado() != null ? entity.getEstado().name() : null)
                 .cliente(clienteStr)
+                .clienteId(entity.getCliente() != null ? entity.getCliente().getId() : null)
                 .userId(entity.getUser() != null ? entity.getUser().getId() : null)
                 .puntoMuestreo(entity.getPuntoMuestreo())
                 .fechaIngreso(entity.getFechaIngreso() != null ? entity.getFechaIngreso().toString() : null)
@@ -78,6 +77,8 @@ public class EstudiosMapper {
                 .observaciones(entity.getObservaciones())
                 .archivoUrl(entity.getArchivoUrl())
                 .matrizNombre(entity.getMatriz() != null ? entity.getMatriz().getNombre() : null)
+                .matrizId(entity.getMatriz() != null ? entity.getMatriz().getId() : null)
+                .tipoMuestraId(entity.getTipoMuestra() != null ? entity.getTipoMuestra().getId() : null)
                 .resolucionesAplicadas(resoluciones)
                 .parametros(parametros)
                 .build();
@@ -103,7 +104,10 @@ public class EstudiosMapper {
         return ParametroResultadoTO.builder()
                 .id(ap.getParametro().getId())
                 .nombre(ap.getParametro().getNombre())
-                .unidad(ap.getParametro().getUnidad())
+                .unidad(ap.getLimites() == null ? null : ap.getLimites().stream()
+                        .map(l -> l.getLimiteOrigen().getUnidad())
+                        .filter(u -> u != null && !u.isBlank())
+                        .findFirst().orElse(null))
                 .metodologiaNombre(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getNombre() : null)
                 .valorResultado(ap.getValorResultado())
                 .observacion(ap.getObservacion())

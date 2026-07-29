@@ -127,7 +127,6 @@ function mockDetalleMuestra(id) {
     return {
         id: Number(id),
         nroProtocolo: "CHQ-2026-014",
-        idMuestra: "M-001",
         estado: "EN_PROCESO",
         cliente: "Industrias del Sur S.A.",
         userId: 12,
@@ -227,6 +226,9 @@ let todasLasMuestras = [];
 
 // ID del análisis abierto actualmente en el modal de detalle (para guardar resultados)
 let detalleAnalisisId = null;
+
+// ID de la muestra que se está editando (null = modo alta)
+let editandoMuestraId = null;
 
 
 // ============================================================
@@ -331,7 +333,66 @@ function cerrarModal() {
     parametrosPorDestinoCache.clear();
     cerrarPanelBuscador();
     limpiarErrores();
+
+    // Restaurar modo alta
+    editandoMuestraId = null;
+    document.getElementById("modalTitulo").textContent = "Alta de muestra";
+    document.getElementById("btnGuardar").innerHTML = '<i class="bi bi-check-lg"></i> Guardar muestra';
+    document.getElementById("seccionNormativas").style.display = "";
+    document.getElementById("seccionParametros").style.display = "";
+    document.getElementById("inputProtocolo").disabled = false;
+    document.getElementById("inputCliente").disabled = false;
+    document.getElementById("modalAltaLoading").classList.add("d-none");
 }
+
+window.abrirEdicionMuestra = async function(id) {
+    editandoMuestraId = id;
+
+    // Título y botón
+    document.getElementById("modalTitulo").textContent = "Editar muestra";
+    document.getElementById("btnGuardar").innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
+
+    // Ocultar secciones que no se editan
+    document.getElementById("seccionNormativas").style.display = "none";
+    document.getElementById("seccionParametros").style.display = "none";
+
+    // Campos no editables en este modo
+    document.getElementById("inputProtocolo").disabled = true;
+    document.getElementById("inputCliente").disabled = true;
+
+    // Mostrar modal con loading
+    document.getElementById("modalAltaMuestra").classList.add("visible");
+    document.getElementById("modalAltaLoading").classList.remove("d-none");
+
+    try {
+        const detalle = await obtenerDetalleMuestra(id);
+
+        // Poblar todos los campos visibles
+        document.getElementById("inputProtocolo").value    = detalle.nroProtocolo || "";
+        document.getElementById("inputFecha").value        = detalle.fechaIngreso  || "";
+        document.getElementById("inputPuntoMuestreo").value = detalle.puntoMuestreo || "";
+        document.getElementById("inputFechaEntrega").value  = detalle.fechaEntrega  || "";
+
+        if (detalle.clienteId) {
+            document.getElementById("inputCliente").value = detalle.clienteId;
+        }
+
+        if (detalle.matrizId) {
+            document.getElementById("inputTipoMuestra").value = detalle.matrizId;
+            await cargarTiposMuestra(detalle.matrizId);
+            if (detalle.tipoMuestraId) {
+                document.getElementById("inputTipoMuestraEspecifica").value = detalle.tipoMuestraId;
+            }
+        }
+    } catch (err) {
+        console.error("Error cargando muestra para editar:", err);
+        mostrarToast("No se pudo cargar la muestra.", true);
+        cerrarModal();
+        return;
+    } finally {
+        document.getElementById("modalAltaLoading").classList.add("d-none");
+    }
+};
 
 
 // ============================================================
@@ -417,6 +478,25 @@ async function obtenerArbolPorMatriz(matrizId) {
     return await response.json();
 }
 
+async function cargarTiposMuestra(matrizId) {
+    const select = document.getElementById("inputTipoMuestraEspecifica");
+    select.innerHTML = '<option value="">— sin especificar —</option>';
+    if (!matrizId) return;
+    try {
+        const res = await fetchConAuth(`${API_URL}/tipos-muestra?matrizId=${matrizId}`);
+        if (!res.ok) return;
+        const tipos = await res.json();
+        tipos.forEach(t => {
+            const opt = document.createElement("option");
+            opt.value = t.id;
+            opt.textContent = t.nombre;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Error cargando tipos de muestra:", err);
+    }
+}
+
 async function onCambioMatriz(e) {
     const matrizId = e.target.value;
     const contenedor = document.getElementById("normativasContainer");
@@ -426,6 +506,7 @@ async function onCambioMatriz(e) {
     parametrosPorDestinoCache.clear();
     contenedor.innerHTML = "";
     recalcularParametrosSeleccionados();
+    cargarTiposMuestra(matrizId);
 
     // Si tildaron "sin normativa", no tiene sentido ir a buscar el árbol
     if (document.getElementById("checkSinNormativa").checked) {
@@ -683,8 +764,47 @@ function agregarParametroALaLista(parametro, origen = "manual") {
 // ============================================================
 // 8. SUBMIT DEL FORMULARIO
 // ============================================================
+async function guardarEdicionMuestra() {
+    const payload = {
+        matrizId:      document.getElementById("inputTipoMuestra").value
+                           ? parseInt(document.getElementById("inputTipoMuestra").value) : null,
+        tipoMuestraId: document.getElementById("inputTipoMuestraEspecifica").value
+                           ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value) : null,
+        puntoMuestreo: document.getElementById("inputPuntoMuestreo").value.trim() || null,
+        fechaIngreso:  document.getElementById("inputFecha").value || null,
+        fechaEntrega:  document.getElementById("inputFechaEntrega").value || null,
+    };
+
+    const btn = document.getElementById("btnGuardar");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Guardando...';
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${editandoMuestraId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        mostrarToast("Muestra actualizada correctamente.");
+        cerrarModal();
+        await cargarMuestrasActivas();
+    } catch (err) {
+        console.error("Error actualizando muestra:", err);
+        mostrarToast("No se pudo actualizar la muestra.", true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
+    }
+}
+
 async function onSubmitMuestra(e) {
     e.preventDefault();
+
+    if (editandoMuestraId) {
+        await guardarEdicionMuestra();
+        return;
+    }
 
     if (!validarFormulario()) return;
 
@@ -697,8 +817,10 @@ async function onSubmitMuestra(e) {
         fechaIngreso:       document.getElementById("inputFecha").value,
         fechaEntrega:       document.getElementById("inputFechaEntrega").value || null,
         clienteId:          parseInt(document.getElementById("inputCliente").value),
-        idMuestra:          document.getElementById("inputIdMuestra").value.trim(),
         puntoMuestreo:      document.getElementById("inputPuntoMuestreo").value.trim() || null,
+        tipoMuestraId:      document.getElementById("inputTipoMuestraEspecifica").value
+                                ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value)
+                                : null,
         // NUEVO: matrizId en vez de tipoMuestraId (el select ahora lista MATRIZ directo)
         matrizId:           parseInt(document.getElementById("inputTipoMuestra").value),
         resolucionDestinoIds: Array.from(destinosSeleccionados),
@@ -751,9 +873,8 @@ function validarFormulario() {
     limpiarErrores();
 
     const campos = [
-        { id: "inputProtocolo", errId: "errProtocolo" },
-        { id: "inputFecha",     errId: "errFecha" },
-        { id: "inputIdMuestra", errId: "errIdMuestra" },
+        { id: "inputProtocolo",   errId: "errProtocolo" },
+        { id: "inputFecha",       errId: "errFecha" },
         { id: "inputTipoMuestra", errId: "errTipoMuestra" },
     ];
 
@@ -797,7 +918,7 @@ function aplicarFiltrosYBusqueda() {
     // Filtro por código
     if (textoCodigo) {
         filtradas = filtradas.filter(m =>
-            (m.nroProtocolo || m.idMuestra || String(m.id) || "")
+            (m.nroProtocolo || String(m.id) || "")
                 .toLowerCase().includes(textoCodigo)
         );
     }
@@ -838,10 +959,10 @@ function renderizarTablaMuestras(lista) {
 
     pagina.forEach(m => {
         const fila = document.createElement("tr");
-        const codigo = m.nroProtocolo || m.idMuestra || m.id || "S/N";
+        const codigo = m.nroProtocolo || m.id || "S/N";
         const puedeGenerar = m.estado === "COMPLETO_SIN_INFORME";
         const yaCompleto   = m.estado === "COMPLETO";
-        const protocolo    = (m.nroProtocolo || m.idMuestra || m.id || "").toString().replace(/'/g, "");
+        const protocolo    = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
@@ -853,6 +974,10 @@ function renderizarTablaMuestras(lista) {
                 <button class="btn-accion" title="Ver detalle"
                         onclick="verDetalleMuestra(${m.id})">
                     <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn-accion" title="Editar datos"
+                        onclick="abrirEdicionMuestra(${m.id})">
+                    <i class="bi bi-pencil"></i>
                 </button>
                 ${puedeGenerar ? `
                 <button class="btn-accion btn-accion-verde" title="Generar informe PDF"
@@ -1020,7 +1145,7 @@ function labelEstadoDetalle(estado) {
 }
 
 function renderizarDetalleMuestra(d) {
-    document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || d.idMuestra || `#${d.id}`;
+    document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || `#${d.id}`;
 
     // El botón "Generar informe" se oculta si ya está COMPLETO,
     // y se deshabilita si algún parámetro no tiene resultado cargado
@@ -1041,9 +1166,9 @@ function renderizarDetalleMuestra(d) {
     estadoEl.textContent = labelEstadoDetalle(d.estado);
 
     document.getElementById("detalleCliente").textContent = d.cliente || "—";
-    document.getElementById("detalleIdMuestra").textContent = d.idMuestra || "—";
     document.getElementById("detalleMatrizTipo").textContent = d.matrizNombre || "—";
     document.getElementById("detallePuntoMuestreo").textContent = d.puntoMuestreo || "—";
+    document.getElementById("detalleTipoMuestra").textContent = d.tipoMuestraNombre || "—";
     document.getElementById("detalleFechas").textContent =
         `${formatearFecha(d.fechaIngreso)} → ${d.fechaEntrega ? formatearFecha(d.fechaEntrega) : "sin definir"}`;
 

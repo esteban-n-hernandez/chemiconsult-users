@@ -22,7 +22,10 @@ public class TipoMuestraService {
     @Autowired
     private MatrizRepository matrizRepository;
 
-    public List<TipoMuestraDE> getTiposMuestra() {
+    public List<TipoMuestraDE> getTiposMuestra(Long matrizId) {
+        if (matrizId != null) {
+            return tipoMuestraRepository.findByMatrizIdAndActivoTrue(matrizId);
+        }
         return tipoMuestraRepository.findByActivoTrue();
     }
 
