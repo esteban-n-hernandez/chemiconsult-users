@@ -17,10 +17,10 @@ public class TipoMuestraController {
 
     TipoMuestraService tipoMuestraService;
 
-    // GET /api/tipos-muestra â€” solo activos
+    // GET /api/tipos-muestra?matrizId=X — solo activos, opcionalmente filtrados por matriz
     @GetMapping
-    public List<TipoMuestraDE> getTiposMuestra() {
-        return tipoMuestraService.getTiposMuestra();
+    public List<TipoMuestraDE> getTiposMuestra(@RequestParam(required = false) Long matrizId) {
+        return tipoMuestraService.getTiposMuestra(matrizId);
     }
 
     // GET /api/tipos-muestra/todos â€” todos
@@ -61,10 +61,10 @@ public class TipoMuestraController {
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE /api/tipos-muestra/{id}
+    // DELETE /api/tipos-muestra/{id} — soft delete (evita FK violation con análisis existentes)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTipoMuestra(@PathVariable Long id) {
-        tipoMuestraService.deleteTipoMuestra(id);
+        tipoMuestraService.desactivarTipoMuestra(id);
         return ResponseEntity.noContent().build();
     }
 

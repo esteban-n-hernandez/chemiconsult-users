@@ -32,6 +32,9 @@ public class ResolucionDestinoParametroDE {
     @EqualsAndHashCode.Exclude
     private MetodologiaDE metodologiaEstandar; // Metodología recomendada por la norma
 
+    @Column(name = "UNIDAD")
+    private String unidad;
+
     @Column(name = "TIPO_LIMITE", nullable = false)
     private String tipoLimite; // "MAX", "MIN", "RANGO", "TEXTO", "AUSENCIA", "NE" (no exigido)
 
@@ -43,4 +46,7 @@ public class ResolucionDestinoParametroDE {
 
     @Column(name = "LIMITE_TEXTO")
     private String limiteTexto; // "Ausencia", "Sin olores extraños", etc.
+
+    @Column(name = "ACTIVO")
+    private Boolean activo = true;
 }

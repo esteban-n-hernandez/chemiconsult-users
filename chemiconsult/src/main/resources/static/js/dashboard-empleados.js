@@ -224,12 +224,32 @@ async function cargarMatricesDash() {
     } catch { console.warn("No se pudieron cargar matrices"); }
 }
 
+async function cargarTiposMuestra(matrizId) {
+    const select = document.getElementById("inputTipoMuestraEspecifica");
+    select.innerHTML = '<option value="">— sin especificar —</option>';
+    if (!matrizId) return;
+    try {
+        const r = await fetchDash(`${API_BASE}/api/tipos-muestra?matrizId=${matrizId}`);
+        if (!r.ok) return;
+        const tipos = await r.json();
+        tipos.forEach(t => {
+            const opt = document.createElement("option");
+            opt.value = t.id;
+            opt.textContent = t.nombre;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Error cargando tipos de muestra:", err);
+    }
+}
+
 document.getElementById("inputTipoMuestra").addEventListener("change", async function () {
     const matrizId = this.value;
     const cont = document.getElementById("normativasContainer");
     destinosSeleccionadosDash.clear();
     parametrosPorDestinoCacheDash.clear();
     recalcularParametrosDash();
+    cargarTiposMuestra(matrizId);
     if (document.getElementById("checkSinNormativa").checked) return;
     if (!matrizId) {
         cont.innerHTML = '<span class="text-muted small">Seleccioná una matriz para ver las normativas aplicables...</span>';
@@ -393,7 +413,6 @@ formMuestra.addEventListener("submit", async function (e) {
     const protocolo = document.getElementById("inputProtocolo").value.trim();
     const fecha     = document.getElementById("inputFecha").value;
     const clienteId = document.getElementById("inputCliente").value;
-    const idMuestra = document.getElementById("inputIdMuestra").value.trim();
     const matrizId  = document.getElementById("inputTipoMuestra").value;
 
     let ok = true;
@@ -401,7 +420,6 @@ formMuestra.addEventListener("submit", async function (e) {
         [!protocolo, "errProtocolo"],
         [!fecha,     "errFecha"],
         [!clienteId, "errCliente"],
-        [!idMuestra, "errIdMuestra"],
         [!matrizId,  "errTipoMuestra"],
     ].forEach(([cond, errId]) => {
         const err = document.getElementById(errId);
@@ -418,8 +436,10 @@ formMuestra.addEventListener("submit", async function (e) {
         fechaIngreso:         fecha,
         fechaEntrega:         document.getElementById("inputFechaEntrega").value || null,
         clienteId:            parseInt(clienteId),
-        idMuestra,
         puntoMuestreo:        document.getElementById("inputPuntoMuestreo").value.trim() || null,
+        tipoMuestraId:        document.getElementById("inputTipoMuestraEspecifica").value
+                                  ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value)
+                                  : null,
         matrizId:             parseInt(matrizId),
         resolucionDestinoIds: Array.from(destinosSeleccionadosDash),
         observaciones:        document.getElementById("inputObservaciones").value.trim() || null,
@@ -703,10 +723,10 @@ function poblarModalDetalle(d) {
     badge.textContent = labelEstado(d.estado);
 
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || "—";
-    document.getElementById("detalleIdMuestra").textContent = d.idMuestra || "—";
     document.getElementById("detalleCliente").textContent = d.cliente || "—";
     document.getElementById("detalleMatriz").textContent = d.matrizNombre || "—";
     document.getElementById("detallePunto").textContent = d.puntoMuestreo || "—";
+    document.getElementById("detalleTipoMuestra").textContent = d.tipoMuestraNombre || "—";
     document.getElementById("detalleFechaIngreso").textContent = formatearFechaDMY(d.fechaIngreso) || "—";
     document.getElementById("detalleFechaEntrega").textContent = formatearFechaDMY(d.fechaEntrega) || "—";
     document.getElementById("detalleObservaciones").textContent = d.observaciones || "Sin observaciones";

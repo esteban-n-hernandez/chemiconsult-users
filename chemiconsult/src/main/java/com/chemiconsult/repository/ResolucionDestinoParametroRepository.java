@@ -24,4 +24,11 @@ public interface ResolucionDestinoParametroRepository extends JpaRepository<Reso
     List<ResolucionDestinoParametroDE> findByDestinoIdsAndParametroId(
             @Param("destinoIds") List<Long> destinoIds,
             @Param("parametroId") Long parametroId);
+
+    // Todos los vínculos de un parámetro dentro de una resolución (todos sus destinos)
+    @Query("SELECT r FROM ResolucionDestinoParametroDE r " +
+            "WHERE r.destino.resolucion.id = :resolucionId AND r.parametro.id = :parametroId")
+    List<ResolucionDestinoParametroDE> findByResolucionIdAndParametroId(
+            @Param("resolucionId") Long resolucionId,
+            @Param("parametroId") Long parametroId);
 }

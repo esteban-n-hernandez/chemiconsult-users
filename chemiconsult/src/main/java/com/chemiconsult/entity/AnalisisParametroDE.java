@@ -41,6 +41,7 @@ public class AnalisisParametroDE {
 
     // Límites aplicables a este parámetro (uno por cada destino elegido en la muestra)
     @OneToMany(mappedBy = "analisisParametro", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 30)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<AnalisisParametroLimiteDE> limites;

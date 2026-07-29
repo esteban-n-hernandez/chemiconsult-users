@@ -13,28 +13,40 @@ const tablas = {
         renderFila: r => `<td>${r.nombre}</td><td>${r.descripcion || '-'}</td>`,
         textoVacio: 'No hay resoluciones registradas.',
         textoBuscar: r => `${r.nombre} ${r.descripcion || ''}`,
+        renderAccionesExtra: r => `<button class="btn-accion-info" onclick="verParametros(${r.id})" title="Ver parámetros"><i class="bi bi-eye"></i></button>`,
     },
     parametros: {
         url: `${API_URL}/parametros`,
         tbodyId: 'tablaParametrosBody',
         filtroId: 'filtroParametros',
         pagId:    'paginadorParametros',
-        colSpan:  3,
+        colSpan:  2,
         data: [], filtro: '', pagina: 1,
-        renderFila: r => `<td>${r.nombre}</td><td>${r.unidad || '-'}</td>`,
+        renderFila: r => `<td>${r.nombre}</td>`,
         textoVacio: 'No hay parámetros cargados.',
-        textoBuscar: r => `${r.nombre} ${r.unidad || ''}`,
+        textoBuscar: r => r.nombre,
     },
     metodologias: {
         url: `${API_URL}/metodologias`,
         tbodyId: 'tablaMetodologiasBody',
         filtroId: 'filtroMetodologias',
         pagId:    'paginadorMetodologias',
-        colSpan:  4,
+        colSpan:  3,
         data: [], filtro: '', pagina: 1,
-        renderFila: r => `<td>${r.descripcion || '-'}</td><td>${r.nombre}</td><td>-</td>`,
+        renderFila: r => `<td>${r.nombre}</td><td>${r.descripcion || '-'}</td>`,
         textoVacio: 'No hay metodologías cargadas.',
         textoBuscar: r => `${r.nombre} ${r.descripcion || ''}`,
+    },
+    tiposmuestra: {
+        url: `${API_URL}/tipos-muestra`,
+        tbodyId: 'tablaTiposMuestraBody',
+        filtroId: 'filtroTiposMuestra',
+        pagId:    'paginadorTiposMuestra',
+        colSpan:  3,
+        data: [], filtro: '', pagina: 1,
+        renderFila: r => `<td>${r.nombre}</td><td>${r.matriz?.nombre || '-'}</td>`,
+        textoVacio: 'No hay tipos de muestra registrados.',
+        textoBuscar: r => `${r.nombre} ${r.matriz?.nombre || ''}`,
     },
 };
 
@@ -93,9 +105,12 @@ function renderTabla(nombre) {
             <tr>
                 ${t.renderFila(r)}
                 <td>
-                    <button class="btn-accion-danger" onclick="eliminar('${nombre}', ${r.id})" title="Eliminar">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="tabla-acciones">
+                        ${t.renderAccionesExtra ? t.renderAccionesExtra(r) : ''}
+                        <button class="btn-accion-danger" onclick="eliminar('${nombre}', ${r.id})" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>`).join('');
     }
@@ -130,6 +145,74 @@ function cambiarPagina(nombre, nuevaPagina) {
 
 // ── Formularios ──
 document.addEventListener('DOMContentLoaded', () => {
+    cargarMatrices();
+
+    document.getElementById('formParametro').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const body = {
+            nombre: document.getElementById('paramNombre').value.trim(),
+        };
+        try {
+            const res = await fetch(`${API_URL}/parametros`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            cargarTabla('parametros');
+        } catch (err) {
+            console.error('Error guardando parámetro:', err);
+            mostrarToast('No se pudo guardar el parámetro.', 'danger');
+        }
+    });
+
+    document.getElementById('formResolucion').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const body = {
+            nombre:      document.getElementById('resNombre').value.trim(),
+            descripcion: document.getElementById('resOrganismo').value.trim(),
+            matrizId:    Number(document.getElementById('resMatriz').value),
+        };
+        try {
+            const res = await fetch(`${API_URL}/resoluciones`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            cargarTabla('resoluciones');
+        } catch (err) {
+            console.error('Error guardando resolución:', err);
+            mostrarToast('No se pudo guardar la resolución.', 'danger');
+        }
+    });
+
+    document.getElementById('formTipoMuestra').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const body = {
+            nombre:   document.getElementById('tmNombre').value.trim(),
+            matrizId: Number(document.getElementById('tmMatriz').value),
+        };
+        try {
+            const res = await fetch(`${API_URL}/tipos-muestra`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            cargarTabla('tiposmuestra');
+        } catch (err) {
+            console.error('Error guardando tipo de muestra:', err);
+            mostrarToast('No se pudo guardar el tipo de muestra.', 'danger');
+        }
+    });
+
     document.getElementById('formMetodologia').addEventListener('submit', async e => {
         e.preventDefault();
         const token = localStorage.getItem('token');
@@ -152,6 +235,274 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+async function cargarMatrices() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/matrices`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const matrices = await res.json();
+        ['resMatriz', 'tmMatriz'].forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            matrices.filter(m => m.activo).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.nombre;
+                select.appendChild(opt);
+            });
+        });
+    } catch (err) {
+        console.error('Error cargando matrices:', err);
+    }
+}
+
+// ── Editor de parámetros de resolución ──
+let _currentResolucionId = null;
+let _currentDetalle = null;
+
+async function verParametros(id) {
+    _currentResolucionId = id;
+    const overlay = document.getElementById('paramsOverlay');
+    const titulo  = document.getElementById('paramsModalTitulo');
+    const cuerpo  = document.getElementById('paramsModalCuerpo');
+
+    titulo.textContent = 'Cargando...';
+    cuerpo.innerHTML   = '<p class="params-loading">Cargando parámetros...</p>';
+    overlay.classList.add('visible');
+
+    await _cargarYRenderModalParams();
+}
+
+async function _cargarYRenderModalParams() {
+    const token = localStorage.getItem('token');
+    const cuerpo = document.getElementById('paramsModalCuerpo');
+    try {
+        const [resDetalle, resParams] = await Promise.all([
+            fetch(`${API_URL}/resoluciones/${_currentResolucionId}/detalle`, { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch(`${API_URL}/parametros`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        ]);
+        if (!resDetalle.ok || !resParams.ok) throw new Error('Error HTTP');
+        const [detalle, todosLosParams] = await Promise.all([resDetalle.json(), resParams.json()]);
+        _currentDetalle = detalle;
+
+        document.getElementById('paramsModalTitulo').textContent = detalle.nombre;
+        _renderEditorParams(detalle, todosLosParams);
+    } catch (err) {
+        console.error('Error cargando parámetros:', err);
+        cuerpo.innerHTML = '<p class="params-error">Error al cargar los datos.</p>';
+    }
+}
+
+function _renderEditorParams(detalle, todosLosParams) {
+    const cuerpo = document.getElementById('paramsModalCuerpo');
+
+    // Aplanar params incluidos deduplicados por param ID
+    const includedMap = new Map();
+    for (const destino of (detalle.destinos || [])) {
+        for (const p of (destino.parametros || [])) {
+            if (!includedMap.has(p.id)) includedMap.set(p.id, p);
+        }
+    }
+    const included = [...includedMap.values()];
+    const includedIds = new Set(included.map(p => p.id));
+    const excluded = todosLosParams.filter(p => !includedIds.has(p.id));
+
+    const filasIncluidos = included.length > 0
+        ? included.map(p => `
+            <tr>
+                <td>${p.nombre}</td>
+                <td>
+                    <input type="text" class="unidad-inline-input" value="${p.unidad || ''}"
+                           placeholder="sin unidad"
+                           onblur="actualizarUnidadParam(${p.id}, this.value)"
+                           onkeydown="if(event.key==='Enter'){this.blur();}">
+                </td>
+                <td>${formatearLimite(p)}</td>
+                <td>
+                    <div class="tabla-acciones">
+                        <button class="btn-accion-info" onclick="abrirEditorLimite(${p.id})" title="Editar límite">
+                            <i class="bi bi-sliders"></i>
+                        </button>
+                        <button class="btn-accion-danger" onclick="quitarParametroResolucion(${p.id})" title="Quitar parámetro">
+                            <i class="bi bi-dash-circle"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`).join('')
+        : `<tr><td colspan="4" class="params-vacio">No hay parámetros configurados.</td></tr>`;
+
+    const filasExcluidos = excluded.length > 0
+        ? excluded.map(p => `
+            <tr data-nombre="${p.nombre.toLowerCase()}">
+                <td>${p.nombre}</td>
+                <td>
+                    <input type="text" id="unidadInput_${p.id}" class="unidad-inline-input"
+                           placeholder="ej: µg/L, mg/kg">
+                </td>
+                <td>
+                    <button class="btn-accion-info" onclick="agregarParametroResolucion(${p.id})" title="Agregar parámetro">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                </td>
+            </tr>`).join('')
+        : `<tr><td colspan="3" class="params-vacio">Todos los parámetros ya están incluidos.</td></tr>`;
+
+    cuerpo.innerHTML = `
+        <div class="params-section-label">Incluidos (${included.length})</div>
+        <table class="tabla-config">
+            <thead><tr><th>Parámetro</th><th>Unidad</th><th>Límite</th><th></th></tr></thead>
+            <tbody>${filasIncluidos}</tbody>
+        </table>
+
+        <div class="params-divider"></div>
+
+        <div class="params-section-label">Disponibles para agregar</div>
+        <input type="text" class="tabla-filtro params-buscador" placeholder="Buscar parámetro..."
+               oninput="filtrarParamsExcluidos(this.value)">
+        <table class="tabla-config">
+            <thead><tr><th>Parámetro</th><th>Unidad para esta resolución</th><th></th></tr></thead>
+            <tbody id="tbodyParamsExcluidos">${filasExcluidos}</tbody>
+        </table>`;
+}
+
+function filtrarParamsExcluidos(valor) {
+    const q = valor.toLowerCase().trim();
+    document.querySelectorAll('#tbodyParamsExcluidos tr[data-nombre]').forEach(tr => {
+        tr.style.display = tr.dataset.nombre.includes(q) ? '' : 'none';
+    });
+}
+
+async function agregarParametroResolucion(parametroId) {
+    const token = localStorage.getItem('token');
+    const unidad = (document.getElementById(`unidadInput_${parametroId}`)?.value || '').trim();
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ unidad: unidad || null }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await _cargarYRenderModalParams();
+    } catch (err) {
+        console.error('Error agregando parámetro:', err);
+        mostrarToast('No se pudo agregar el parámetro.', 'danger');
+    }
+}
+
+async function actualizarUnidadParam(parametroId, unidad) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ unidad: unidad.trim() || null }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        mostrarToast('Unidad actualizada.', 'success');
+    } catch (err) {
+        console.error('Error actualizando unidad:', err);
+        mostrarToast('No se pudo actualizar la unidad.', 'danger');
+    }
+}
+
+async function quitarParametroResolucion(parametroId) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.status === 409) {
+            mostrarToast('No se pudo desactivar: error de integridad inesperado.', 'danger');
+            return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        mostrarToast('Parámetro desactivado. El historial de análisis no se ve afectado.', 'success');
+        await _cargarYRenderModalParams();
+    } catch (err) {
+        console.error('Error quitando parámetro:', err);
+        mostrarToast('No se pudo desactivar el parámetro.', 'danger');
+    }
+}
+
+function formatearLimite(p) {
+    if (!p.tipoLimite) return p.limiteTexto || '-';
+    if (p.tipoLimite === 'RANGO')    return `${p.valorMinimo ?? '?'} – ${p.valorMaximo ?? '?'}`;
+    if (p.tipoLimite === 'MAX')      return `≤ ${p.valorMaximo}`;
+    if (p.tipoLimite === 'MIN')      return `≥ ${p.valorMinimo}`;
+    if (p.tipoLimite === 'TEXTO')    return p.limiteTexto || '-';
+    if (p.tipoLimite === 'AUSENCIA') return 'Ausencia';
+    if (p.tipoLimite === 'NE')       return 'No exigido';
+    if (p.tipoLimite === 'NL')       return '—';
+    return '-';
+}
+
+// ── Editor de límite de parámetro ──
+function abrirEditorLimite(parametroId) {
+    let p = null;
+    for (const destino of (_currentDetalle?.destinos || [])) {
+        p = (destino.parametros || []).find(x => x.id === parametroId);
+        if (p) break;
+    }
+    if (!p) return;
+
+    document.getElementById('limiteParamId').value          = parametroId;
+    document.getElementById('limiteModalTitulo').textContent = `Límite — ${p.nombre}`;
+    document.getElementById('limiteTipo').value             = p.tipoLimite || 'NE';
+    document.getElementById('limiteMin').value              = p.valorMinimo ?? '';
+    document.getElementById('limiteMax').value              = p.valorMaximo ?? '';
+    document.getElementById('limiteTextoInput').value       = p.limiteTexto || '';
+    onTipoLimiteCambio();
+    document.getElementById('limiteOverlay').classList.add('visible');
+}
+
+function onTipoLimiteCambio() {
+    const tipo = document.getElementById('limiteTipo').value;
+    document.getElementById('limiteGrupoMax').style.display   = ['MAX', 'RANGO'].includes(tipo) ? '' : 'none';
+    document.getElementById('limiteGrupoMin').style.display   = ['MIN', 'RANGO'].includes(tipo) ? '' : 'none';
+    document.getElementById('limiteGrupoTexto').style.display = tipo === 'TEXTO' ? '' : 'none';
+}
+
+async function guardarLimiteParam() {
+    const parametroId = document.getElementById('limiteParamId').value;
+    const tipoLimite  = document.getElementById('limiteTipo').value;
+    const minVal      = document.getElementById('limiteMin').value;
+    const maxVal      = document.getElementById('limiteMax').value;
+    const valorMinimo = minVal !== '' ? parseFloat(minVal) : null;
+    const valorMaximo = maxVal !== '' ? parseFloat(maxVal) : null;
+    const limiteTexto = document.getElementById('limiteTextoInput').value.trim() || null;
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}/limite`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ tipoLimite, valorMinimo, valorMaximo, limiteTexto }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        document.getElementById('limiteOverlay').classList.remove('visible');
+        mostrarToast('Límite actualizado.', 'success');
+        await _cargarYRenderModalParams();
+    } catch (err) {
+        console.error('Error guardando límite:', err);
+        mostrarToast('No se pudo guardar el límite.', 'danger');
+    }
+}
+
+function cerrarLimiteOverlay(event) {
+    if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove('visible');
+    }
+}
+
+function cerrarModalParams(event) {
+    if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove('visible');
+    }
+}
 
 // ── Eliminar ──
 async function eliminar(nombre, id) {

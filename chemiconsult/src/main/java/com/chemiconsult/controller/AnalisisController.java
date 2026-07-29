@@ -22,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Log4j2
@@ -62,15 +63,27 @@ public class AnalisisController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<Void> createEstudio(@RequestBody EstudioTO estudio) {
-        analisisService.createEstudio(estudio);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<Long> createEstudio(@RequestBody EstudioTO estudio) {
+        AnalisisDE created = analisisService.createEstudio(estudio);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created.getId());
     }
 
     @PutMapping("/{id}")
     @Transactional
     public AnalisisDE updateEstudio(@PathVariable Long id, @RequestBody AnalisisDE estudio) {
         return analisisService.updateEstudio(id, estudio);
+    }
+
+    @PatchMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> patchEstudio(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Long matrizId = body.get("matrizId") != null ? ((Number) body.get("matrizId")).longValue() : null;
+        Long tipoMuestraId = body.get("tipoMuestraId") != null ? ((Number) body.get("tipoMuestraId")).longValue() : null;
+        String puntoMuestreo = (String) body.get("puntoMuestreo");
+        String fechaIngreso = (String) body.get("fechaIngreso");
+        String fechaEntrega = (String) body.get("fechaEntrega");
+        analisisService.patchEstudio(id, matrizId, tipoMuestraId, puntoMuestreo, fechaIngreso, fechaEntrega);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

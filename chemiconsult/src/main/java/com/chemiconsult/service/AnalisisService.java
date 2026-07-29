@@ -6,6 +6,7 @@ import com.chemiconsult.repository.*;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
 import com.chemiconsult.to.ResultadoParametroTO;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 @Service
+@Log4j2
 public class AnalisisService {
 
     private final AnalisisRepository analisisRepository;
@@ -26,6 +29,7 @@ public class AnalisisService {
     private final ResolucionDestinoRepository resolucionDestinoRepository;
     private final ParametroRepository parametroRepository;
     private final ResolucionDestinoParametroRepository resolucionDestinoParametroRepository;
+    private final TipoMuestraRepository tipoMuestraRepository;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -92,6 +96,10 @@ public class AnalisisService {
         }
 
         AnalisisDE analisis = EstudiosMapper.createEstudio(estudio, cliente, matriz, sucursal);
+        if (estudio.getTipoMuestraId() != null) {
+            tipoMuestraRepository.findById(estudio.getTipoMuestraId())
+                    .ifPresent(analisis::setTipoMuestra);
+        }
         analisis = analisisRepository.save(analisis);
 
         List<Long> destinoIds = estudio.getResolucionDestinoIds() != null
@@ -158,6 +166,29 @@ public class AnalisisService {
         return analisisRepository.save(existing);
     }
 
+    @Transactional
+    public void patchEstudio(Long id, Long matrizId, Long tipoMuestraId,
+                             String puntoMuestreo, String fechaIngreso, String fechaEntrega) {
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Muestra no encontrada: " + id));
+        if (matrizId != null) {
+            matrizRepository.findById(matrizId).ifPresent(analisis::setMatriz);
+        }
+        if (tipoMuestraId != null) {
+            tipoMuestraRepository.findById(tipoMuestraId).ifPresent(analisis::setTipoMuestra);
+        } else {
+            analisis.setTipoMuestra(null);
+        }
+        analisis.setPuntoMuestreo(puntoMuestreo != null && !puntoMuestreo.isBlank() ? puntoMuestreo : null);
+        if (fechaIngreso != null && !fechaIngreso.isBlank()) {
+            analisis.setFechaIngreso(LocalDate.parse(fechaIngreso));
+        }
+        analisis.setFechaEntrega(fechaEntrega != null && !fechaEntrega.isBlank()
+                ? LocalDate.parse(fechaEntrega) : null);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
+    }
+
     public void deleteEstudio(Long id) {
         analisisRepository.deleteById(id);
     }
@@ -209,7 +240,8 @@ public class AnalisisService {
                            ClienteSucursalRepository sucursalRepository,
                            ResolucionDestinoRepository resolucionDestinoRepository,
                            ParametroRepository parametroRepository,
-                           ResolucionDestinoParametroRepository resolucionDestinoParametroRepository) {
+                           ResolucionDestinoParametroRepository resolucionDestinoParametroRepository,
+                           TipoMuestraRepository tipoMuestraRepository) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -217,5 +249,6 @@ public class AnalisisService {
         this.resolucionDestinoRepository = resolucionDestinoRepository;
         this.parametroRepository = parametroRepository;
         this.resolucionDestinoParametroRepository = resolucionDestinoParametroRepository;
+        this.tipoMuestraRepository = tipoMuestraRepository;
     }
 }

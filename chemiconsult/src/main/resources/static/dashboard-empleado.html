@@ -291,13 +291,14 @@
                         <span class="field-error" id="errCliente">Seleccioná un cliente</span>
                     </div>
                     <div class="form-group">
-                        <label>ID de muestra <span class="required">*</span></label>
-                        <input type="text" id="inputIdMuestra" class="form-control-custom" placeholder="Ej: M-001" autocomplete="off"/>
-                        <span class="field-error" id="errIdMuestra">Campo requerido</span>
-                    </div>
-                    <div class="form-group">
                         <label>Punto de muestreo</label>
                         <input type="text" id="inputPuntoMuestreo" class="form-control-custom" placeholder="Ej: Pozo norte..." autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de muestra</label>
+                        <select id="inputTipoMuestraEspecifica" class="form-control-custom">
+                            <option value="">— sin especificar —</option>
+                        </select>
                     </div>
                 </div>
                 <!-- Fila 3: Matriz -->
@@ -483,10 +484,10 @@
             <div id="detalleEstadoBadge" class="badge-estado" style="margin-bottom:.5rem"></div>
             <div class="detalle-grid">
                 <div class="detalle-campo"><label>Protocolo</label><span id="detalleProtocolo">—</span></div>
-                <div class="detalle-campo"><label>ID Muestra</label><span id="detalleIdMuestra">—</span></div>
                 <div class="detalle-campo"><label>Cliente</label><span id="detalleCliente">—</span></div>
                 <div class="detalle-campo"><label>Matriz</label><span id="detalleMatriz">—</span></div>
                 <div class="detalle-campo"><label>Punto de muestreo</label><span id="detallePunto">—</span></div>
+                <div class="detalle-campo"><label>Tipo de muestra</label><span id="detalleTipoMuestra">—</span></div>
                 <div class="detalle-campo"><label>Fecha ingreso</label><span id="detalleFechaIngreso">—</span></div>
                 <div class="detalle-campo"><label>Fecha entrega</label><span id="detalleFechaEntrega">—</span></div>
             </div>

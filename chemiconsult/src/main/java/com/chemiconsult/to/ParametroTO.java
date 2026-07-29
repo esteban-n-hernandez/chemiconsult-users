@@ -6,7 +6,6 @@ import lombok.Data;
 public class ParametroTO {
 
     private String nombre;
-    private String unidad;
     private Double valorMinimo;
     private Double valorMaximo;
     private String normaReferencia;

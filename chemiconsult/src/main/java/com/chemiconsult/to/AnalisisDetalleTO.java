@@ -10,9 +10,10 @@ import java.util.List;
 public class AnalisisDetalleTO {
     private Long id;
     private String nroProtocolo;
-    private String idMuestra;
     private String estado;
+    private String tipoMuestraNombre;
     private String cliente;
+    private Long clienteId;
     private Long userId;
     private String puntoMuestreo;
     private String fechaIngreso;
@@ -20,6 +21,8 @@ public class AnalisisDetalleTO {
     private String observaciones;
     private String archivoUrl;
     private String matrizNombre;
+    private Long matrizId;
+    private Long tipoMuestraId;
 
     private List<String> resolucionesAplicadas;
     private List<ParametroResultadoTO> parametros;
