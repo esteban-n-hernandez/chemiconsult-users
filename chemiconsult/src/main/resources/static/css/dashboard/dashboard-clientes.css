@@ -255,6 +255,12 @@
     color: #146c43;
 }
 
+.badge-cancelada {
+    background: #f3f4f6;
+    color: #6b7280;
+    text-decoration: line-through;
+}
+
 /* ── Botón descargar ── */
 .btn-descargar {
     background: none;

@@ -46,6 +46,11 @@ public class AnalisisController {
         return analisisService.getEstudiosTO();
     }
 
+    @GetMapping("/proximo-protocolo")
+    public ResponseEntity<Long> getProximoProtocolo() {
+        return ResponseEntity.ok(analisisService.obtenerProximoNumeroProtocolo());
+    }
+
     @GetMapping("/user/{userId}")
     public List<EstudioTO> getEstudiosByID(@PathVariable Long userId) {
         return analisisService.getEstudiosByID(userId);
@@ -89,6 +94,12 @@ public class AnalisisController {
     @DeleteMapping("/{id}")
     public void deleteEstudio(@PathVariable Long id) {
         analisisService.deleteEstudio(id);
+    }
+
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<Void> cancelarEstudio(@PathVariable Long id) {
+        analisisService.cancelarEstudio(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/resultados")

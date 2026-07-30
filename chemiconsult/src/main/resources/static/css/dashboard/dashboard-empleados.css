@@ -341,6 +341,13 @@ body {
     border-color: #fca5a5;
 }
 
+.badge-cancelada {
+    background: #f3f4f6;
+    color: #6b7280;
+    border-color: #d1d5db;
+    text-decoration: line-through;
+}
+
 .fecha-ok {
     color: #495057;
 }

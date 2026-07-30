@@ -314,10 +314,24 @@ function vincularEventos() {
 }
 
 
-function abrirModal() {
+async function abrirModal() {
     document.getElementById("modalAltaMuestra").classList.add("visible");
-    document.getElementById("inputProtocolo").focus();
     document.getElementById("inputFecha").value = new Date().toISOString().slice(0, 10);
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/proximo-protocolo`);
+        if (resp.ok) {
+            const numero = await resp.json();
+            const inputProtocolo = document.getElementById("inputProtocolo");
+            if (!inputProtocolo.value) {
+                inputProtocolo.value = numero;
+            }
+        }
+    } catch (err) {
+        console.warn("No se pudo obtener el próximo número de protocolo:", err);
+    }
+
+    document.getElementById("inputProtocolo").focus();
 }
 
 function cerrarModal() {
@@ -962,6 +976,7 @@ function renderizarTablaMuestras(lista) {
         const codigo = m.nroProtocolo || m.id || "S/N";
         const puedeGenerar = m.estado === "COMPLETO_SIN_INFORME";
         const yaCompleto   = m.estado === "COMPLETO";
+        const cancelada    = m.estado === "CANCELADA";
         const protocolo    = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
@@ -975,19 +990,25 @@ function renderizarTablaMuestras(lista) {
                         onclick="verDetalleMuestra(${m.id})">
                     <i class="bi bi-eye"></i>
                 </button>
+                ${!cancelada ? `
                 <button class="btn-accion" title="Editar datos"
                         onclick="abrirEdicionMuestra(${m.id})">
                     <i class="bi bi-pencil"></i>
-                </button>
+                </button>` : ''}
                 ${puedeGenerar ? `
                 <button class="btn-accion btn-accion-verde" title="Generar informe PDF"
                         onclick="onGenerarInformeDesdeTabla(${m.id})">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
                 </button>` : ''}
-                ${!yaCompleto ? `
+                ${!yaCompleto && !cancelada ? `
                 <button class="btn-accion btn-accion-gris" title="Subir informe desde PC"
                         onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
                     <i class="bi bi-upload"></i>
+                </button>` : ''}
+                ${!yaCompleto && !cancelada ? `
+                <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
+                        onclick="cancelarMuestra(${m.id}, '${protocolo}')">
+                    <i class="bi bi-x-circle"></i>
                 </button>` : ''}
             </td>
         `;
@@ -1129,6 +1150,7 @@ function badgeClassDetalle(estado) {
         COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
         DEMORADA: "badge-demorada",
         COMPLETO: "badge-informe",
+        CANCELADA: "badge-cancelada",
     };
     return "badge-estado " + (map[(estado || "").toUpperCase()] || "");
 }
@@ -1140,6 +1162,7 @@ function labelEstadoDetalle(estado) {
         COMPLETO_SIN_INFORME: "Completo sin informe",
         DEMORADA: "Demorada",
         COMPLETO: "Completo",
+        CANCELADA: "Cancelada",
     };
     return map[(estado || "").toUpperCase()] || (estado || "—");
 }
@@ -1482,6 +1505,25 @@ async function onUploadAltaInforme() {
         btn.innerHTML = textoOriginal;
     }
 }
+
+window.cancelarMuestra = async function(id, protocolo) {
+    const confirmar = window.confirm(
+        `¿Confirmás la cancelación de la muestra ${protocolo}?\n\nEsta acción no se puede deshacer.`
+    );
+    if (!confirmar) return;
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${id}/cancelar`, {
+            method: "PATCH"
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        mostrarToast(`Muestra ${protocolo} cancelada.`);
+        await cargarMuestrasActivas();
+    } catch (err) {
+        console.error("Error al cancelar muestra:", err);
+        mostrarToast("No se pudo cancelar la muestra.", true);
+    }
+};
 
 function init() {
     inicializarHeader();

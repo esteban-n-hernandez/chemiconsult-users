@@ -57,6 +57,7 @@ function labelEstado(estado) {
         COMPLETO_SIN_INFORME: "Completo sin informe",
         DEMORADA: "Demorada",
         COMPLETO: "Completo",
+        CANCELADA: "Cancelada",
     };
     return map[normalizarEstado(estado)] || (estado || "-");
 }
@@ -874,6 +875,8 @@ function badgeClassParaEstado(estado) {
             return "badge-estado badge-completo-sin-informe";
         case "PENDIENTE":
             return "badge-estado badge-pendiente";
+        case "CANCELADA":
+            return "badge-estado badge-cancelada";
         default:
             return "badge-estado";
     }

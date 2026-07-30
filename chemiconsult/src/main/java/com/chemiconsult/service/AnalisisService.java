@@ -1,6 +1,7 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.*;
+import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.repository.*;
 import com.chemiconsult.to.AnalisisDetalleTO;
@@ -30,6 +31,26 @@ public class AnalisisService {
     private final ParametroRepository parametroRepository;
     private final ResolucionDestinoParametroRepository resolucionDestinoParametroRepository;
     private final TipoMuestraRepository tipoMuestraRepository;
+    private final NumeradorMuestraRepository numeradorMuestraRepository;
+
+    @Transactional(readOnly = true)
+    public long obtenerProximoNumeroProtocolo() {
+        return numeradorMuestraRepository.findById(1L)
+                .map(n -> n.getValorActual() + 1)
+                .orElse(1L);
+    }
+
+    private void incrementarNumerador() {
+        NumeradorMuestraDE numerador = numeradorMuestraRepository.findById(1L)
+                .orElseGet(() -> {
+                    NumeradorMuestraDE n = new NumeradorMuestraDE();
+                    n.setId(1L);
+                    n.setValorActual(0L);
+                    return n;
+                });
+        numerador.setValorActual(numerador.getValorActual() + 1);
+        numeradorMuestraRepository.save(numerador);
+    }
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -150,7 +171,18 @@ public class AnalisisService {
         }
         analisis.setParametros(parametros);
 
-        return analisisRepository.save(analisis);
+        AnalisisDE resultado = analisisRepository.save(analisis);
+        incrementarNumerador();
+        return resultado;
+    }
+
+    @Transactional
+    public void cancelarEstudio(Long id) {
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Muestra no encontrada con ID: " + id));
+        analisis.setEstado(EstadoMuestraEnum.CANCELADA);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
     }
 
     public AnalisisDE updateEstudio(Long id, AnalisisDE estudio) {
@@ -241,7 +273,8 @@ public class AnalisisService {
                            ResolucionDestinoRepository resolucionDestinoRepository,
                            ParametroRepository parametroRepository,
                            ResolucionDestinoParametroRepository resolucionDestinoParametroRepository,
-                           TipoMuestraRepository tipoMuestraRepository) {
+                           TipoMuestraRepository tipoMuestraRepository,
+                           NumeradorMuestraRepository numeradorMuestraRepository) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -250,5 +283,6 @@ public class AnalisisService {
         this.parametroRepository = parametroRepository;
         this.resolucionDestinoParametroRepository = resolucionDestinoParametroRepository;
         this.tipoMuestraRepository = tipoMuestraRepository;
+        this.numeradorMuestraRepository = numeradorMuestraRepository;
     }
 }

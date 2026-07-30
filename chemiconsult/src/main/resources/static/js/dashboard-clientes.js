@@ -89,6 +89,7 @@ function badgeHTML(estado) {
         "DEMORADA":             `<span class="badge-estado badge-demorada">⏸ Demorada</span>`,
         "COMPLETO_SIN_INFORME": `<span class="badge-estado badge-sin-informe">✔ Analizado</span>`,
         "COMPLETO":             `<span class="badge-estado badge-informe">📄 Informe listo</span>`,
+        "CANCELADA":            `<span class="badge-estado badge-cancelada">✕ Cancelada</span>`,
     };
     return map[estado] || `<span class="badge-estado">${estado}</span>`;
 }
