@@ -48,6 +48,9 @@
         <button class="tab-btn-custom" onclick="cambiarPestaña('tiposmuestra')">
             <i class="bi bi-layers"></i> Tipos de Muestra
         </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('numeradores')">
+            <i class="bi bi-hash"></i> Numeradores
+        </button>
     </div>
 
     <!-- ==========================================
@@ -257,6 +260,37 @@
                     </table>
                     <div class="tabla-paginador" id="paginadorTiposMuestra"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PÁGINA / SECCIÓN: NUMERADORES
+         ========================================== -->
+    <div id="tab-numeradores" class="tab-content-panel">
+        <div class="panel-custom" style="max-width:580px;">
+            <div class="panel-header-custom">
+                <h5><i class="bi bi-hash text-primary"></i> Numeradores del sistema</h5>
+            </div>
+            <div class="panel-body-custom">
+                <div class="numeradores-info">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <p>Los numeradores son contadores internos del sistema. Para dar de alta uno nuevo
+                    (ej: remitos, certificados) debe crearse el registro en la base de datos e implementar
+                    la lógica correspondiente en el código. Desde aquí solo se puede corregir el valor actual
+                    de los contadores existentes.</p>
+                </div>
+                <table class="tabla-config" style="margin-top:16px;">
+                    <thead>
+                        <tr>
+                            <th>Contador</th>
+                            <th>Último valor asignado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaNumeradoresBody">
+                        <tr><td colspan="2" class="text-center" style="padding:16px;color:#6c757d;">Cargando...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

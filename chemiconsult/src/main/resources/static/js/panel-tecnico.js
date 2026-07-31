@@ -62,7 +62,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderTabla(nombre);
             });
     });
+    cargarNumeradores();
 });
+
+// ── Numeradores ──
+async function cargarNumeradores() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/numeradores`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderNumeradores(data);
+    } catch {
+        document.getElementById('tablaNumeradoresBody').innerHTML =
+            `<tr><td colspan="2" class="text-center text-danger" style="padding:16px;">Error al cargar los numeradores.</td></tr>`;
+    }
+}
+
+function renderNumeradores(data) {
+    document.getElementById('tablaNumeradoresBody').innerHTML = data.length === 0
+        ? `<tr><td colspan="2" class="text-center" style="padding:16px;color:#6c757d;">Sin numeradores registrados.</td></tr>`
+        : data.map(n => `
+            <tr>
+                <td><code style="font-size:13px;">${n.nombre}</code></td>
+                <td>
+                    <input type="number" class="unidad-inline-input" value="${n.valor}" min="0"
+                           title="Presioná Enter o hacé clic fuera para guardar"
+                           onblur="guardarNumerador(${n.id}, this)"
+                           onkeydown="if(event.key==='Enter') this.blur();">
+                </td>
+            </tr>`).join('');
+}
+
+async function guardarNumerador(id, input) {
+    const valor = parseInt(input.value, 10);
+    if (isNaN(valor) || valor < 0) {
+        input.classList.add('campo-error');
+        setTimeout(() => input.classList.remove('campo-error'), 1500);
+        return;
+    }
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/numeradores/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ valor })
+        });
+        if (!res.ok) throw new Error();
+        mostrarToast('Numerador actualizado correctamente.');
+    } catch {
+        mostrarToast('No se pudo actualizar el numerador.', 'danger');
+    }
+}
 
 async function cargarTabla(nombre) {
     const t = tablas[nombre];

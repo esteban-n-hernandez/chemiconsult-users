@@ -67,13 +67,22 @@ public class AnalisisService {
     @Transactional
     public AnalisisDE createEstudio(EstudioTO estudio) {
 
-        String nroProtocolo = (estudio.getNroProtocolo() != null && !estudio.getNroProtocolo().isBlank())
+        boolean manuallProvided = estudio.getNroProtocolo() != null && !estudio.getNroProtocolo().isBlank();
+        String nroProtocolo = manuallProvided
                 ? estudio.getNroProtocolo()
                 : String.valueOf(numeradorService.generarSiguiente("NUMERO_PROTOCOLO"));
         estudio.setNroProtocolo(nroProtocolo);
 
         if (analisisRepository.existsByNumeroProtocolo(nroProtocolo)) {
             throw new RuntimeException("Ya existe una muestra con el protocolo: " + nroProtocolo);
+        }
+
+        if (manuallProvided) {
+            try {
+                numeradorService.sincronizarSiMayor("NUMERO_PROTOCOLO", Long.parseLong(nroProtocolo));
+            } catch (NumberFormatException ignored) {
+                // protocolo no numérico — no aplica sincronización
+            }
         }
         if (estudio.getParametrosIds() == null || estudio.getParametrosIds().isEmpty()) {
             throw new RuntimeException("Debe seleccionar al menos un parámetro a analizar");
