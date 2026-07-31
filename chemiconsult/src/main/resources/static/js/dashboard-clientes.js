@@ -95,7 +95,7 @@ function badgeHTML(estado) {
 
 function btnInformeHTML(muestra) {
     if (muestra.informe) {
-        return `<button class="btn-descargar" onclick="abrirPDF(${muestra.id}, '${muestra.codigo}')">
+        return `<button class="btn-descargar" onclick="abrirInformes(${muestra.id}, '${muestra.codigo}')">
                     <i class="bi bi-eye"></i> Ver informe
                 </button>`;
     }
@@ -165,25 +165,77 @@ function renderTabla() {
 }
 
 // ──────────────────────────────────────────
-// MODAL PDF
+// MODAL PDF — soporte multi-archivo
 // ──────────────────────────────────────────
 const pdfIframe  = document.getElementById("pdfIframe");
 const pdfLoading = document.getElementById("pdfLoading");
 
-function abrirPDF(estudioId, protocolo) {
-    const url = `${API_CLIENTES_BASE}/estudios/${estudioId}/resultado`;
-
+async function abrirInformes(estudioId, protocolo) {
     document.getElementById("pdfModalTitulo").textContent = `Informe ${protocolo}`;
-    document.getElementById("btnDescargarPdf").href     = url;
-    document.getElementById("btnDescargarPdf").download = `resultado_${protocolo}.pdf`;
-    document.getElementById("btnAbrirNueva").href       = url;
+
+    // Reset estado visual
+    pdfLoading.style.display = "flex";
+    pdfLoading.innerHTML     = `<div class="spinner"></div><span>Cargando...</span>`;
+    pdfIframe.style.display  = "none";
+    pdfIframe.src            = "";
+    document.getElementById("pdfArchivosNav").style.display = "none";
+    document.getElementById("pdfArchivosBtns").innerHTML = "";
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("pdfModal")).show();
+
+    try {
+        const res = await fetch(`${API_CLIENTES_BASE}/estudios/${estudioId}/archivos`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        const archivos = await res.json();
+
+        if (archivos.length === 0) {
+            pdfLoading.innerHTML = `<i class="bi bi-exclamation-circle" style="font-size:32px;color:#ef4444;"></i>
+                                    <span style="color:#ef4444;">No hay archivos disponibles.</span>`;
+            return;
+        }
+
+        if (archivos.length > 1) {
+            const nav  = document.getElementById("pdfArchivosNav");
+            const btns = document.getElementById("pdfArchivosBtns");
+            nav.style.display = "flex";
+
+            archivos.forEach((a, i) => {
+                const btn = document.createElement("button");
+                btn.className = "btn-archivo-nav" + (i === 0 ? " activo" : "");
+                btn.textContent = a.nombre || `Archivo ${i + 1}`;
+                btn.dataset.archivoId = a.id;
+                btn.onclick = () => {
+                    document.querySelectorAll(".btn-archivo-nav").forEach(b => b.classList.remove("activo"));
+                    btn.classList.add("activo");
+                    cargarArchivoEnModal(estudioId, a.id, a.nombre || `Archivo ${i + 1}`, protocolo);
+                };
+                btns.appendChild(btn);
+            });
+        }
+
+        // Cargar el primer archivo automáticamente
+        const primero = archivos[0];
+        cargarArchivoEnModal(estudioId, primero.id, primero.nombre || "Archivo", protocolo);
+
+    } catch {
+        pdfLoading.innerHTML = `<i class="bi bi-exclamation-circle" style="font-size:32px;color:#ef4444;"></i>
+                                <span style="color:#ef4444;">No se pudo cargar el informe.</span>`;
+    }
+}
+
+function cargarArchivoEnModal(estudioId, archivoId, nombre, protocolo) {
+    const url = `${API_CLIENTES_BASE}/estudios/${estudioId}/archivos/${archivoId}`;
 
     pdfLoading.style.display = "flex";
-    pdfLoading.innerHTML     = `<div class="spinner"></div><span>Cargando informe...</span>`;
+    pdfLoading.innerHTML     = `<div class="spinner"></div><span>Cargando...</span>`;
     pdfIframe.style.display  = "none";
     pdfIframe.src            = "";
 
-    bootstrap.Modal.getOrCreateInstance(document.getElementById("pdfModal")).show();
+    document.getElementById("btnDescargarPdf").href     = "#";
+    document.getElementById("btnDescargarPdf").download = nombre;
+    document.getElementById("btnAbrirNueva").href       = "#";
 
     fetch(url, { headers: { "Authorization": `Bearer ${token}` } })
         .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
@@ -197,12 +249,13 @@ function abrirPDF(estudioId, protocolo) {
         })
         .catch(() => {
             pdfLoading.innerHTML = `<i class="bi bi-exclamation-circle" style="font-size:32px;color:#ef4444;"></i>
-                                    <span style="color:#ef4444;">No se pudo cargar el informe.</span>`;
+                                    <span style="color:#ef4444;">No se pudo cargar el archivo.</span>`;
         });
 }
 
 document.getElementById("pdfModal").addEventListener("hidden.bs.modal", () => {
     pdfIframe.src = "";
+    document.getElementById("pdfArchivosNav").style.display = "none";
 });
 
 // ── Buscador ──

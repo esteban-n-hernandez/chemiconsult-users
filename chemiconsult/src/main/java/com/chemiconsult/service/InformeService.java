@@ -1,8 +1,10 @@
 package com.chemiconsult.service;
 
+import com.chemiconsult.entity.AnalisisArchivoDE;
 import com.chemiconsult.entity.AnalisisDE;
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.mapper.EstudiosMapper;
+import com.chemiconsult.repository.AnalisisArchivoRepository;
 import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.AnalisisDetalleTO;
@@ -50,12 +52,15 @@ public class InformeService {
     private static final String FIRMA_MATRICULA = "M. 4763";
 
     private final AnalisisRepository analisisRepository;
+    private final AnalisisArchivoRepository analisisArchivoRepository;
     private final SupabaseBucketService supabaseBucketService;
 
     @Autowired
     public InformeService(AnalisisRepository analisisRepository,
+                          AnalisisArchivoRepository analisisArchivoRepository,
                           SupabaseBucketService supabaseBucketService) {
         this.analisisRepository = analisisRepository;
+        this.analisisArchivoRepository = analisisArchivoRepository;
         this.supabaseBucketService = supabaseBucketService;
     }
 
@@ -86,10 +91,17 @@ public class InformeService {
         }
 
         String nro = detalle.getNroProtocolo() != null ? detalle.getNroProtocolo() : String.valueOf(analisisId);
-        String path = analisisId + "/informe-" + nro + ".pdf";
+        String nombreArchivo = "informe-" + nro + ".pdf";
+        String path = analisisId + "/" + nombreArchivo;
         supabaseBucketService.subirArchivoBytes(BUCKET, path, pdfBytes);
 
-        analisis.setArchivoUrl(path);
+        AnalisisArchivoDE archivo = new AnalisisArchivoDE();
+        archivo.setAnalisis(analisis);
+        archivo.setArchivoUrl(path);
+        archivo.setNombre(nombreArchivo);
+        archivo.setCreatedAt(LocalDate.now());
+        analisisArchivoRepository.save(archivo);
+
         analisis.setEstado(EstadoMuestraEnum.COMPLETO);
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);

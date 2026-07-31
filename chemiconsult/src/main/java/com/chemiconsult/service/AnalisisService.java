@@ -30,6 +30,7 @@ public class AnalisisService {
     private final ParametroRepository parametroRepository;
     private final ResolucionDestinoParametroRepository resolucionDestinoParametroRepository;
     private final TipoMuestraRepository tipoMuestraRepository;
+    private final NumeradorService numeradorService;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -66,11 +67,13 @@ public class AnalisisService {
     @Transactional
     public AnalisisDE createEstudio(EstudioTO estudio) {
 
-        if (estudio.getNroProtocolo() == null || estudio.getNroProtocolo().isBlank()) {
-            throw new RuntimeException("El número de protocolo es obligatorio");
-        }
-        if (analisisRepository.existsByNumeroProtocolo(estudio.getNroProtocolo())) {
-            throw new RuntimeException("Ya existe una muestra con el protocolo: " + estudio.getNroProtocolo());
+        String nroProtocolo = (estudio.getNroProtocolo() != null && !estudio.getNroProtocolo().isBlank())
+                ? estudio.getNroProtocolo()
+                : String.valueOf(numeradorService.generarSiguiente("NUMERO_PROTOCOLO"));
+        estudio.setNroProtocolo(nroProtocolo);
+
+        if (analisisRepository.existsByNumeroProtocolo(nroProtocolo)) {
+            throw new RuntimeException("Ya existe una muestra con el protocolo: " + nroProtocolo);
         }
         if (estudio.getParametrosIds() == null || estudio.getParametrosIds().isEmpty()) {
             throw new RuntimeException("Debe seleccionar al menos un parámetro a analizar");
@@ -241,7 +244,8 @@ public class AnalisisService {
                            ResolucionDestinoRepository resolucionDestinoRepository,
                            ParametroRepository parametroRepository,
                            ResolucionDestinoParametroRepository resolucionDestinoParametroRepository,
-                           TipoMuestraRepository tipoMuestraRepository) {
+                           TipoMuestraRepository tipoMuestraRepository,
+                           NumeradorService numeradorService) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -250,5 +254,6 @@ public class AnalisisService {
         this.parametroRepository = parametroRepository;
         this.resolucionDestinoParametroRepository = resolucionDestinoParametroRepository;
         this.tipoMuestraRepository = tipoMuestraRepository;
+        this.numeradorService = numeradorService;
     }
 }

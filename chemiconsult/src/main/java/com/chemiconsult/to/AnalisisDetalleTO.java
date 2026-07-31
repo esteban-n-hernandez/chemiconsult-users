@@ -19,7 +19,6 @@ public class AnalisisDetalleTO {
     private String fechaIngreso;
     private String fechaEntrega;
     private String observaciones;
-    private String archivoUrl;
     private String matrizNombre;
     private Long matrizId;
     private Long tipoMuestraId;

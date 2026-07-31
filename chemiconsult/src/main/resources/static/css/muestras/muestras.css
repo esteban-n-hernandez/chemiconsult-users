@@ -197,6 +197,17 @@
     color: var(--color-text-tertiary);
 }
 
+.btn-accion-rojo {
+    border-color: #f5c6cb;
+    color: #dc3545;
+}
+
+.btn-accion-rojo:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
 .cod-badge {
     font-family: var(--font-mono);
     font-size: 12px;

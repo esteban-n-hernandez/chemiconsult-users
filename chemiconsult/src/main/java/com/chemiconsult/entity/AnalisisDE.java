@@ -42,9 +42,6 @@ public class AnalisisDE {
     @Column(name = "STATUS", nullable = false)
     private EstadoMuestraEnum estado = EstadoMuestraEnum.PENDIENTE;
 
-    @Column(name = "PDF_URL")
-    private String archivoUrl;
-
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
 
@@ -92,6 +89,13 @@ public class AnalisisDE {
     @EqualsAndHashCode.Exclude
     @org.hibernate.annotations.BatchSize(size = 25)
     private List<AnalisisResolucionDestinoDE> resolucionesAplicadas;
+
+    @OneToMany(mappedBy = "analisis", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @org.hibernate.annotations.BatchSize(size = 10)
+    private List<AnalisisArchivoDE> archivos;
 
     @ManyToOne
     @JoinColumn(name = "CLIENTE_SUCURSAL_ID")

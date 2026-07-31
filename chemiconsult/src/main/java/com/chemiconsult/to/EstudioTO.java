@@ -13,7 +13,6 @@ public class EstudioTO {
     private String cliente;
     private String tipo;
     private String estado;
-    private String archivoUrl;
     private Long userId;       // se sigue usando en la salida (listado), no en la entrada de alta
     private String userMail;
     private String createdDate;

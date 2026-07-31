@@ -454,6 +454,38 @@
     display: none;
 }
 
+/* ── Barra de selección de archivos en el modal ── */
+#pdfArchivosNav {
+    background: var(--bg-surface, #f9fafb);
+    border-bottom: 1px solid var(--borde, #e5e7eb);
+}
+
+.btn-archivo-nav {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 20px;
+    border: 1px solid var(--borde, #e5e7eb);
+    background: var(--bg-card, #fff);
+    color: var(--color-text-secondary, #555);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-archivo-nav:hover {
+    border-color: var(--verde, #16a34a);
+    color: var(--verde, #16a34a);
+}
+
+.btn-archivo-nav.activo {
+    background: var(--verde, #16a34a);
+    border-color: var(--verde, #16a34a);
+    color: #fff;
+}
+
 /* ── Loading spinner ── */
 .pdf-loading {
     position: absolute;

@@ -70,4 +70,13 @@ public class SupabaseBucketService {
                 .toBodilessEntity();
     }
 
+    public void eliminarArchivo(String bucket, String path) {
+        restClient.delete()
+                .uri("/object/{bucket}/{path}", bucket, path)
+                .header("Authorization", "Bearer " + serviceRoleKey)
+                .header("apikey", serviceRoleKey)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
 }

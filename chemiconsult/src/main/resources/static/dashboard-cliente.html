@@ -145,6 +145,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
             </div>
+            <!-- Barra de selección de archivos (se muestra solo si hay más de uno) -->
+            <div id="pdfArchivosNav" style="display:none; padding:8px 16px; border-bottom:1px solid var(--bs-border-color, #dee2e6); display:none; gap:8px; flex-wrap:wrap; align-items:center;">
+                <span style="font-size:12px; color:#888; margin-right:4px;">Archivos:</span>
+                <div id="pdfArchivosBtns" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+            </div>
             <div class="pdf-modal-body">
                 <div class="pdf-loading" id="pdfLoading">
                     <div class="spinner"></div>

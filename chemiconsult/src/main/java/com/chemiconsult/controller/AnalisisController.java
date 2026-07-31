@@ -1,11 +1,14 @@
 package com.chemiconsult.controller;
 
+import com.chemiconsult.entity.AnalisisArchivoDE;
 import com.chemiconsult.entity.AnalisisDE;
 import com.chemiconsult.enums.EstadoMuestraEnum;
+import com.chemiconsult.repository.AnalisisArchivoRepository;
 import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.service.AnalisisService;
 import com.chemiconsult.service.InformeService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
+import com.chemiconsult.to.AnalisisArchivoTO;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.EstudioTO;
 import com.chemiconsult.to.ResultadoParametroTO;
@@ -33,6 +36,7 @@ public class AnalisisController {
     private final AnalisisService analisisService;
     private final SupabaseBucketService supabaseBucketService;
     private final AnalisisRepository analisisRepository;
+    private final AnalisisArchivoRepository analisisArchivoRepository;
     private final InformeService informeService;
     private final String BUCKET = "chemiconsult-bucket";
 
@@ -99,26 +103,115 @@ public class AnalisisController {
         return ResponseEntity.ok().build();
     }
 
-    // Descarga el PDF desde Supabase (ya no hay fallback a bytea local)
-    @GetMapping("/{id}/resultado")
-    public ResponseEntity<byte[]> getResultado(@PathVariable Long id) {
-        log.info("Obteniendo resultado del estudio con ID: {}", id);
+    // ── ARCHIVOS ────────────────────────────────────────────────────────────────
 
-        AnalisisDE analisis = analisisService.getEstudio(id)
+    /** Lista todos los archivos asociados a una muestra. */
+    @GetMapping("/{id}/archivos")
+    public List<AnalisisArchivoTO> listarArchivos(@PathVariable Long id) {
+        if (!analisisRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return analisisArchivoRepository.findAllByAnalisisIdOrderByCreatedAtAsc(id).stream()
+                .map(a -> AnalisisArchivoTO.builder()
+                        .id(a.getId())
+                        .nombre(a.getNombre())
+                        .createdAt(a.getCreatedAt() != null ? a.getCreatedAt().toString() : null)
+                        .build())
+                .toList();
+    }
+
+    /** Descarga un archivo específico por su id. */
+    @GetMapping("/{id}/archivos/{archivoId}")
+    public ResponseEntity<byte[]> descargarArchivo(
+            @PathVariable Long id,
+            @PathVariable Long archivoId) {
+
+        AnalisisArchivoDE archivo = analisisArchivoRepository.findByIdAndAnalisisId(archivoId, id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        String path = analisis.getArchivoUrl();
-        if (path == null || path.isBlank()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        byte[] archivo = supabaseBucketService.descargarArchivo(BUCKET, path);
-        String nombreArchivo = path.substring(path.lastIndexOf('/') + 1);
+        byte[] bytes = supabaseBucketService.descargarArchivo(BUCKET, archivo.getArchivoUrl());
+        String nombreArchivo = archivo.getNombre() != null ? archivo.getNombre()
+                : archivo.getArchivoUrl().substring(archivo.getArchivoUrl().lastIndexOf('/') + 1);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + nombreArchivo + "\"")
-                .body(archivo);
+                .body(bytes);
+    }
+
+    /** Sube un archivo PDF y lo asocia a la muestra. */
+    @PostMapping("/{id}/documento")
+    @Transactional
+    public ResponseEntity<AnalisisArchivoTO> subirDocumento(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        String path = id + "/" + file.getOriginalFilename();
+        supabaseBucketService.subirArchivo(BUCKET, path, file);
+
+        AnalisisArchivoDE archivo = new AnalisisArchivoDE();
+        archivo.setAnalisis(analisis);
+        archivo.setArchivoUrl(path);
+        archivo.setNombre(file.getOriginalFilename());
+        archivo.setCreatedAt(LocalDate.now());
+        analisisArchivoRepository.save(archivo);
+
+        analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
+
+        return ResponseEntity.ok(AnalisisArchivoTO.builder()
+                .id(archivo.getId())
+                .nombre(archivo.getNombre())
+                .createdAt(archivo.getCreatedAt().toString())
+                .build());
+    }
+
+    /** Elimina un archivo específico de la muestra (storage + DB). */
+    @DeleteMapping("/{id}/archivos/{archivoId}")
+    @Transactional
+    public ResponseEntity<Void> eliminarArchivo(
+            @PathVariable Long id,
+            @PathVariable Long archivoId) {
+
+        AnalisisArchivoDE archivo = analisisArchivoRepository.findByIdAndAnalisisId(archivoId, id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        supabaseBucketService.eliminarArchivo(BUCKET, archivo.getArchivoUrl());
+        analisisArchivoRepository.delete(archivo);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Devuelve el primer archivo de la muestra (usado por el dashboard del cliente). */
+    @GetMapping("/{id}/resultado")
+    public ResponseEntity<byte[]> getResultado(@PathVariable Long id) {
+        log.info("Obteniendo resultado del estudio con ID: {}", id);
+
+        if (!analisisRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        List<AnalisisArchivoDE> archivos =
+                analisisArchivoRepository.findAllByAnalisisIdOrderByCreatedAtAsc(id);
+
+        if (archivos.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String path = archivos.get(0).getArchivoUrl();
+        byte[] bytes = supabaseBucketService.descargarArchivo(BUCKET, path);
+        String nombreArchivo = archivos.get(0).getNombre() != null
+                ? archivos.get(0).getNombre()
+                : path.substring(path.lastIndexOf('/') + 1);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + nombreArchivo + "\"")
+                .body(bytes);
     }
 
     @PostMapping("/{id}/generar-informe")
@@ -133,33 +226,16 @@ public class AnalisisController {
                 .body(pdf);
     }
 
-    @PostMapping("/{id}/documento")
-    public ResponseEntity<Void> subirDocumento(
-            @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) {
-
-        AnalisisDE analisis = analisisRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        String path = id + "/" + file.getOriginalFilename();
-        supabaseBucketService.subirArchivo(BUCKET, path, file);
-
-        analisis.setArchivoUrl(path);
-        analisis.setEstado(EstadoMuestraEnum.COMPLETO);
-        analisis.setUpdateDate(LocalDate.now());
-        analisisRepository.save(analisis);
-
-        return ResponseEntity.ok().build();
-    }
-
     @Autowired
     public AnalisisController(AnalisisService analisisService,
                               SupabaseBucketService supabaseBucketService,
                               AnalisisRepository analisisRepository,
+                              AnalisisArchivoRepository analisisArchivoRepository,
                               InformeService informeService) {
         this.analisisService = analisisService;
         this.supabaseBucketService = supabaseBucketService;
         this.analisisRepository = analisisRepository;
+        this.analisisArchivoRepository = analisisArchivoRepository;
         this.informeService = informeService;
     }
 }

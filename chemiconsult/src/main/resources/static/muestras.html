@@ -356,33 +356,38 @@
 </div>
 
 <!-- =============================================
-     MODAL ALTA DE INFORME (subir PDF desde PC)
+     MODAL ARCHIVOS DE MUESTRA
      ============================================= -->
 <div class="modal-overlay" id="modalAltaInforme">
-    <div class="modal-box" style="max-width: 480px;">
+    <div class="modal-box" style="max-width: 520px;">
         <div class="modal-header">
-            <div class="mh-icon"><i class="bi bi-upload"></i></div>
+            <div class="mh-icon"><i class="bi bi-paperclip"></i></div>
             <div class="mh-info">
-                <div class="mh-eyebrow">Informe</div>
-                <h5 id="altaInformeTitulo">Alta de informe</h5>
+                <div class="mh-eyebrow">Archivos</div>
+                <h5 id="altaInformeTitulo">Archivos de la muestra</h5>
             </div>
             <button class="modal-close" id="altaInformeClose"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="modal-body">
+            <!-- Lista de archivos existentes -->
+            <div id="listaArchivosContainer" style="margin-bottom:16px;">
+                <label style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">Archivos subidos</label>
+                <div id="listaArchivos" style="display:flex; flex-direction:column; gap:6px; min-height:32px;">
+                    <span class="text-muted" style="font-size:13px;" id="listaArchivosVacia">Sin archivos todavía.</span>
+                </div>
+            </div>
+            <!-- Upload nuevo archivo -->
             <div class="form-group">
-                <label>Archivo PDF <span class="required">*</span></label>
+                <label>Agregar archivo PDF <span class="required">*</span></label>
                 <input type="file" id="inputAltaInformePdf" class="form-control-custom"
                        accept=".pdf,application/pdf"/>
                 <span class="field-error" id="altaInformeError" style="display:none;"></span>
             </div>
-            <p class="text-muted small mt-2" style="font-size:12px;">
-                El archivo se sube directamente al portal del cliente y marca la muestra como completada.
-            </p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-cancelar" id="altaInformeCancelar">Cancelar</button>
+            <button type="button" class="btn-cancelar" id="altaInformeCancelar">Cerrar</button>
             <button type="button" class="btn-guardar" id="btnUploadAltaInforme">
-                <i class="bi bi-upload me-1"></i> Subir informe
+                <i class="bi bi-upload me-1"></i> Subir archivo
             </button>
         </div>
     </div>

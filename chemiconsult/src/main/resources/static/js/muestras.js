@@ -134,7 +134,6 @@ function mockDetalleMuestra(id) {
         fechaIngreso: "2026-07-10",
         fechaEntrega: "2026-07-17",
         observaciones: "Cliente solicita evaluar ambos destinos posibles hasta confirmar vuelco.",
-        archivoUrl: null,
         tipoMuestraNombre: "Efluente industrial",
         matrizNombre: "Líquida",
         resolucionesAplicadas: [
@@ -314,10 +313,26 @@ function vincularEventos() {
 }
 
 
-function abrirModal() {
+async function abrirModal() {
     document.getElementById("modalAltaMuestra").classList.add("visible");
-    document.getElementById("inputProtocolo").focus();
     document.getElementById("inputFecha").value = new Date().toISOString().slice(0, 10);
+
+    // Pre-llenar el número de protocolo con el próximo sugerido (editable)
+    const inputProtocolo = document.getElementById("inputProtocolo");
+    inputProtocolo.value = "";
+    inputProtocolo.placeholder = "Cargando...";
+    try {
+        const resp = await fetchConAuth(`${API_URL}/numeradores/preview/NUMERO_PROTOCOLO`);
+        if (resp.ok) {
+            const data = await resp.json();
+            inputProtocolo.value = String(data.siguiente);
+        }
+    } catch (e) {
+        // si falla, el usuario puede ingresarlo manualmente
+    } finally {
+        inputProtocolo.placeholder = "Nº de protocolo";
+        inputProtocolo.focus();
+    }
 }
 
 function cerrarModal() {
@@ -873,7 +888,6 @@ function validarFormulario() {
     limpiarErrores();
 
     const campos = [
-        { id: "inputProtocolo",   errId: "errProtocolo" },
         { id: "inputFecha",       errId: "errFecha" },
         { id: "inputTipoMuestra", errId: "errTipoMuestra" },
     ];
@@ -984,11 +998,10 @@ function renderizarTablaMuestras(lista) {
                         onclick="onGenerarInformeDesdeTabla(${m.id})">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
                 </button>` : ''}
-                ${!yaCompleto ? `
-                <button class="btn-accion btn-accion-gris" title="Subir informe desde PC"
+                <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
                         onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
-                    <i class="bi bi-upload"></i>
-                </button>` : ''}
+                    <i class="bi bi-paperclip"></i>
+                </button>
             </td>
         `;
         tbody.appendChild(fila);
@@ -1421,22 +1434,101 @@ window.onGenerarInformeDesdeTabla = async function(id) {
 };
 
 // ============================================================
-// ALTA DE INFORME (subir PDF desde PC)
+// ARCHIVOS DE MUESTRA (múltiples PDFs)
 // ============================================================
 let altaInformeAnalisisId = null;
 
-window.abrirAltaInforme = function(id, protocolo) {
+window.abrirAltaInforme = async function(id, protocolo) {
     altaInformeAnalisisId = id;
-    document.getElementById("altaInformeTitulo").textContent = `Alta de informe — ${protocolo}`;
+    document.getElementById("altaInformeTitulo").textContent = `Archivos — ${protocolo}`;
     document.getElementById("inputAltaInformePdf").value = "";
     document.getElementById("altaInformeError").style.display = "none";
     document.getElementById("modalAltaInforme").classList.add("visible");
+    await cargarListaArchivos(id);
 };
 
 function cerrarAltaInforme() {
     document.getElementById("modalAltaInforme").classList.remove("visible");
     altaInformeAnalisisId = null;
 }
+
+async function cargarListaArchivos(analisisId) {
+    const contenedor = document.getElementById("listaArchivos");
+    const vacia = document.getElementById("listaArchivosVacia");
+    contenedor.innerHTML = `<span class="text-muted" style="font-size:13px;">Cargando...</span>`;
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${analisisId}/archivos`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const archivos = await resp.json();
+
+        contenedor.innerHTML = "";
+        if (archivos.length === 0) {
+            contenedor.innerHTML = `<span class="text-muted" style="font-size:13px;">Sin archivos todavía.</span>`;
+            return;
+        }
+
+        archivos.forEach(a => {
+            const fila = document.createElement("div");
+            fila.style.cssText = "display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--bg-card, #f8f9fa); border:1px solid var(--border-color, #dee2e6);";
+            fila.innerHTML = `
+                <i class="bi bi-file-earmark-pdf-fill" style="color:#dc3545; font-size:15px;"></i>
+                <span style="flex:1; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                      title="${a.nombre || ''}">${a.nombre || 'Archivo'}</span>
+                <span style="font-size:11px; color:#888;">${formatearFecha(a.createdAt)}</span>
+                <button class="btn-accion" title="Descargar"
+                        onclick="descargarArchivoModal(${analisisId}, ${a.id}, '${(a.nombre || 'archivo').replace(/'/g, '')}')">
+                    <i class="bi bi-download"></i>
+                </button>
+                <button class="btn-accion btn-accion-rojo" title="Eliminar"
+                        onclick="eliminarArchivoModal(${analisisId}, ${a.id}, this)">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            `;
+            contenedor.appendChild(fila);
+        });
+    } catch (err) {
+        console.error("Error cargando archivos:", err);
+        contenedor.innerHTML = `<span style="color:#dc3545; font-size:13px;">Error al cargar los archivos.</span>`;
+    }
+}
+
+window.descargarArchivoModal = function(analisisId, archivoId, nombre) {
+    const token = localStorage.getItem("token");
+    fetch(`${API_URL}/estudios/${analisisId}/archivos/${archivoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(r => r.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = nombre;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    })
+    .catch(err => mostrarToast("Error al descargar el archivo.", true));
+};
+
+window.eliminarArchivoModal = async function(analisisId, archivoId, btn) {
+    if (!confirm("¿Eliminar este archivo? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${analisisId}/archivos/${archivoId}`, {
+            method: "DELETE"
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        mostrarToast("Archivo eliminado.");
+        await cargarListaArchivos(analisisId);
+        await cargarMuestrasActivas();
+    } catch (err) {
+        console.error("Error eliminando archivo:", err);
+        mostrarToast("Error al eliminar el archivo.", true);
+        btn.disabled = false;
+    }
+};
 
 async function onUploadAltaInforme() {
     const fileInput = document.getElementById("inputAltaInformePdf");
@@ -1470,12 +1562,13 @@ async function onUploadAltaInforme() {
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
-        mostrarToast("Informe subido correctamente.");
-        cerrarAltaInforme();
+        fileInput.value = "";
+        mostrarToast("Archivo subido correctamente.");
+        await cargarListaArchivos(altaInformeAnalisisId);
         await cargarMuestrasActivas();
     } catch (err) {
-        console.error("Error al subir informe:", err);
-        errEl.textContent = "Error al subir el informe. Intentá nuevamente.";
+        console.error("Error al subir archivo:", err);
+        errEl.textContent = "Error al subir el archivo. Intentá nuevamente.";
         errEl.style.display = "block";
     } finally {
         btn.disabled = false;
