@@ -294,4 +294,8 @@ function mostrarToast(msg, tipo = 'success') {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 inicializarHeader();
-cargarItems();
+cargarItems().then(() => {
+    if (new URLSearchParams(location.search).get('nueva') === '1') {
+        abrirModal();
+    }
+});

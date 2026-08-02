@@ -446,7 +446,9 @@ formMuestra.addEventListener("submit", async function (e) {
     }
 });
 
-document.getElementById("btnAccionNuevaMuestra").addEventListener("click", abrirModalMuestra);
+document.getElementById("btnAccionNuevaMuestra").addEventListener("click", () => {
+    window.location.href = "muestras.html?nueva=1";
+});
 
 // ════════════════════════════════
 //  MODAL ALTA TAREA
@@ -524,7 +526,9 @@ formTarea.addEventListener("submit", async function (e) {
     }
 });
 
-document.getElementById("btnAccionAltaTarea").addEventListener("click", abrirModalTarea);
+document.getElementById("btnAccionAltaTarea").addEventListener("click", () => {
+    window.location.href = "task.html?nueva=1";
+});
 
 // ════════════════════════════════
 //  MODAL ALTA STOCK
@@ -593,7 +597,9 @@ formStock.addEventListener("submit", async function (e) {
     }
 });
 
-document.getElementById("btnAccionAltaStock").addEventListener("click", abrirModalStock);
+document.getElementById("btnAccionAltaStock").addEventListener("click", () => {
+    window.location.href = "stock.html?nueva=1";
+});
 
 // Escape cierra cualquier modal activo
 document.addEventListener("keydown", (e) => {

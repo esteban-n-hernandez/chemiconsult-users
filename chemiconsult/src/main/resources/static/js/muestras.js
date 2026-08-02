@@ -26,8 +26,9 @@ let parametrosPorDestinoCache = new Map();
 let destinosNombresCache = new Map();
 
 // Instancias de Tom Select para autocomplete
-let tomSelectCliente = null;
-let tomSelectMatriz  = null;
+let tomSelectCliente     = null;
+let tomSelectMatriz      = null;
+let tomSelectTipoMuestra = null;
 
 // ============================================================
 // MOCK: árbol Matriz → Resoluciones → Destinos → Parámetros
@@ -447,6 +448,10 @@ function cerrarModal() {
     document.getElementById("formAltaMuestra").reset();
     tomSelectCliente?.clear();
     tomSelectMatriz?.clear();
+    if (tomSelectTipoMuestra) {
+        tomSelectTipoMuestra.destroy();
+        tomSelectTipoMuestra = null;
+    }
     document.getElementById("parametrosLista").innerHTML = "";
     document.getElementById("parametrosVacio").style.display = "flex";
     document.getElementById("normativasContainer").innerHTML =
@@ -500,7 +505,11 @@ window.abrirEdicionMuestra = async function(id) {
             // onCambioMatriz carga el árbol de normativas y resetea destinosSeleccionados
             await onCambioMatriz({ target: { value: String(detalle.matrizId) } });
             if (detalle.tipoMuestraId) {
-                document.getElementById("inputTipoMuestraEspecifica").value = detalle.tipoMuestraId;
+                if (tomSelectTipoMuestra) {
+                    tomSelectTipoMuestra.setValue(String(detalle.tipoMuestraId), true);
+                } else {
+                    document.getElementById("inputTipoMuestraEspecifica").value = detalle.tipoMuestraId;
+                }
             }
         }
 
@@ -591,7 +600,8 @@ async function cargarClientes() {
         placeholder: 'Buscar cliente...',
         allowEmptyOption: false,
         maxOptions: null,
-        sortField: { field: 'text', direction: 'asc' }
+        sortField: { field: 'text', direction: 'asc' },
+        dropdownParent: 'body'
     });
 }
 
@@ -617,9 +627,10 @@ async function cargarMatrices() {
     if (tomSelectMatriz) tomSelectMatriz.destroy();
     tomSelectMatriz = new TomSelect('#inputTipoMuestra', {
         placeholder: 'Buscar matriz...',
-        allowEmptyOption: true,
+        allowEmptyOption: false,
         maxOptions: null,
         sortField: { field: 'text', direction: 'asc' },
+        dropdownParent: 'body',
         onChange: (value) => onCambioMatriz({ target: { value: String(value) } })
     });
 }
@@ -660,21 +671,52 @@ async function obtenerArbolPorMatriz(matrizId) {
 
 async function cargarTiposMuestra(matrizId) {
     const select = document.getElementById("inputTipoMuestraEspecifica");
-    select.innerHTML = '<option value="">— sin especificar —</option>';
-    if (!matrizId) return;
-    try {
-        const res = await fetchConAuth(`${API_URL}/tipos-muestra?matrizId=${matrizId}`);
-        if (!res.ok) return;
-        const tipos = await res.json();
-        tipos.forEach(t => {
-            const opt = document.createElement("option");
-            opt.value = t.id;
-            opt.textContent = t.nombre;
-            select.appendChild(opt);
-        });
-    } catch (err) {
-        console.error("Error cargando tipos de muestra:", err);
+
+    if (tomSelectTipoMuestra) {
+        tomSelectTipoMuestra.destroy();
+        tomSelectTipoMuestra = null;
     }
+
+    select.innerHTML = '<option value="">— sin especificar —</option>';
+
+    if (matrizId) {
+        try {
+            const res = await fetchConAuth(`${API_URL}/tipos-muestra?matrizId=${matrizId}`);
+            if (res.ok) {
+                const tipos = await res.json();
+                tipos.forEach(t => {
+                    const opt = document.createElement("option");
+                    opt.value = t.id;
+                    opt.textContent = t.nombre;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error("Error cargando tipos de muestra:", err);
+        }
+    }
+
+    tomSelectTipoMuestra = new TomSelect('#inputTipoMuestraEspecifica', {
+        placeholder: 'Buscar o crear tipo de muestra...',
+        allowEmptyOption: false,
+        maxOptions: null,
+        sortField: { field: 'text', direction: 'asc' },
+        dropdownParent: 'body',
+        create: function(input, callback) {
+            const currentMatrizId = tomSelectMatriz?.getValue()
+                ? parseInt(tomSelectMatriz.getValue()) : null;
+            fetchConAuth(`${API_URL}/tipos-muestra`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: input, matrizId: currentMatrizId })
+            }).then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            }).then(nuevo => {
+                callback({ value: String(nuevo.id), text: nuevo.nombre });
+            }).catch(() => callback());
+        }
+    });
 }
 
 async function onCambioMatriz(e) {
@@ -687,7 +729,7 @@ async function onCambioMatriz(e) {
     destinosNombresCache.clear();
     contenedor.innerHTML = "";
     recalcularParametrosSeleccionados();
-    cargarTiposMuestra(matrizId);
+    await cargarTiposMuestra(matrizId);
 
     // Si tildaron "sin normativa", no tiene sentido ir a buscar el árbol
     if (document.getElementById("checkSinNormativa").checked) {
@@ -1953,12 +1995,14 @@ async function onUploadAltaInforme() {
     }
 }
 
-function init() {
+async function init() {
     inicializarHeader();
-    cargarClientes();
-    cargarMatrices();
+    await Promise.all([cargarClientes(), cargarMatrices()]);
     cargarMuestrasActivas();
     vincularEventos();
+    if (new URLSearchParams(location.search).get('nueva') === '1') {
+        abrirModal();
+    }
 }
 
 if (document.readyState === "loading") {

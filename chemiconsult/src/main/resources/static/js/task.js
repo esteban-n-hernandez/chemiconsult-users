@@ -17,6 +17,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupDropzones();
 
     document.getElementById("archivedModal").addEventListener("show.bs.modal", loadArchivedTasks);
+
+    if (new URLSearchParams(location.search).get('nueva') === '1') {
+        abrirNuevaTarea();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('taskModal')).show();
+    }
 });
 
 // Trae la lista de usuarios para poblar los selects de asignación
