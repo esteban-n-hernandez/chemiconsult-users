@@ -21,6 +21,14 @@ let destinosSeleccionados = new Set();
 // Map<destinoId, ParametroNormaTO[]>
 let parametrosPorDestinoCache = new Map();
 
+// Cache de etiquetas de destino para mostrar en los chips de cada parámetro
+// Map<destinoId, string>
+let destinosNombresCache = new Map();
+
+// Instancias de Tom Select para autocomplete
+let tomSelectCliente = null;
+let tomSelectMatriz  = null;
+
 // ============================================================
 // MOCK: árbol Matriz → Resoluciones → Destinos → Parámetros
 // Simula la respuesta real de GET /api/resoluciones/por-matriz/{matrizId}
@@ -223,12 +231,80 @@ const ITEMS_POR_PAGINA = 20;
 // Snapshot de todas las muestras cargadas (para filtrar/buscar en cliente)
 let todasLasMuestras = [];
 
-// ID del análisis abierto actualmente en el modal de detalle (para guardar resultados)
+// Estado del ordenamiento de la tabla
+let sortCol = "nroProtocolo";
+let sortDir = "desc";
+
+// ID del análisis abierto actualmente en el modal de detalle
 let detalleAnalisisId = null;
+let _autoGuardarTimer = null;
 
 // ID de la muestra que se está editando (null = modo alta)
 let editandoMuestraId = null;
 
+// Paso actual del wizard (1 = Datos, 2 = Normativas, 3 = Parámetros)
+let currentStep = 1;
+
+
+// ============================================================
+// 1b. WIZARD — navegación entre pasos
+// ============================================================
+function renderWizardStep() {
+    [1, 2, 3].forEach(i => {
+        const panel   = document.getElementById(`wizardPanel${i}`);
+        const stepEl  = document.getElementById(`wstep-${i}`);
+        const dotEl   = document.getElementById(`wdot-${i}`);
+
+        panel.style.display = i === currentStep ? '' : 'none';
+
+        stepEl.classList.remove('active', 'done');
+        if (i === currentStep)   stepEl.classList.add('active');
+        else if (i < currentStep) stepEl.classList.add('done');
+
+        dotEl.innerHTML = i < currentStep
+            ? '<i class="bi bi-check"></i>'
+            : String(i);
+    });
+
+    const btnBack = document.getElementById('btnBack');
+    btnBack.style.display = currentStep > 1 ? '' : 'none';
+
+    const btnGuardar = document.getElementById('btnGuardar');
+    if (currentStep === 3) {
+        const esEdicion = !!editandoMuestraId;
+        btnGuardar.innerHTML = `<i class="bi bi-check-lg"></i> ${esEdicion ? 'Guardar cambios' : 'Guardar muestra'}`;
+    } else {
+        btnGuardar.innerHTML = 'Siguiente <i class="bi bi-arrow-right"></i>';
+    }
+}
+
+function wizardNext() {
+    if (currentStep === 1 && !validarFormulario()) return;
+    if (currentStep < 3) {
+        currentStep++;
+        renderWizardStep();
+        return;
+    }
+    // Paso 3 → submit
+    if (editandoMuestraId) {
+        guardarEdicionMuestra();
+    } else {
+        altaMuestra();
+    }
+}
+
+function wizardPrev() {
+    if (currentStep > 1) {
+        currentStep--;
+        renderWizardStep();
+    }
+}
+
+window.wizardGoTo = function(step) {
+    if (step >= currentStep) return; // solo se puede volver a pasos completados
+    currentStep = step;
+    renderWizardStep();
+};
 
 // ============================================================
 // 2. VINCULACIÓN DE EVENTOS (centralizada, sin inline en HTML)
@@ -258,20 +334,25 @@ function vincularEventos() {
             cerrarModal();
             cerrarModalDetalle();
             cerrarAltaInforme();
+            cerrarModalCancelar();
         }
     });
 
     // — Selectores dependientes —
-    document.getElementById("inputTipoMuestra").addEventListener("change", onCambioMatriz);
+    // onCambioMatriz se dispara desde el callback onChange de TomSelect (no desde el <select> nativo)
     document.getElementById("checkSinNormativa").addEventListener("change", onToggleSinNormativa);
 
-    // — Buscador individual de parámetros —
+    // — Parámetros: selección masiva y buscador individual —
+    document.getElementById("btnSelectAll").addEventListener("click", () => selectAllParams(true));
+    document.getElementById("btnSelectNone").addEventListener("click", () => selectAllParams(false));
     document.getElementById("btnAddParam").addEventListener("click", abrirBuscadorIndividual);
     document.getElementById("btnCerrarBuscadorIndividual").addEventListener("click", cerrarPanelBuscador);
     document.getElementById("inputBuscarParametroIndividual").addEventListener("input", onBuscarParametroIndividual);
 
-    // — Submit del formulario —
-    document.getElementById("formAltaMuestra").addEventListener("submit", onSubmitMuestra);
+    // — Navegación wizard —
+    document.getElementById("btnGuardar").addEventListener("click", wizardNext);
+    document.getElementById("btnBack").addEventListener("click", wizardPrev);
+    renderWizardStep();
 
     // — Filtros de estado (delegación desde el contenedor) —
     document.querySelector(".filtros").addEventListener("click", (e) => {
@@ -288,20 +369,44 @@ function vincularEventos() {
     document.getElementById("inputBuscarCodigo").addEventListener("input", aplicarFiltrosYBusqueda);
     document.getElementById("inputBuscarCliente").addEventListener("input", aplicarFiltrosYBusqueda);
 
-    // — Guardar resultados de parámetros —
-    document.getElementById("btnGuardarResultados").addEventListener("click", onGuardarResultados);
-
     // — Generar informe PDF —
     document.getElementById("btnGenerarInforme").addEventListener("click", onGenerarInforme);
 
-    // Live re-evaluation of cumple badges + enable/disable generar informe as user types
-    document.getElementById("detalleParametros").addEventListener("input", e => {
-        if (!e.target.classList.contains("param-resultado-input")) return;
-        e.target.closest(".param-card").querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
-            actualizarBadge(badge, e.target.value);
-        });
-        recalcularEstadoBtnGenerarInforme();
+    // Live re-evaluation de badges y auto-guardado
+    function onResultadoChange(e) {
+        if (e.target.classList.contains("param-resultado-input")) {
+            e.target.closest(".param-card").querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
+                actualizarBadge(badge, e.target.value);
+            });
+            recalcularEstadoBtnGenerarInforme();
+        }
+        if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-obs-input")) {
+            dispararAutoGuardar();
+        }
+    }
+    const contParam = document.getElementById("detalleParametros");
+    contParam.addEventListener("input", onResultadoChange);
+    contParam.addEventListener("change", onResultadoChange);
+    contParam.addEventListener("click", e => {
+        const toggle = e.target.closest(".param-toggle");
+        if (!toggle) return;
+        const colapsable = toggle.nextElementSibling;
+        const isOpen = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", String(!isOpen));
+        colapsable.style.display = isOpen ? "none" : "block";
+        toggle.querySelector(".param-toggle-icon").style.transform = isOpen ? "" : "rotate(180deg)";
+        toggle.querySelector("span").textContent = isOpen
+            ? `Ver normativas (${toggle.dataset.count})`
+            : "Ocultar normativas";
     });
+
+    // — Modal Cancelar Muestra —
+    document.getElementById("modalCancelarClose").addEventListener("click", cerrarModalCancelar);
+    document.getElementById("btnCancelarCancelar").addEventListener("click", cerrarModalCancelar);
+    document.getElementById("modalCancelarMuestra").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("modalCancelarMuestra")) cerrarModalCancelar();
+    });
+    document.getElementById("btnConfirmarCancelar").addEventListener("click", confirmarCancelarMuestra);
 
     // — Modal Alta Informe —
     document.getElementById("altaInformeClose").addEventListener("click", cerrarAltaInforme);
@@ -314,6 +419,8 @@ function vincularEventos() {
 
 
 async function abrirModal() {
+    currentStep = 1;
+    renderWizardStep();
     document.getElementById("modalAltaMuestra").classList.add("visible");
     document.getElementById("inputFecha").value = new Date().toISOString().slice(0, 10);
 
@@ -338,10 +445,12 @@ async function abrirModal() {
 function cerrarModal() {
     document.getElementById("modalAltaMuestra").classList.remove("visible");
     document.getElementById("formAltaMuestra").reset();
+    tomSelectCliente?.clear();
+    tomSelectMatriz?.clear();
     document.getElementById("parametrosLista").innerHTML = "";
     document.getElementById("parametrosVacio").style.display = "flex";
     document.getElementById("normativasContainer").innerHTML =
-        '<span class="text-muted small">Seleccioná una matriz para ver las normativas aplicables...</span>';
+        '<span class="text-muted small">Seleccioná una matriz en el paso anterior para ver las normativas aplicables...</span>';
     document.getElementById("checkSinNormativa").checked = false;
     document.getElementById("normativasContainer").classList.remove("disabled-panel");
     destinosSeleccionados.clear();
@@ -351,31 +460,23 @@ function cerrarModal() {
 
     // Restaurar modo alta
     editandoMuestraId = null;
+    currentStep = 1;
     document.getElementById("modalTitulo").textContent = "Alta de muestra";
-    document.getElementById("btnGuardar").innerHTML = '<i class="bi bi-check-lg"></i> Guardar muestra';
-    document.getElementById("seccionNormativas").style.display = "";
-    document.getElementById("seccionParametros").style.display = "";
     document.getElementById("inputProtocolo").disabled = false;
-    document.getElementById("inputCliente").disabled = false;
+    tomSelectCliente?.enable();
     document.getElementById("modalAltaLoading").classList.add("d-none");
+    renderWizardStep();
 }
 
 window.abrirEdicionMuestra = async function(id) {
+    currentStep = 1;
     editandoMuestraId = id;
 
-    // Título y botón
     document.getElementById("modalTitulo").textContent = "Editar muestra";
-    document.getElementById("btnGuardar").innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
-
-    // Ocultar secciones que no se editan
-    document.getElementById("seccionNormativas").style.display = "none";
-    document.getElementById("seccionParametros").style.display = "none";
-
-    // Campos no editables en este modo
     document.getElementById("inputProtocolo").disabled = true;
-    document.getElementById("inputCliente").disabled = true;
+    tomSelectCliente?.disable();
 
-    // Mostrar modal con loading
+    renderWizardStep();
     document.getElementById("modalAltaMuestra").classList.add("visible");
     document.getElementById("modalAltaLoading").classList.remove("d-none");
 
@@ -383,22 +484,68 @@ window.abrirEdicionMuestra = async function(id) {
         const detalle = await obtenerDetalleMuestra(id);
 
         // Poblar todos los campos visibles
-        document.getElementById("inputProtocolo").value    = detalle.nroProtocolo || "";
-        document.getElementById("inputFecha").value        = detalle.fechaIngreso  || "";
+        document.getElementById("inputProtocolo").value     = detalle.nroProtocolo || "";
+        document.getElementById("inputFecha").value         = detalle.fechaIngreso  || "";
         document.getElementById("inputPuntoMuestreo").value = detalle.puntoMuestreo || "";
         document.getElementById("inputFechaEntrega").value  = detalle.fechaEntrega  || "";
 
         if (detalle.clienteId) {
-            document.getElementById("inputCliente").value = detalle.clienteId;
+            tomSelectCliente?.setValue(String(detalle.clienteId));
         }
 
         if (detalle.matrizId) {
-            document.getElementById("inputTipoMuestra").value = detalle.matrizId;
-            await cargarTiposMuestra(detalle.matrizId);
+            tomSelectMatriz
+                ? tomSelectMatriz.setValue(String(detalle.matrizId), true)
+                : (document.getElementById("inputTipoMuestra").value = detalle.matrizId);
+            // onCambioMatriz carga el árbol de normativas y resetea destinosSeleccionados
+            await onCambioMatriz({ target: { value: String(detalle.matrizId) } });
             if (detalle.tipoMuestraId) {
                 document.getElementById("inputTipoMuestraEspecifica").value = detalle.tipoMuestraId;
             }
         }
+
+        // Pre-seleccionar los destinos que ya tenía la muestra
+        const resolucionDestinoIds = detalle.resolucionDestinoIds || [];
+        resolucionDestinoIds.forEach(destinoId => {
+            const checkbox = document.getElementById(`check-destino-${destinoId}`);
+            if (checkbox) {
+                checkbox.checked = true;
+                destinosSeleccionados.add(destinoId);
+            }
+        });
+
+        // Recalcular la lista de parámetros derivados de los destinos pre-seleccionados
+        recalcularParametrosSeleccionados();
+
+        // IDs de parámetros actualmente en la muestra
+        const paramIdsEnMuestra = new Set((detalle.parametros || []).map(p => p.id));
+
+        // Desmarcar los que vinieron de destinos pero no estaban en la muestra
+        document.querySelectorAll(".check-parametro").forEach(cb => {
+            if (!paramIdsEnMuestra.has(parseInt(cb.value))) {
+                cb.checked = false;
+            }
+        });
+
+        // Agregar manualmente los parámetros que no vinieron de ningún destino
+        const idsYaEnLista = new Set(
+            Array.from(document.querySelectorAll(".parametro-item-row"))
+                .map(el => parseInt(el.dataset.parametroId))
+        );
+        for (const p of (detalle.parametros || [])) {
+            if (!idsYaEnLista.has(p.id)) {
+                agregarParametroALaLista(
+                    { id: p.id, nombre: p.nombre, unidad: p.unidad,
+                      metodologia: { nombre: p.metodologiaNombre } },
+                    "manual"
+                );
+            }
+        }
+
+        if (document.querySelectorAll(".parametro-item-row").length > 0) {
+            document.getElementById("parametrosVacio").style.display = "none";
+        }
+
     } catch (err) {
         console.error("Error cargando muestra para editar:", err);
         mostrarToast("No se pudo cargar la muestra.", true);
@@ -434,9 +581,18 @@ async function cargarClientes() {
         });
     } catch (error) {
         console.warn("No se pudieron cargar clientes:", error);
-        // No rompe — el select queda funcional aunque vacío
         select.innerHTML = '<option value="">Sin clientes disponibles</option>';
     }
+
+    if (tomSelectCliente) {
+        tomSelectCliente.destroy();
+    }
+    tomSelectCliente = new TomSelect('#inputCliente', {
+        placeholder: 'Buscar cliente...',
+        allowEmptyOption: false,
+        maxOptions: null,
+        sortField: { field: 'text', direction: 'asc' }
+    });
 }
 
 async function cargarMatrices() {
@@ -457,6 +613,15 @@ async function cargarMatrices() {
     } catch (error) {
         console.error("Error al cargar matrices:", error);
     }
+
+    if (tomSelectMatriz) tomSelectMatriz.destroy();
+    tomSelectMatriz = new TomSelect('#inputTipoMuestra', {
+        placeholder: 'Buscar matriz...',
+        allowEmptyOption: true,
+        maxOptions: null,
+        sortField: { field: 'text', direction: 'asc' },
+        onChange: (value) => onCambioMatriz({ target: { value: String(value) } })
+    });
 }
 
 async function cargarMuestrasActivas() {
@@ -519,6 +684,7 @@ async function onCambioMatriz(e) {
     // Reset total: cambiar de matriz invalida las normativas y parámetros elegidos
     destinosSeleccionados.clear();
     parametrosPorDestinoCache.clear();
+    destinosNombresCache.clear();
     contenedor.innerHTML = "";
     recalcularParametrosSeleccionados();
     cargarTiposMuestra(matrizId);
@@ -593,8 +759,11 @@ function renderizarNormativas(resoluciones) {
         destinosWrap.className = "d-flex flex-wrap gap-3";
 
         (res.destinos || []).forEach(destino => {
-            // Guardamos los parámetros de este destino para poder recalcular al tildar/destildar
             parametrosPorDestinoCache.set(destino.id, destino.parametros || []);
+            // Etiqueta corta: si la resolución no tiene destino real ("Único"), solo mostrar el nombre de la resolución
+            destinosNombresCache.set(destino.id, res.tieneDestino
+                ? `${res.nombre} — ${destino.nombre}`
+                : res.nombre);
 
             const wrapper = document.createElement("div");
             wrapper.className = "form-check";
@@ -638,11 +807,17 @@ function recalcularParametrosSeleccionados() {
 
     contenedorLista.innerHTML = "";
 
-    const parametrosUnicos = new Map(); // id -> parametro
+    const parametrosUnicos   = new Map(); // id -> parametro
+    const paramDestinoLabels = new Map(); // id -> string[]
 
     destinosSeleccionados.forEach(destinoId => {
         const parametros = parametrosPorDestinoCache.get(destinoId) || [];
-        parametros.forEach(p => parametrosUnicos.set(p.id, p));
+        const label      = destinosNombresCache.get(destinoId) || String(destinoId);
+        parametros.forEach(p => {
+            parametrosUnicos.set(p.id, p);
+            if (!paramDestinoLabels.has(p.id)) paramDestinoLabels.set(p.id, []);
+            paramDestinoLabels.get(p.id).push(label);
+        });
     });
 
     if (parametrosUnicos.size === 0 && idsManuales.length === 0) {
@@ -655,7 +830,9 @@ function recalcularParametrosSeleccionados() {
     }
 
     panelVacio.style.display = "none";
-    parametrosUnicos.forEach(p => agregarParametroALaLista(p, "norma"));
+    [...parametrosUnicos.values()]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+        .forEach(p => agregarParametroALaLista(p, "norma", paramDestinoLabels.get(p.id) || []));
 
     // Reponer los agregados manualmente (si el usuario ya había buscado alguno antes)
     idsManuales.forEach(id => {
@@ -733,46 +910,62 @@ function cerrarPanelBuscador() {
 // ============================================================
 // 7. AGREGAR PARÁMETRO A LA LISTA VISUAL
 // ============================================================
-function agregarParametroALaLista(parametro, origen = "manual") {
+function agregarParametroALaLista(parametro, origen = "manual", destinoLabels = []) {
     const contenedorLista = document.getElementById("parametrosLista");
     document.getElementById("parametrosVacio").style.display = "none";
 
-    // Evita duplicar si el parámetro ya está en la lista (puede venir de dos destinos distintos)
     if (contenedorLista.querySelector(`[data-parametro-id="${parametro.id}"]`)) {
         return;
     }
 
     const fila = document.createElement("div");
-    fila.className = "parametro-item-row d-flex align-items-center justify-content-between p-2 mb-2 border rounded bg-light";
+    fila.className = "param-select-card selected";
     fila.dataset.parametroId = parametro.id;
     fila.dataset.origen = origen;
 
-    const metodo = parametro.metodologia?.nombre || "Sin metodología";
-    const descripcion = parametro.metodologia?.descripcion || "";
+    const metodo = parametro.metodologia?.nombre || "";
+    const normaChips = destinoLabels.map(l => `<span class="param-destino-chip">${l}</span>`).join("");
 
     fila.innerHTML = `
-        <div class="d-flex align-items-center" style="gap: 12px;">
-            <input
-                type="checkbox"
-                class="form-check-input check-parametro"
-                value="${parametro.id}"
-                id="check-param-${parametro.id}"
-                checked
-            />
-            <label for="check-param-${parametro.id}" class="mb-0 fw-semibold" style="cursor:pointer;">
-                ${parametro.nombre}
-                <span class="text-muted small">(${parametro.unidad || '-'})</span>
-            </label>
-        </div>
-        <div class="text-end">
-            <span class="badge bg-secondary text-wrap"
-                  style="max-width:200px; font-size:0.8rem;"
-                  title="${descripcion}">
-                <i class="bi bi-gear me-1"></i> ${metodo}
-            </span>
-        </div>
+        <label class="param-select-label" for="check-param-${parametro.id}">
+            <input type="checkbox" class="param-select-checkbox check-parametro"
+                   value="${parametro.id}" id="check-param-${parametro.id}" checked>
+            <span class="param-select-check-icon"><i class="bi bi-check-lg"></i></span>
+            <div class="param-select-body">
+                <div class="param-select-top">
+                    <span class="param-select-nombre">${parametro.nombre}</span>
+                    ${parametro.unidad ? `<span class="param-select-unidad">${parametro.unidad}</span>` : ""}
+                </div>
+                <div class="param-select-footer">
+                    ${metodo ? `<span class="param-select-metodo">${metodo}</span>` : ""}
+                    ${normaChips}
+                </div>
+            </div>
+        </label>
     `;
+
+    fila.querySelector(".param-select-checkbox").addEventListener("change", function () {
+        fila.classList.toggle("selected", this.checked);
+        actualizarContadorParams();
+    });
+
     contenedorLista.appendChild(fila);
+    actualizarContadorParams();
+}
+
+function actualizarContadorParams() {
+    const total = document.querySelectorAll(".check-parametro").length;
+    const sel   = document.querySelectorAll(".check-parametro:checked").length;
+    const el    = document.getElementById("paramContador");
+    if (el) el.textContent = total > 0 ? `${sel} de ${total} seleccionados` : "";
+}
+
+function selectAllParams(checked) {
+    document.querySelectorAll(".check-parametro").forEach(cb => {
+        cb.checked = checked;
+        cb.closest(".param-select-card").classList.toggle("selected", checked);
+    });
+    actualizarContadorParams();
 }
 
 
@@ -780,14 +973,24 @@ function agregarParametroALaLista(parametro, origen = "manual") {
 // 8. SUBMIT DEL FORMULARIO
 // ============================================================
 async function guardarEdicionMuestra() {
+    const parametrosIds = Array.from(document.querySelectorAll(".check-parametro:checked"))
+        .map(cb => parseInt(cb.value));
+
+    if (parametrosIds.length === 0) {
+        mostrarToast("Seleccioná al menos un parámetro.", true);
+        return;
+    }
+
     const payload = {
-        matrizId:      document.getElementById("inputTipoMuestra").value
-                           ? parseInt(document.getElementById("inputTipoMuestra").value) : null,
-        tipoMuestraId: document.getElementById("inputTipoMuestraEspecifica").value
-                           ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value) : null,
-        puntoMuestreo: document.getElementById("inputPuntoMuestreo").value.trim() || null,
-        fechaIngreso:  document.getElementById("inputFecha").value || null,
-        fechaEntrega:  document.getElementById("inputFechaEntrega").value || null,
+        matrizId:             document.getElementById("inputTipoMuestra").value
+                                  ? parseInt(document.getElementById("inputTipoMuestra").value) : null,
+        tipoMuestraId:        document.getElementById("inputTipoMuestraEspecifica").value
+                                  ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value) : null,
+        puntoMuestreo:        document.getElementById("inputPuntoMuestreo").value.trim() || null,
+        fechaIngreso:         document.getElementById("inputFecha").value || null,
+        fechaEntrega:         document.getElementById("inputFechaEntrega").value || null,
+        resolucionDestinoIds: Array.from(destinosSeleccionados),
+        parametrosIds,
     };
 
     const btn = document.getElementById("btnGuardar");
@@ -809,46 +1012,32 @@ async function guardarEdicionMuestra() {
         mostrarToast("No se pudo actualizar la muestra.", true);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
+        renderWizardStep();
     }
 }
 
-async function onSubmitMuestra(e) {
-    e.preventDefault();
+async function altaMuestra() {
+    const parametrosIds = Array.from(document.querySelectorAll(".check-parametro:checked"))
+        .map(cb => parseInt(cb.value));
 
-    if (editandoMuestraId) {
-        await guardarEdicionMuestra();
-        return;
-    }
-
-    if (!validarFormulario()) return;
-
-    // FIX: userId (número) en vez de clienteNombre (texto)
-    // FIX: idMuestra incluido (faltaba antes)
-    // NUEVO: puntoMuestreo incluido
-    // NUEVO: resolucionDestinoIds como array (una muestra puede evaluarse contra varias resoluciones a la vez)
-    const payload = {
-        nroProtocolo:       document.getElementById("inputProtocolo").value.trim(),
-        fechaIngreso:       document.getElementById("inputFecha").value,
-        fechaEntrega:       document.getElementById("inputFechaEntrega").value || null,
-        clienteId:          parseInt(document.getElementById("inputCliente").value),
-        puntoMuestreo:      document.getElementById("inputPuntoMuestreo").value.trim() || null,
-        tipoMuestraId:      document.getElementById("inputTipoMuestraEspecifica").value
-                                ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value)
-                                : null,
-        // NUEVO: matrizId en vez de tipoMuestraId (el select ahora lista MATRIZ directo)
-        matrizId:           parseInt(document.getElementById("inputTipoMuestra").value),
-        resolucionDestinoIds: Array.from(destinosSeleccionados),
-        observaciones:      document.getElementById("inputObservaciones").value.trim() || null,
-        // Solo los parámetros que quedaron con el checkbox tildado
-        parametrosIds:      Array.from(document.querySelectorAll(".check-parametro:checked"))
-            .map(cb => parseInt(cb.value))
-    };
-
-    if (payload.parametrosIds.length === 0) {
+    if (parametrosIds.length === 0) {
         mostrarToast("Seleccioná al menos un parámetro para analizar.", true);
         return;
     }
+
+    const payload = {
+        nroProtocolo:         document.getElementById("inputProtocolo").value.trim(),
+        fechaIngreso:         document.getElementById("inputFecha").value,
+        fechaEntrega:         document.getElementById("inputFechaEntrega").value || null,
+        clienteId:            parseInt(document.getElementById("inputCliente").value),
+        puntoMuestreo:        document.getElementById("inputPuntoMuestreo").value.trim() || null,
+        tipoMuestraId:        document.getElementById("inputTipoMuestraEspecifica").value
+                                  ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value) : null,
+        matrizId:             parseInt(document.getElementById("inputTipoMuestra").value),
+        resolucionDestinoIds: Array.from(destinosSeleccionados),
+        observaciones:        document.getElementById("inputObservaciones").value.trim() || null,
+        parametrosIds,
+    };
 
     const btnGuardar = document.getElementById("btnGuardar");
     btnGuardar.disabled = true;
@@ -875,7 +1064,7 @@ async function onSubmitMuestra(e) {
         mostrarToast(`No se pudo guardar la muestra: ${error.message}`, true);
     } finally {
         btnGuardar.disabled = false;
-        btnGuardar.innerHTML = `<i class="bi bi-check-lg"></i> Guardar muestra`;
+        renderWizardStep();
     }
 }
 
@@ -918,6 +1107,34 @@ function limpiarErrores() {
 // ============================================================
 // 10. FILTROS Y BÚSQUEDA EN LA TABLA
 // ============================================================
+function ordenarPor(col) {
+    sortDir = sortCol === col && sortDir === "asc" ? "desc" : "asc";
+    sortCol = col;
+    aplicarFiltrosYBusqueda();
+}
+
+function ordenar(lista) {
+    if (!sortCol) return lista;
+    return [...lista].sort((a, b) => {
+        const va = (a[sortCol] || "").toString();
+        const vb = (b[sortCol] || "").toString();
+        const cmp = va.localeCompare(vb, "es", { numeric: true });
+        return sortDir === "asc" ? cmp : -cmp;
+    });
+}
+
+function actualizarIconosOrden() {
+    document.querySelectorAll(".th-sortable").forEach(th => {
+        const icon = th.querySelector(".sort-icon");
+        if (!icon) return;
+        if (th.dataset.sort === sortCol) {
+            icon.className = `sort-icon bi bi-chevron-${sortDir === "asc" ? "up" : "down"} sort-activo`;
+        } else {
+            icon.className = "sort-icon bi bi-chevron-expand";
+        }
+    });
+}
+
 function aplicarFiltrosYBusqueda() {
     const textoCodigo  = document.getElementById("inputBuscarCodigo").value.toLowerCase().trim();
     const textoCliente = document.getElementById("inputBuscarCliente").value.toLowerCase().trim();
@@ -944,7 +1161,8 @@ function aplicarFiltrosYBusqueda() {
         );
     }
 
-    renderizarTablaMuestras(filtradas);
+    renderizarTablaMuestras(ordenar(filtradas));
+    actualizarIconosOrden();
 }
 
 
@@ -974,14 +1192,14 @@ function renderizarTablaMuestras(lista) {
     pagina.forEach(m => {
         const fila = document.createElement("tr");
         const codigo = m.nroProtocolo || m.id || "S/N";
-        const puedeGenerar = m.estado === "COMPLETO_SIN_INFORME";
-        const yaCompleto   = m.estado === "COMPLETO";
-        const protocolo    = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
+        const puedeGenerar  = m.estado === "COMPLETO_SIN_INFORME";
+        const esCancelado   = m.estado === "CANCELADO";
+        const protocolo     = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
             <td>${m.matrizNombre || m.tipoAnalisis || '—'}</td>
-            <td><span class="${badgeClassDetalle(m.estado)}">${labelEstadoDetalle(m.estado)}</span></td>
+            <td>${badgeHTML(m.estado)}</td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
             <td class="acciones-celda">
@@ -989,19 +1207,25 @@ function renderizarTablaMuestras(lista) {
                         onclick="verDetalleMuestra(${m.id})">
                     <i class="bi bi-eye"></i>
                 </button>
+                ${!esCancelado ? `
                 <button class="btn-accion" title="Editar datos"
                         onclick="abrirEdicionMuestra(${m.id})">
                     <i class="bi bi-pencil"></i>
-                </button>
+                </button>` : ''}
                 ${puedeGenerar ? `
                 <button class="btn-accion btn-accion-verde" title="Generar informe PDF"
                         onclick="onGenerarInformeDesdeTabla(${m.id})">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
                 </button>` : ''}
+                ${!esCancelado ? `
                 <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
                         onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
                     <i class="bi bi-paperclip"></i>
                 </button>
+                <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
+                        onclick="abrirModalCancelar(${m.id}, '${codigo}')">
+                    <i class="bi bi-x-circle"></i>
+                </button>` : ''}
             </td>
         `;
         tbody.appendChild(fila);
@@ -1132,18 +1356,28 @@ window.verDetalleMuestra = async function(id) {
 };
 
 function cerrarModalDetalle() {
+    if (_autoGuardarTimer) {
+        clearTimeout(_autoGuardarTimer);
+        _autoGuardarTimer = null;
+        autoGuardar(); // flush sin await — guarda en background
+    }
+    mostrarAutoGuardadoStatus("");
     document.getElementById("modalDetalleMuestra").classList.remove("visible");
 }
 
-function badgeClassDetalle(estado) {
-    const map = {
-        PENDIENTE: "badge-pendiente",
-        EN_PROCESO: "badge-proceso",
+function badgeHTML(estado) {
+    const e = (estado || "").toUpperCase();
+    const classMap = {
+        PENDIENTE:            "badge-pendiente",
+        EN_PROCESO:           "badge-proceso",
         COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
-        DEMORADA: "badge-demorada",
-        COMPLETO: "badge-informe",
+        DEMORADA:             "badge-demorada",
+        COMPLETO:             "badge-informe",
+        CANCELADO:            "badge-cancelado",
     };
-    return "badge-estado " + (map[(estado || "").toUpperCase()] || "");
+    const cls = classMap[e] || "";
+    const lbl = labelEstadoDetalle(e);
+    return `<span class="badge-estado ${cls}"><span class="badge-dot"></span>${lbl}</span>`;
 }
 
 function labelEstadoDetalle(estado) {
@@ -1153,6 +1387,7 @@ function labelEstadoDetalle(estado) {
         COMPLETO_SIN_INFORME: "Completo sin informe",
         DEMORADA: "Demorada",
         COMPLETO: "Completo",
+        CANCELADO: "Cancelado",
     };
     return map[(estado || "").toUpperCase()] || (estado || "—");
 }
@@ -1160,13 +1395,19 @@ function labelEstadoDetalle(estado) {
 function renderizarDetalleMuestra(d) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || `#${d.id}`;
 
-    // El botón "Generar informe" se oculta si ya está COMPLETO,
-    // y se deshabilita si algún parámetro no tiene resultado cargado
-    const btnGenerar = document.getElementById("btnGenerarInforme");
-    if (d.estado === "COMPLETO") {
+    const btnGenerar  = document.getElementById("btnGenerarInforme");
+    const statusEl    = document.getElementById("autoGuardadoStatus");
+    const esCancelado = d.estado === "CANCELADO";
+
+    if (esCancelado) {
         btnGenerar.style.display = "none";
+        if (statusEl) statusEl.style.display = "none";
+    } else if (d.estado === "COMPLETO") {
+        btnGenerar.style.display = "none";
+        if (statusEl) statusEl.style.display = "";
     } else {
         btnGenerar.style.display = "";
+        if (statusEl) statusEl.style.display = "";
         const todosCompletos = d.parametros && d.parametros.length > 0 &&
             d.parametros.every(p => p.valorResultado && p.valorResultado.trim() !== "");
         btnGenerar.disabled = !todosCompletos;
@@ -1175,8 +1416,8 @@ function renderizarDetalleMuestra(d) {
 
     // Estado badge
     const estadoEl = document.getElementById("detalleEstado");
-    estadoEl.className = badgeClassDetalle(d.estado);
-    estadoEl.textContent = labelEstadoDetalle(d.estado);
+    estadoEl.className = "";
+    estadoEl.innerHTML = badgeHTML(d.estado);
 
     document.getElementById("detalleCliente").textContent = d.cliente || "—";
     document.getElementById("detalleMatrizTipo").textContent = d.matrizNombre || "—";
@@ -1243,14 +1484,30 @@ function renderizarDetalleMuestra(d) {
                         <span class="param-limite-origen">${l.origenNombre}</span>
                         <span class="param-limite-valor">${textoLimite}</span>
                         <span class="${badgeClass}"
-                              data-tipo="${l.tipoLimite || ''}"
+                              data-tipo="${esLimiteAusencia(l) ? 'AUSENCIA' : (l.tipoLimite || '')}"
                               data-min="${l.limiteMin ?? ''}"
                               data-max="${l.limiteMax ?? ''}"
+                              data-texto="${l.limiteTexto ?? ''}"
                         >${badgeText}</span>
                     </div>`;
             }).join("");
             limitesHtml = `<div class="param-card-limites">${filas}</div>`;
         }
+
+        const soloAusencia = p.limites && p.limites.length > 0 && p.limites.every(l => esLimiteAusencia(l));
+        const val = p.valorResultado || "";
+        const inputResultado = soloAusencia
+            ? `<select class="param-resultado-input param-resultado-select" data-parametro-id="${p.id}" ${esCancelado ? 'disabled style="opacity:.6;"' : ''}>
+                   <option value="">— Seleccionar —</option>
+                   <option value="Ausente"  ${val === "Ausente"  ? "selected" : ""}>Ausente</option>
+                   <option value="Presente" ${val === "Presente" ? "selected" : ""}>Presente</option>
+               </select>`
+            : `<input class="param-resultado-input" type="text" data-parametro-id="${p.id}"
+                   value="${val}" placeholder="Resultado..."
+                   ${esCancelado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`;
+
+        const hayLimites = p.limites && p.limites.length > 0;
+        const nLimites   = hayLimites ? p.limites.length : 0;
 
         card.innerHTML = `
             <div class="param-card-header">
@@ -1259,29 +1516,37 @@ function renderizarDetalleMuestra(d) {
                     <div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>
                 </div>
                 <div class="param-resultado-wrap">
-                    <input
-                        class="param-resultado-input"
-                        type="text"
-                        data-parametro-id="${p.id}"
-                        value="${p.valorResultado || ''}"
-                        placeholder="Resultado..."
-                    >
+                    ${inputResultado}
                     <span class="param-resultado-unidad">${p.unidad || ""}</span>
+                    ${hayLimites ? `<span class="param-norma-count">${nLimites} norma${nLimites !== 1 ? 's' : ''}</span>` : ''}
                 </div>
             </div>
-            <div class="param-obs-wrap">
-                <input
-                    class="param-obs-input"
-                    type="text"
-                    id="obs-param-${p.id}"
-                    value="${p.observacion || ''}"
-                    placeholder="Observación..."
-                >
+            ${hayLimites ? `<button class="param-toggle" type="button" aria-expanded="false" data-count="${nLimites}">
+                <i class="bi bi-chevron-down param-toggle-icon"></i>
+                <span>Ver normativas (${nLimites})</span>
+            </button>` : ''}
+            <div class="param-colapsable"${hayLimites ? ' style="display:none"' : ''}>
+                <div class="param-obs-wrap">
+                    <input
+                        class="param-obs-input"
+                        type="text"
+                        id="obs-param-${p.id}"
+                        value="${p.observacion || ''}"
+                        placeholder="Observación..."
+                    >
+                </div>
+                ${limitesHtml}
             </div>
-            ${limitesHtml}
         `;
         contParametros.appendChild(card);
     });
+}
+
+// Devuelve true si el límite representa "debe ser ausente" (tipo AUSENCIA o TEXTO con texto="Ausente")
+function esLimiteAusencia(l) {
+    if (l.tipoLimite === "AUSENCIA") return true;
+    if (l.tipoLimite === "TEXTO" && l.limiteTexto && l.limiteTexto.trim().toLowerCase() === "ausente") return true;
+    return false;
 }
 
 // Formatea un límite según su tipo (MAX, MIN, RANGO, TEXTO) para mostrarlo legible
@@ -1292,37 +1557,91 @@ function formatearLimite(l) {
         case "MIN":
             return `≥ ${l.limiteMin}`;
         case "RANGO":
-            return `${l.limiteMin} – ${l.limiteMax}`;
+            if (l.limiteMin != null && l.limiteMax != null) return `${l.limiteMin} – ${l.limiteMax}`;
+            if (l.limiteTexto) return l.limiteTexto;
+            return "—";
         case "TEXTO":
             return l.limiteTexto || "—";
+        case "AUSENCIA":
+            return "Ausente";
         default:
             return l.limiteTexto || `${l.limiteMin ?? ''} ${l.limiteMax ?? ''}`.trim() || "—";
     }
 }
 
 // Updates a badge-cumple element based on a typed result value
+// Intenta parsear un texto tipo "0,01/0,05" como rango {min, max}
+function parsearRangoTexto(texto) {
+    if (!texto) return null;
+    const parts = texto.replace(/\s/g, "").split("/");
+    if (parts.length === 2) {
+        const min = parseFloat(parts[0].replace(",", "."));
+        const max = parseFloat(parts[1].replace(",", "."));
+        if (!isNaN(min) && !isNaN(max)) return { min, max };
+    }
+    return null;
+}
+
 function actualizarBadge(badge, valorStr) {
     const tipo = badge.dataset.tipo;
-    if (!tipo || tipo === "TEXTO" || !valorStr || !valorStr.trim()) {
+    if (!tipo || !valorStr || !valorStr.trim()) {
         badge.className = "badge-cumple badge-cumple-nd";
         badge.textContent = "Sin evaluar";
         return;
     }
+
+    // AUSENCIA: evaluación por string antes del parseo numérico
+    if (tipo === "AUSENCIA") {
+        const v = valorStr.trim().toLowerCase();
+        let cumple = null;
+        if (v === "ausente") cumple = true;
+        else if (v === "presente") cumple = false;
+        else { const n = parseFloat(valorStr.replace(",", ".")); if (!isNaN(n)) cumple = false; }
+        badge.className = cumple === true  ? "badge-cumple badge-cumple-si"
+                        : cumple === false ? "badge-cumple badge-cumple-no"
+                        :                   "badge-cumple badge-cumple-nd";
+        badge.textContent = cumple === true ? "Cumple" : cumple === false ? "No cumple" : "Sin evaluar";
+        return;
+    }
+
+    // TEXTO: solo evalúa si el texto tiene formato de rango "X/Y"
+    if (tipo === "TEXTO") {
+        const rango = parsearRangoTexto(badge.dataset.texto);
+        if (rango) {
+            const valor = parseFloat(valorStr.replace(",", ".").trim());
+            const cumple = isNaN(valor) ? null : (valor >= rango.min && valor <= rango.max);
+            aplicarCumpleBadge(badge, cumple);
+        } else {
+            badge.className = "badge-cumple badge-cumple-nd";
+            badge.textContent = "Sin evaluar";
+        }
+        return;
+    }
+
     const valor = parseFloat(valorStr.replace(",", ".").trim());
     if (isNaN(valor)) {
         badge.className = "badge-cumple badge-cumple-nd";
         badge.textContent = "Sin evaluar";
         return;
     }
-    const min = parseFloat(badge.dataset.min);
-    const max = parseFloat(badge.dataset.max);
+    let min = parseFloat(badge.dataset.min);
+    let max = parseFloat(badge.dataset.max);
+    // Si min/max no están como números, intenta parsear el limiteTexto como "X/Y"
+    if ((isNaN(min) || isNaN(max)) && (tipo === "RANGO" || tipo === "MAX" || tipo === "MIN")) {
+        const rango = parsearRangoTexto(badge.dataset.texto);
+        if (rango) { min = rango.min; max = rango.max; }
+    }
     let cumple;
     switch (tipo) {
-        case "MAX":   cumple = !isNaN(max) && valor <= max; break;
-        case "MIN":   cumple = !isNaN(min) && valor >= min; break;
-        case "RANGO": cumple = !isNaN(min) && !isNaN(max) && valor >= min && valor <= max; break;
+        case "MAX":   cumple = isNaN(max) ? null : valor <= max; break;
+        case "MIN":   cumple = isNaN(min) ? null : valor >= min; break;
+        case "RANGO": cumple = (isNaN(min) || isNaN(max)) ? null : (valor >= min && valor <= max); break;
         default:      cumple = null;
     }
+    aplicarCumpleBadge(badge, cumple);
+}
+
+function aplicarCumpleBadge(badge, cumple) {
     if (cumple === true) {
         badge.className = "badge-cumple badge-cumple-si";
         badge.textContent = "Cumple";
@@ -1335,41 +1654,59 @@ function actualizarBadge(badge, valorStr) {
     }
 }
 
-async function onGuardarResultados() {
+function dispararAutoGuardar() {
+    if (_autoGuardarTimer) clearTimeout(_autoGuardarTimer);
+    mostrarAutoGuardadoStatus("pending");
+    _autoGuardarTimer = setTimeout(autoGuardar, 1500);
+}
+
+async function autoGuardar() {
+    _autoGuardarTimer = null;
     if (!detalleAnalisisId) return;
-
-    const inputs = document.querySelectorAll(".param-resultado-input");
-    const resultados = [];
-    inputs.forEach(input => {
-        const parametroId = parseInt(input.dataset.parametroId);
-        const obsInput = document.getElementById(`obs-param-${parametroId}`);
-        resultados.push({
-            parametroId,
-            valorResultado: input.value.trim() || null,
-            observacion: obsInput ? (obsInput.value.trim() || null) : null,
-        });
-    });
-
-    const btn = document.getElementById("btnGuardarResultados");
-    const textoOriginal = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Guardando...`;
-
+    mostrarAutoGuardadoStatus("saving");
     try {
+        const inputs = document.querySelectorAll(".param-resultado-input");
+        const resultados = [];
+        inputs.forEach(input => {
+            const parametroId = parseInt(input.dataset.parametroId);
+            const obsInput = document.getElementById(`obs-param-${parametroId}`);
+            resultados.push({
+                parametroId,
+                valorResultado: input.value.trim() || null,
+                observacion: obsInput ? (obsInput.value.trim() || null) : null,
+            });
+        });
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/resultados`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(resultados),
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        mostrarToast("Resultados guardados correctamente.");
-        cerrarModalDetalle();
+        mostrarAutoGuardadoStatus("saved");
     } catch (err) {
-        console.error("Error guardando resultados:", err);
-        mostrarToast("Error al guardar los resultados.", true);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = textoOriginal;
+        console.error("Error auto-guardando:", err);
+        mostrarAutoGuardadoStatus("error");
+    }
+}
+
+function mostrarAutoGuardadoStatus(estado) {
+    const el = document.getElementById("autoGuardadoStatus");
+    if (!el) return;
+    el.className = "autosave-status";
+    if (estado === "pending") {
+        el.textContent = "";
+    } else if (estado === "saving") {
+        el.textContent = "Guardando...";
+        el.classList.add("autosave-saving");
+    } else if (estado === "saved") {
+        el.textContent = "✓ Guardado";
+        el.classList.add("autosave-saved");
+        setTimeout(() => { if (el.classList.contains("autosave-saved")) el.textContent = ""; }, 3000);
+    } else if (estado === "error") {
+        el.textContent = "Error al guardar";
+        el.classList.add("autosave-error");
+    } else {
+        el.textContent = "";
     }
 }
 
@@ -1529,6 +1866,46 @@ window.eliminarArchivoModal = async function(analisisId, archivoId, btn) {
         btn.disabled = false;
     }
 };
+
+// ── Cancelar muestra ──────────────────────────────────────
+let _cancelarMuestraId = null;
+
+window.abrirModalCancelar = function(id, codigo) {
+    _cancelarMuestraId = id;
+    document.getElementById("modalCancelarMsg").textContent =
+        `¿Cancelar la muestra ${codigo}? Esta acción no se puede revertir.`;
+    document.getElementById("inputMotivoCancelacionM").value = "";
+    document.getElementById("modalCancelarMuestra").classList.add("visible");
+    document.getElementById("inputMotivoCancelacionM").focus();
+};
+
+function cerrarModalCancelar() {
+    document.getElementById("modalCancelarMuestra").classList.remove("visible");
+    _cancelarMuestraId = null;
+}
+
+async function confirmarCancelarMuestra() {
+    if (!_cancelarMuestraId) return;
+    const motivo = document.getElementById("inputMotivoCancelacionM").value.trim();
+    const btn = document.getElementById("btnConfirmarCancelar");
+    btn.disabled = true;
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${_cancelarMuestraId}/cancelar`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ motivo: motivo || null }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        mostrarToast("Muestra cancelada.");
+        cerrarModalCancelar();
+        await cargarMuestrasActivas();
+    } catch (err) {
+        console.error("Error cancelando muestra:", err);
+        mostrarToast("No se pudo cancelar la muestra.", true);
+    } finally {
+        btn.disabled = false;
+    }
+}
 
 async function onUploadAltaInforme() {
     const fileInput = document.getElementById("inputAltaInformePdf");

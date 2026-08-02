@@ -78,6 +78,10 @@ public class EstudiosMapper {
                 .matrizId(entity.getMatriz() != null ? entity.getMatriz().getId() : null)
                 .tipoMuestraId(entity.getTipoMuestra() != null ? entity.getTipoMuestra().getId() : null)
                 .resolucionesAplicadas(resoluciones)
+                .resolucionDestinoIds(entity.getResolucionesAplicadas() == null ? List.of() :
+                        entity.getResolucionesAplicadas().stream()
+                                .map(ard -> ard.getResolucionDestino().getId())
+                                .toList())
                 .parametros(parametros)
                 .build();
     }
@@ -89,12 +93,13 @@ public class EstudiosMapper {
             ResolucionDestinoDE destino = l.getLimiteOrigen().getDestino();
             String origenNombre = destino.getResolucion().getNombre() + " - " + destino.getNombre();
 
+            ResolucionDestinoParametroDE origen = l.getLimiteOrigen();
             return LimiteAplicableTO.builder()
                     .origenNombre(origenNombre)
-                    .tipoLimite(l.getLimiteOrigen().getTipoLimite())
-                    .limiteMin(l.getLimiteMin())
-                    .limiteMax(l.getLimiteMax())
-                    .limiteTexto(l.getLimiteTexto())
+                    .tipoLimite(origen.getTipoLimite())
+                    .limiteMin(l.getLimiteMin() != null ? l.getLimiteMin() : origen.getValorMinimo())
+                    .limiteMax(l.getLimiteMax() != null ? l.getLimiteMax() : origen.getValorMaximo())
+                    .limiteTexto(l.getLimiteTexto() != null ? l.getLimiteTexto() : origen.getLimiteTexto())
                     .cumple(l.getCumple())
                     .build();
         }).toList();
@@ -102,15 +107,25 @@ public class EstudiosMapper {
         return ParametroResultadoTO.builder()
                 .id(ap.getParametro().getId())
                 .nombre(ap.getParametro().getNombre())
-                .unidad(ap.getLimites() == null ? null : ap.getLimites().stream()
-                        .map(l -> l.getLimiteOrigen().getUnidad())
-                        .filter(u -> u != null && !u.isBlank())
-                        .findFirst().orElse(null))
+                .unidad(resolverUnidad(ap))
                 .metodologiaNombre(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getNombre() : null)
                 .valorResultado(ap.getValorResultado())
                 .observacion(ap.getObservacion())
                 .limites(limites)
                 .build();
+    }
+
+    private static String resolverUnidad(AnalisisParametroDE ap) {
+        // Primero: unidad configurada en la resolución para este parámetro
+        if (ap.getLimites() != null) {
+            String u = ap.getLimites().stream()
+                    .map(l -> l.getLimiteOrigen().getUnidad())
+                    .filter(s -> s != null && !s.isBlank())
+                    .findFirst().orElse(null);
+            if (u != null) return u;
+        }
+        // Fallback: unidad global del parámetro
+        return ap.getParametro() != null ? ap.getParametro().getUnidad() : null;
     }
 
     private static String resolverNombreCliente(AnalisisDE entity) {

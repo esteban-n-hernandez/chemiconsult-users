@@ -83,8 +83,6 @@
 }
 
 body {
-    background-image: radial-gradient(rgba(26,26,46,.04) 1px, transparent 1px);
-    background-size: 5px 5px;
     color: var(--text-primary);
 }
 

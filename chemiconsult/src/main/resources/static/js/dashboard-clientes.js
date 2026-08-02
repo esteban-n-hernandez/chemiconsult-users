@@ -41,6 +41,8 @@ let todasLasMuestras = [];
 let datosFiltrados   = [];
 let paginaActual     = 1;
 const POR_PAGINA     = 10;
+let sortCol = "codigo";
+let sortDir = "desc";
 
 async function cargarEstudios() {
     try {
@@ -55,11 +57,14 @@ async function cargarEstudios() {
         // Mapear respuesta al formato interno (se muestran todos los estados)
         todasLasMuestras = data.map(e => ({
             id:       e.id,
-            codigo:   e.numeroProtocolo || `ID-${e.id}`,
-            tipo:     e.tipo || "—",
-            fecha:    e.createdDate
-                ? new Date(e.createdDate).toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
-                : "—",
+            codigo:    e.nroProtocolo || `ID-${e.id}`,
+            tipo:      e.tipo || "—",
+            fechaRaw:  e.fechaIngreso || e.createdDate || "",
+            fecha:     e.fechaIngreso
+                ? new Date(e.fechaIngreso + "T00:00:00").toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
+                : e.createdDate
+                    ? new Date(e.createdDate).toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
+                    : "—",
             estado:   e.estado || "—",
             informe:  e.estado === "COMPLETO"  // solo COMPLETO tiene PDF disponible
         }));
@@ -70,7 +75,7 @@ async function cargarEstudios() {
         document.getElementById("kpi-listos").textContent  = todasLasMuestras.filter(m => m.informe).length;
 
         datosFiltrados = [...todasLasMuestras];
-        renderTabla();
+        aplicarFiltros();
 
     } catch (err) {
         console.error(err);
@@ -83,14 +88,26 @@ async function cargarEstudios() {
 // RENDER TABLA
 // ──────────────────────────────────────────
 function badgeHTML(estado) {
-    const map = {
-        "PENDIENTE":            `<span class="badge-estado badge-pendiente">⏳ Pendiente</span>`,
-        "EN_PROCESO":           `<span class="badge-estado badge-proceso">🔬 En análisis</span>`,
-        "DEMORADA":             `<span class="badge-estado badge-demorada">⏸ Demorada</span>`,
-        "COMPLETO_SIN_INFORME": `<span class="badge-estado badge-sin-informe">✔ Analizado</span>`,
-        "COMPLETO":             `<span class="badge-estado badge-informe">📄 Informe listo</span>`,
+    const classMap = {
+        PENDIENTE:            "badge-pendiente",
+        EN_PROCESO:           "badge-proceso",
+        COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
+        DEMORADA:             "badge-demorada",
+        COMPLETO:             "badge-informe",
+        CANCELADO:            "badge-cancelado",
     };
-    return map[estado] || `<span class="badge-estado">${estado}</span>`;
+    const labelMap = {
+        PENDIENTE:            "Pendiente",
+        EN_PROCESO:           "En análisis",
+        COMPLETO_SIN_INFORME: "Analizado",
+        DEMORADA:             "Demorada",
+        COMPLETO:             "Informe listo",
+        CANCELADO:            "Cancelada",
+    };
+    const e   = (estado || "").toUpperCase();
+    const cls = classMap[e] || "";
+    const lbl = labelMap[e] || estado;
+    return `<span class="badge-estado ${cls}"><span class="badge-dot"></span>${lbl}</span>`;
 }
 
 function btnInformeHTML(muestra) {
@@ -98,6 +115,9 @@ function btnInformeHTML(muestra) {
         return `<button class="btn-descargar" onclick="abrirInformes(${muestra.id}, '${muestra.codigo}')">
                     <i class="bi bi-eye"></i> Ver informe
                 </button>`;
+    }
+    if (muestra.estado === "CANCELADO") {
+        return `<span style="color:var(--color-text-tertiary);font-size:13px;">—</span>`;
     }
     return `<button class="btn-descargar disabled" disabled>
                 <i class="bi bi-clock"></i> En proceso
@@ -258,12 +278,63 @@ document.getElementById("pdfModal").addEventListener("hidden.bs.modal", () => {
     document.getElementById("pdfArchivosNav").style.display = "none";
 });
 
-// ── Buscador ──
-document.getElementById("buscadorProtocolo").addEventListener("input", function () {
-    const texto = this.value.trim().toLowerCase();
-    datosFiltrados = todasLasMuestras.filter(m => m.codigo.toLowerCase().includes(texto));
+// ── Ordenamiento ──
+function ordenarPor(col) {
+    sortDir = sortCol === col && sortDir === "asc" ? "desc" : "asc";
+    sortCol = col;
+    aplicarFiltros();
+}
+
+function ordenar() {
+    if (!sortCol) return;
+    datosFiltrados.sort((a, b) => {
+        const va = a[sortCol] || "";
+        const vb = b[sortCol] || "";
+        if (sortCol === "fechaRaw") {
+            return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        const na = parseInt(va, 10), nb = parseInt(vb, 10);
+        if (!isNaN(na) && !isNaN(nb)) return sortDir === "asc" ? na - nb : nb - na;
+        return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+}
+
+function actualizarIconosOrden() {
+    document.querySelectorAll(".th-sortable").forEach(th => {
+        const icon = th.querySelector(".sort-icon");
+        if (th.dataset.sort === sortCol) {
+            icon.className = `sort-icon bi bi-chevron-${sortDir === "asc" ? "up" : "down"} sort-activo`;
+        } else {
+            icon.className = "sort-icon bi bi-chevron-expand";
+        }
+    });
+}
+
+// ── Filtros ──
+function aplicarFiltros() {
+    const texto  = document.getElementById("buscadorProtocolo").value.trim().toLowerCase();
+    const desde  = document.getElementById("filtroDesde").value;
+    const hasta  = document.getElementById("filtroHasta").value;
+
+    datosFiltrados = todasLasMuestras.filter(m => {
+        if (texto && !m.codigo.toLowerCase().includes(texto)) return false;
+        if (desde && m.fechaRaw < desde) return false;
+        if (hasta && m.fechaRaw > hasta) return false;
+        return true;
+    });
+    ordenar();
     paginaActual = 1;
     renderTabla();
+    actualizarIconosOrden();
+}
+
+document.getElementById("buscadorProtocolo").addEventListener("input", aplicarFiltros);
+document.getElementById("filtroDesde").addEventListener("change", aplicarFiltros);
+document.getElementById("filtroHasta").addEventListener("change", aplicarFiltros);
+document.getElementById("btnLimpiarFecha").addEventListener("click", () => {
+    document.getElementById("filtroDesde").value = "";
+    document.getElementById("filtroHasta").value = "";
+    aplicarFiltros();
 });
 
 // ── Init ──

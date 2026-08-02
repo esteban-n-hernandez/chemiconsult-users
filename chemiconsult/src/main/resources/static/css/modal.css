@@ -90,10 +90,21 @@
     gap: 1.1rem;
 }
 
+.autosave-status {
+    font-size: 12px;
+    margin-right: auto;
+    align-self: center;
+    min-width: 100px;
+}
+.autosave-saving { color: var(--color-text-secondary); }
+.autosave-saved  { color: var(--verde, #2e7d32); }
+.autosave-error  { color: #dc3545; }
+
 .modal-footer {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--color-border-tertiary);
     display: flex;
+    align-items: center;
     justify-content: flex-end;
     gap: 10px;
     position: sticky;

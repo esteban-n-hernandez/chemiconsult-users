@@ -175,95 +175,18 @@
     color: #adb5bd;
 }
 
-/* ── Tabla ── */
-.tabla-muestras {
-    width: 100%;
-    font-size: 13px;
-    border-collapse: collapse;
-}
 
-.tabla-muestras thead th {
-    background: var(--bg-subtle);
-    color: var(--gris);
-    font-weight: 600;
-    padding: 8px 12px;
-    text-align: left;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--borde);
-}
-
-.tabla-muestras tbody tr {
-    border-bottom: 1px solid #f1f3f5;
-    transition: background 0.15s;
-}
-
-.tabla-muestras tbody tr:hover {
-    background: var(--bg-subtle);
-}
-
-.tabla-muestras tbody tr:last-child {
-    border-bottom: none;
-}
-
-.tabla-muestras td {
-    padding: 10px 12px;
-    vertical-align: middle;
-}
-
-.cod-badge {
-    font-family: monospace;
-    font-size: 12px;
-    background: var(--bg-subtle);
-    padding: 2px 7px;
-    border-radius: 4px;
-    color: var(--color-text-secondary);
-    letter-spacing: 0.3px;
-}
-
-.badge-estado {
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.badge-pendiente {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.badge-proceso {
-    background: #cfe2ff;
-    color: #0d6efd;
-}
-
-.badge-demorada {
-    background: #f3e8ff;
-    color: #7c3aed;
-}
-
-.badge-sin-informe {
-    background: #e0f2fe;
-    color: #075985;
-}
-
-.badge-informe {
-    background: #d1e7dd;
-    color: #146c43;
-}
-
-/* ── Botón descargar ── */
+/* ── Botón informe ── */
 .btn-descargar {
-    background: none;
-    border: 1px solid var(--borde);
-    border-radius: 6px;
-    padding: 3px 10px;
+    background: var(--bg-surface);
+    border: 1px solid #c5e6a0;
+    border-radius: 7px;
+    padding: 0 10px;
+    height: 30px;
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    color: var(--gris);
+    color: var(--verde);
     transition: all 0.2s;
     display: inline-flex;
     align-items: center;
@@ -274,12 +197,102 @@
     background: var(--verde);
     color: white;
     border-color: var(--verde);
+    transform: translateY(-1px);
 }
 
 .btn-descargar.disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
     pointer-events: none;
+    border-color: var(--color-border-tertiary);
+    color: var(--color-text-secondary);
+}
+
+/* ── Ordenamiento de columnas ── */
+.th-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.th-sortable:hover {
+    color: var(--verde-oscuro, #3a7000);
+}
+
+.sort-icon {
+    font-size: 10px;
+    opacity: 0.4;
+    margin-left: 4px;
+    vertical-align: middle;
+    transition: opacity 0.15s;
+}
+
+.th-sortable:hover .sort-icon {
+    opacity: 0.8;
+}
+
+.sort-icon.sort-activo {
+    opacity: 1;
+    color: var(--verde);
+}
+
+/* ── Filtros en el header ── */
+.panel-header-filtros {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filtros-fecha-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filtro-fecha-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.filtro-fecha-input {
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--borde);
+    border-radius: 7px;
+    font-size: 12px;
+    color: var(--text-main);
+    background: var(--bg-surface);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filtro-fecha-input:focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.1);
+}
+
+.btn-limpiar-fecha {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 7px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    background: var(--bg-surface);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    margin-left: 4px;
+}
+
+.btn-limpiar-fecha:hover {
+    border-color: #dc3545;
+    color: #dc3545;
 }
 
 /* ── Sin resultados ── */

@@ -359,9 +359,9 @@ function _renderEditorParams(detalle, todosLosParams) {
             if (!includedMap.has(p.id)) includedMap.set(p.id, p);
         }
     }
-    const included = [...includedMap.values()];
+    const included = [...includedMap.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     const includedIds = new Set(included.map(p => p.id));
-    const excluded = todosLosParams.filter(p => !includedIds.has(p.id));
+    const excluded = todosLosParams.filter(p => !includedIds.has(p.id)).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
     const filasIncluidos = included.length > 0
         ? included.map(p => `

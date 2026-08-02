@@ -125,12 +125,18 @@
     }
 
     // ── Inyectar HTML ─────────────────────────────────────────────────────────
-    function inyectarWidget() {
+    function inyectarWidget(onReady) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = 'css/chat.css';
+        // Esperar a que el CSS esté aplicado antes de insertar el HTML,
+        // para evitar que el panel aparezca sin estilos durante un frame.
+        link.addEventListener('load', onReady);
+        link.addEventListener('error', onReady); // fallback si falla la carga
         document.head.appendChild(link);
+    }
 
+    function inyectarHTML() {
         document.body.insertAdjacentHTML('beforeend', `
             <button class="chat-fab" id="chatFab" title="Mensajes" aria-label="Mensajes">
                 <i class="bi bi-chat-dots-fill"></i>
@@ -548,33 +554,38 @@
     function init() {
         if (!token()) return;
 
-        inyectarWidget();
-
-        document.getElementById('chatFab').addEventListener('click', () => {
-            panelAbierto ? cerrarPanel() : abrirPanel();
-        });
-        document.getElementById('chatCerrarBtn').addEventListener('click', cerrarPanel);
-        document.getElementById('chatConvBack').addEventListener('click', () => {
-            convActual = null;
-            modoGrupo = false;
-            primerMsgId = null;
-            ultimoMsgId = null;
-            mostrarVista('lista');
-            cargarConversaciones();
-        });
-        document.getElementById('chatNuevaConvBtn').addEventListener('click', abrirNuevaConv);
-        document.getElementById('chatNuevaBack').addEventListener('click', () => mostrarVista('lista'));
-        document.getElementById('chatSendBtn').addEventListener('click', enviarMensaje);
-        document.getElementById('chatInput').addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje(); }
-        });
-        document.getElementById('chatBuscar').addEventListener('input', e => {
-            const q = e.target.value.toLowerCase();
-            renderizarEmpleados(todosEmpleados.filter(u => u.username.toLowerCase().includes(q)));
-        });
-
+        // El badge polling puede arrancar ya (tiene guard para el elemento ausente)
         actualizarBadge();
         setInterval(actualizarBadge, POLL_INTERVAL);
+
+        // Inyectar HTML y bindear eventos sólo después de que el CSS esté listo,
+        // para evitar el flash del panel sin estilos durante la carga inicial.
+        inyectarWidget(function () {
+            inyectarHTML();
+
+            document.getElementById('chatFab').addEventListener('click', () => {
+                panelAbierto ? cerrarPanel() : abrirPanel();
+            });
+            document.getElementById('chatCerrarBtn').addEventListener('click', cerrarPanel);
+            document.getElementById('chatConvBack').addEventListener('click', () => {
+                convActual = null;
+                modoGrupo = false;
+                primerMsgId = null;
+                ultimoMsgId = null;
+                mostrarVista('lista');
+                cargarConversaciones();
+            });
+            document.getElementById('chatNuevaConvBtn').addEventListener('click', abrirNuevaConv);
+            document.getElementById('chatNuevaBack').addEventListener('click', () => mostrarVista('lista'));
+            document.getElementById('chatSendBtn').addEventListener('click', enviarMensaje);
+            document.getElementById('chatInput').addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje(); }
+            });
+            document.getElementById('chatBuscar').addEventListener('input', e => {
+                const q = e.target.value.toLowerCase();
+                renderizarEmpleados(todosEmpleados.filter(u => u.username.toLowerCase().includes(q)));
+            });
+        });
     }
 
     if (document.readyState === 'loading') {

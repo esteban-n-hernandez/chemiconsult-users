@@ -73,9 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <i class="bi bi-moon"></i>
                     <span class="sidebar-label"> Modo oscuro</span>
                 </button>
-                <button class="sidebar-collapse-btn" id="sidebarToggle" title="Colapsar">
+                <button class="sidebar-collapse-btn" id="sidebarToggle" title="Ocultar">
                     <i class="bi bi-chevron-left"></i>
-                    <span class="sidebar-label"> Colapsar</span>
+                    <span class="sidebar-label"> Ocultar</span>
                 </button>
                 ${link('perfil.html', 'bi-person-circle', 'Perfil')}
                 <a href="#" id="logout-btn" title="Cerrar sesión">
@@ -129,8 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const icon = btn.querySelector("i");
         const label = btn.querySelector(".sidebar-label");
         if (icon) icon.className = `bi ${collapsed ? "bi-chevron-right" : "bi-chevron-left"}`;
-        if (label) label.textContent = collapsed ? " Expandir" : " Colapsar";
-        btn.title = collapsed ? "Expandir sidebar" : "Colapsar sidebar";
+        if (label) label.textContent = collapsed ? " Expandir" : " Ocultar";
+        btn.title = collapsed ? "Expandir sidebar" : "Ocultar sidebar";
     }
 
     document.getElementById("sidebarToggle")?.addEventListener("click", () => {

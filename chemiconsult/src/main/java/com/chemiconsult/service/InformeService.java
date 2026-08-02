@@ -33,23 +33,19 @@ public class InformeService {
     private static final String BUCKET = "chemiconsult-bucket";
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private static final String LAB_NOMBRE    = "Laboratorio Chemiconsult";
+    private static final String LAB_NOMBRE = "Laboratorio Chemiconsult";
     private static final String LAB_DIRECCION = "San Isidro, Buenos Aires";
     private static final String LAB_TELEFONOS = "4723 5698 / 11 5869 2444";
-    private static final String LAB_EMAIL1    = "info@chemiconsult.com.ar";
-    private static final String LAB_EMAIL2    = "chemiconsult.secretaria@gmail.com";
+    private static final String LAB_EMAIL1 = "info@chemiconsult.com.ar";
+    private static final String LAB_EMAIL2 = "chemiconsult.secretaria@gmail.com";
 
     private static final String[] CERT_LINES = {
-        "Laboratorio certificado por el Consejo de Fiscalizacion de laboratorios (COFILAB)",
-        "Habilitado por el Consejo Profesional de Quimica N°1908009",
-        "Habilitado por el Organismo provincial para el desarrollo sostenible (OPDS) N°26",
-        "Inscripto en RELADA N°29",
-        "Inscripto en el ROLA (Provincia De Cordoba) N°16"
+            "Laboratorio certificado por el Consejo de Fiscalizacion de laboratorios (COFILAB)",
+            "Habilitado por el Consejo Profesional de Quimica N°1908009",
+            "Habilitado por el Organismo provincial para el desarrollo sostenible (OPDS) N°26",
+            "Inscripto en RELADA N°29",
+            "Inscripto en el ROLA (Provincia De Cordoba) N°16"
     };
-
-    private static final String FIRMA_NOMBRE    = "Laura Bertello";
-    private static final String FIRMA_TITULO    = "Dra. en Quimica";
-    private static final String FIRMA_MATRICULA = "M. 4763";
 
     private final AnalisisRepository analisisRepository;
     private final AnalisisArchivoRepository analisisArchivoRepository;
@@ -129,13 +125,13 @@ public class InformeService {
     }
 
     private void addContenido(Document doc, AnalisisDetalleTO d) throws Exception {
-        Font fTitulo    = new Font(Font.HELVETICA, 14, Font.BOLD | Font.UNDERLINE);
-        Font fLabel     = new Font(Font.HELVETICA, 10, Font.BOLD);
-        Font fValor     = new Font(Font.HELVETICA, 10, Font.NORMAL);
-        Font fSeccion   = new Font(Font.HELVETICA, 11, Font.BOLD);
-        Font fSubseccion= new Font(Font.HELVETICA, 10, Font.BOLD);
-        Font fNota      = new Font(Font.HELVETICA, 8, Font.NORMAL);
-        Font fConcl     = new Font(Font.HELVETICA, 10, Font.NORMAL);
+        Font fTitulo = new Font(Font.HELVETICA, 14, Font.BOLD | Font.UNDERLINE);
+        Font fLabel = new Font(Font.HELVETICA, 10, Font.BOLD);
+        Font fValor = new Font(Font.HELVETICA, 10, Font.NORMAL);
+        Font fSeccion = new Font(Font.HELVETICA, 11, Font.BOLD);
+        Font fSubseccion = new Font(Font.HELVETICA, 10, Font.BOLD);
+        Font fNota = new Font(Font.HELVETICA, 8, Font.NORMAL);
+        Font fConcl = new Font(Font.HELVETICA, 10, Font.NORMAL);
 
         // Título centrado y subrayado
         Paragraph titulo = new Paragraph("INFORME DE ANALISIS", fTitulo);
@@ -146,22 +142,29 @@ public class InformeService {
         // Fecha de emisión alineada a la derecha
         Paragraph fechaLine = new Paragraph();
         fechaLine.setAlignment(Element.ALIGN_RIGHT);
-        fechaLine.add(new Chunk("Fecha de emision: ", fLabel));
+        fechaLine.add(new Chunk("Fecha de emisión: ", fLabel));
         fechaLine.add(new Chunk(LocalDate.now().format(FMT), fValor));
         fechaLine.setSpacingAfter(10);
         doc.add(fechaLine);
 
-        // Campos con línea separadora bajo cada uno
         addCampoConLinea(doc, "Cliente", upper(d.getCliente()), fLabel, fValor);
-        addCampoConLinea(doc, "Punto de muestreo", nvl(d.getPuntoMuestreo()), fLabel, fValor);
-        if (d.getTipoMuestraNombre() != null) {
-            addCampoConLinea(doc, "Tipo de muestra", d.getTipoMuestraNombre(), fLabel, fValor);
+        if (d.getMatrizNombre() != null && !d.getMatrizNombre().isBlank()) {
+            addCampo(doc, "Muestra", d.getMatrizNombre(), fLabel, fValor);
         }
-        addCampoConLinea(doc, "Protocolo de analisis", "N°" + nvl(d.getNroProtocolo()), fLabel, fValor);
-        addCampoConLinea(doc, "Fecha recepcion de la muestra", formatFecha(d.getFechaIngreso()), fLabel, fValor);
+        if (d.getPuntoMuestreo() != null && !d.getPuntoMuestreo().isBlank()) {
+            addCampo(doc, "Punto de muestreo", d.getPuntoMuestreo(), fLabel, fValor);
+        }
+       /* Tipo de muestra
+        if (d.getTipoMuestraNombre() != null && !d.getTipoMuestraNombre().isBlank()) {
+            addCampo(doc, "Tipo de muestra", d.getTipoMuestraNombre(), fLabel, fValor);
+        }
+        */
 
-        // Separador fuerte
-        doc.add(buildSeparator(1f));
+        addCampo(doc, "Protocolo de análisis", "N°" + nvl(d.getNroProtocolo()), fLabel, fValor);
+        addCampo(doc, "Fecha recepción de la muestra", formatFecha(d.getFechaIngreso()), fLabel, fValor);
+
+        // Separador verde antes de Resultados
+        doc.add(buildSeparator(1f, new Color(26, 107, 58)));
 
         // Encabezado de resultados
         Paragraph secResul = new Paragraph("Resultados", fSeccion);
@@ -170,7 +173,7 @@ public class InformeService {
         secResul.setSpacingAfter(6);
         doc.add(secResul);
 
-        Paragraph subSec = new Paragraph("Analisis Fisico Quimico", fSubseccion);
+        Paragraph subSec = new Paragraph("Análisis Físico Químico", fSubseccion);
         subSec.setSpacingAfter(8);
         doc.add(subSec);
 
@@ -187,26 +190,39 @@ public class InformeService {
         addFirma(doc);
     }
 
-    private void addCampoConLinea(Document doc, String etiqueta, String valor,
-                                   Font fLabel, Font fValor) throws DocumentException {
+    private void addCampo(Document doc, String etiqueta, String valor,
+                          Font fLabel, Font fValor) throws DocumentException {
         Paragraph p = new Paragraph();
         p.add(new Chunk(etiqueta + ": ", fLabel));
         p.add(new Chunk(valor, fValor));
         p.setSpacingAfter(3);
         doc.add(p);
-        doc.add(buildSeparator(0.5f));
+    }
+
+    private void addCampoConLinea(Document doc, String etiqueta, String valor,
+                                  Font fLabel, Font fValor) throws DocumentException {
+        addCampo(doc, etiqueta, valor, fLabel, fValor);
+        doc.add(buildSeparator(1f));
     }
 
     private Element buildSeparator(float width) {
+        return buildSeparator(width, new Color(26, 107, 58), 90f);
+    }
+
+    private Element buildSeparator(float width, Color color) {
+        return buildSeparator(width, color, 90);
+    }
+
+    private Element buildSeparator(float width, Color color, float widthPct) {
         PdfPTable line = new PdfPTable(1);
-        line.setWidthPercentage(100);
+        line.setWidthPercentage(widthPct);
         PdfPCell cell = new PdfPCell(new Phrase(" "));
         cell.setBorderWidthBottom(width);
         cell.setBorderWidthTop(0);
         cell.setBorderWidthLeft(0);
         cell.setBorderWidthRight(0);
         cell.setMinimumHeight(4f);
-        cell.setBorderColor(new Color(180, 180, 180));
+        cell.setBorderColor(color);
         line.addCell(cell);
         line.setSpacingAfter(4f);
         return line;
@@ -221,7 +237,7 @@ public class InformeService {
                 ? d.getResolucionesAplicadas() : List.of();
 
         int numCols = 3 + resoluciones.size() + 1;
-        float[] widths = buildWidths(resoluciones.size());
+        float[] widths = buildWidthsDynamic(resoluciones, d.getParametros());
 
         PdfPTable tabla = new PdfPTable(numCols);
         tabla.setWidthPercentage(100);
@@ -230,8 +246,8 @@ public class InformeService {
         tabla.setSpacingAfter(6);
         tabla.setHeaderRows(1);
 
-        Font fHeader = new Font(Font.HELVETICA, 9, Font.BOLD);
-        Color headerBg = new Color(200, 200, 200);
+        Font fHeader = new Font(Font.HELVETICA, 9, Font.BOLD, new Color(255, 255, 255));
+        Color headerBg = new Color(94, 165, 4);
 
         addHeaderCell(tabla, "Analito", fHeader, headerBg);
         addHeaderCell(tabla, "Unidad", fHeader, headerBg);
@@ -239,11 +255,11 @@ public class InformeService {
         for (String r : resoluciones) {
             addHeaderCell(tabla, buildLimiteHeader(r), fHeader, headerBg);
         }
-        addHeaderCell(tabla, "Metodologia", fHeader, headerBg);
+        addHeaderCell(tabla, "Metodología", fHeader, headerBg);
 
-        Font fParam  = new Font(Font.HELVETICA, 9, Font.NORMAL);
+        Font fParam = new Font(Font.HELVETICA, 9, Font.NORMAL);
         Font fResult = new Font(Font.HELVETICA, 9, Font.BOLD);
-        Font fSmall  = new Font(Font.HELVETICA, 8, Font.NORMAL);
+        Font fSmall = new Font(Font.HELVETICA, 8, Font.NORMAL);
 
         if (d.getParametros() != null) {
             for (ParametroResultadoTO p : d.getParametros()) {
@@ -260,30 +276,60 @@ public class InformeService {
         doc.add(tabla);
     }
 
-    private float[] buildWidths(int n) {
-        return switch (n) {
-            case 0 -> new float[]{30f, 8f, 12f, 50f};
-            case 1 -> new float[]{24f, 8f, 10f, 25f, 33f};
-            case 2 -> new float[]{22f, 7f, 9f, 21f, 21f, 20f};
-            case 3 -> new float[]{20f, 6f, 8f, 18f, 18f, 18f, 12f};
-            default -> {
-                float each = 13f;
-                float meta = 100f - 18f - 6f - 7f - each * n;
-                float[] w = new float[3 + n + 1];
-                w[0] = 18f; w[1] = 6f; w[2] = 7f;
-                for (int i = 0; i < n; i++) w[3 + i] = each;
-                w[3 + n] = Math.max(meta, 10f);
-                yield w;
+    private float[] buildWidthsDynamic(List<String> resoluciones, List<ParametroResultadoTO> parametros) {
+        int cols = 4 + resoluciones.size();
+
+        // Arrancar con la longitud del header de cada columna
+        int[] maxLen = new int[cols];
+        maxLen[0] = 7;   // "Analito"
+        maxLen[1] = 6;   // "Unidad"
+        maxLen[2] = 10;  // "Resultados"
+        for (int i = 0; i < resoluciones.size(); i++) {
+            maxLen[3 + i] = buildLimiteHeader(resoluciones.get(i)).length();
+        }
+        maxLen[cols - 1] = 11; // "Metodología"
+
+        // Medir el contenido real de cada fila
+        if (parametros != null) {
+            for (ParametroResultadoTO p : parametros) {
+                maxLen[0] = Math.max(maxLen[0], slen(p.getNombre()));
+                maxLen[1] = Math.max(maxLen[1], slen(p.getUnidad()));
+                maxLen[2] = Math.max(maxLen[2], slen(p.getValorResultado()));
+                for (int i = 0; i < resoluciones.size(); i++) {
+                    maxLen[3 + i] = Math.max(maxLen[3 + i],
+                            findLimite(p.getLimites(), resoluciones.get(i)).length());
+                }
+                maxLen[cols - 1] = Math.max(maxLen[cols - 1], slen(p.getMetodologiaNombre()));
             }
-        };
+        }
+
+        // Pesos con clamp por tipo de columna
+        float[] weights = new float[cols];
+        weights[0]       = clampW(maxLen[0],       18, 40); // Analito: puede ser largo
+        weights[1]       = clampW(maxLen[1],         5,  9); // Unidad: corto
+        weights[2]       = clampW(maxLen[2],         8, 13); // Resultados: número corto
+        for (int i = 0; i < resoluciones.size(); i++) {
+            weights[3 + i] = clampW(maxLen[3 + i], 10, 24); // Límites
+        }
+        weights[cols - 1] = clampW(maxLen[cols - 1], 14, 36); // Metodología
+
+        // Normalizar a 100 %
+        float total = 0f;
+        for (float w : weights) total += w;
+        float[] result = new float[cols];
+        for (int i = 0; i < cols; i++) result[i] = weights[i] * 100f / total;
+        return result;
     }
+
+    private int slen(String s) { return s != null ? s.length() : 0; }
+    private float clampW(int val, int min, int max) { return Math.min(max, Math.max(min, val)); }
 
     private String buildLimiteHeader(String origenNombre) {
         String nombre = origenNombre;
         if (nombre.endsWith(" - Unico") || nombre.endsWith(" - Único")) {
             nombre = nombre.substring(0, nombre.lastIndexOf(" - "));
         }
-        return "Limites " + nombre;
+        return "Límites " + nombre;
     }
 
     private String findLimite(List<LimiteAplicableTO> limites, String origen) {
@@ -298,12 +344,13 @@ public class InformeService {
     private String formatLimite(LimiteAplicableTO l) {
         if (l.getTipoLimite() == null) return "-";
         return switch (l.getTipoLimite()) {
-            case "MAX"   -> l.getLimiteMax() != null ? fmtNum(l.getLimiteMax()) : "-";
-            case "MIN"   -> l.getLimiteMin() != null ? fmtNum(l.getLimiteMin()) : "-";
+            case "MAX" -> l.getLimiteMax() != null ? fmtNum(l.getLimiteMax()) : "-";
+            case "MIN" -> l.getLimiteMin() != null ? fmtNum(l.getLimiteMin()) : "-";
             case "RANGO" -> (l.getLimiteMin() != null && l.getLimiteMax() != null)
                     ? fmtNum(l.getLimiteMin()) + "-" + fmtNum(l.getLimiteMax()) : "-";
-            case "TEXTO" -> l.getLimiteTexto() != null ? l.getLimiteTexto() : "-";
-            default      -> "-";
+            case "TEXTO"    -> l.getLimiteTexto() != null ? l.getLimiteTexto() : "-";
+            case "AUSENCIA" -> "Ausente";
+            default -> "-";
         };
     }
 
@@ -361,28 +408,26 @@ public class InformeService {
                 + String.join(", ", noOk) + ".";
     }
 
-    private void addFirma(Document doc) throws DocumentException {
-        Font fFirma = new Font(Font.HELVETICA, 9, Font.NORMAL);
-
+    private void addFirma(Document doc) throws Exception {
         PdfPTable tabla = new PdfPTable(1);
         tabla.setWidthPercentage(35);
         tabla.setHorizontalAlignment(Element.ALIGN_CENTER);
 
-        PdfPCell espacio = new PdfPCell(new Phrase(" "));
-        espacio.setFixedHeight(40f);
-        espacio.setBorderWidthTop(0);
-        espacio.setBorderWidthLeft(0);
-        espacio.setBorderWidthRight(0);
-        espacio.setBorderWidthBottom(0.8f);
-        espacio.setHorizontalAlignment(Element.ALIGN_CENTER);
-        tabla.addCell(espacio);
-
-        for (String linea : new String[]{FIRMA_NOMBRE, FIRMA_TITULO, FIRMA_MATRICULA}) {
-            PdfPCell cell = new PdfPCell(new Phrase(linea, fFirma));
-            cell.setBorder(Rectangle.NO_BORDER);
-            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            tabla.addCell(cell);
+        // Celda con imagen de firma (si existe) o espacio vacío
+        PdfPCell celdaFirma;
+        try (InputStream is = InformeService.class.getResourceAsStream("/static/img/firma.png")) {
+            if (is != null) {
+                Image imgFirma = Image.getInstance(is.readAllBytes());
+                imgFirma.scaleToFit(120, 50);
+                celdaFirma = new PdfPCell(imgFirma, false);
+                celdaFirma.setHorizontalAlignment(Element.ALIGN_CENTER);
+            } else {
+                celdaFirma = new PdfPCell(new Phrase(" "));
+                celdaFirma.setFixedHeight(50f);
+            }
         }
+        celdaFirma.setBorder(Rectangle.NO_BORDER);
+        tabla.addCell(celdaFirma);
 
         doc.add(tabla);
     }
@@ -415,12 +460,21 @@ public class InformeService {
     // Utilities
     // ----------------------------------------------------------------
 
-    private String nvl(String s) { return s != null && !s.isBlank() ? s : "-"; }
-    private String upper(String s) { return s != null ? s.toUpperCase() : "-"; }
+    private String nvl(String s) {
+        return s != null && !s.isBlank() ? s : "-";
+    }
+
+    private String upper(String s) {
+        return s != null ? s.toUpperCase() : "-";
+    }
 
     private String formatFecha(String fechaStr) {
         if (fechaStr == null || fechaStr.isBlank()) return "-";
-        try { return LocalDate.parse(fechaStr).format(FMT); } catch (Exception e) { return fechaStr; }
+        try {
+            return LocalDate.parse(fechaStr).format(FMT);
+        } catch (Exception e) {
+            return fechaStr;
+        }
     }
 
     private byte[] loadResource(String path) throws Exception {
@@ -477,9 +531,9 @@ public class InformeService {
         private void drawHeader(PdfWriter writer, Document doc) throws Exception {
             PdfContentByte cb = writer.getDirectContent();
             Rectangle ps = doc.getPageSize();
-            float left  = doc.left();
+            float left = doc.left();
             float right = doc.right();
-            float top   = ps.getTop();
+            float top = ps.getTop();
 
             // Logo en esquina superior izquierda
             Image logo = Image.getInstance(logoBytes);
@@ -489,28 +543,20 @@ public class InformeService {
 
             // Datos de contacto alineados a la derecha
             float textTop = top - 10;
-            float lineH   = 11f;
+            float lineH = 11f;
             cb.beginText();
             cb.setFontAndSize(bf, 8);
-            showRight(cb, LAB_NOMBRE,    right, textTop);
+            showRight(cb, LAB_NOMBRE, right, textTop);
             showRight(cb, LAB_DIRECCION, right, textTop - lineH);
             showRight(cb, LAB_TELEFONOS, right, textTop - lineH * 2);
-            showRight(cb, LAB_EMAIL1,    right, textTop - lineH * 3);
-            showRight(cb, LAB_EMAIL2,    right, textTop - lineH * 4);
+            showRight(cb, LAB_EMAIL1, right, textTop - lineH * 3);
+            showRight(cb, LAB_EMAIL2, right, textTop - lineH * 4);
             cb.endText();
-
-            // Línea separadora bajo el encabezado (dentro del margen superior)
-            cb.setLineWidth(0.5f);
-            cb.setColorStroke(new Color(150, 150, 150));
-            cb.moveTo(left, doc.top() + 8);  // justo encima del área de contenido
-            cb.lineTo(right, doc.top() + 8);
-            cb.stroke();
-            cb.setColorStroke(Color.BLACK);
         }
 
         private void drawFooter(PdfWriter writer, Document doc) throws Exception {
             PdfContentByte cb = writer.getDirectContent();
-            float left  = doc.left();
+            float left = doc.left();
             float right = doc.right();
 
             // Tope del área de pie = bottom del contenido
@@ -526,7 +572,7 @@ public class InformeService {
 
             // Texto de certificación: 5 líneas de 8pt
             float lineH = 8f;
-            float y     = footerTop - 12;
+            float y = footerTop - 12;
             cb.beginText();
             cb.setFontAndSize(bf, 7);
             for (String linea : CERT_LINES) {

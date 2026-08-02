@@ -1,0 +1,194 @@
+/* ═══════════════════════════════════════════════════════════════
+   tabla-muestras.css  —  estilos compartidos: tabla, badges, botones
+   Usado en: dashboard-empleado, dashboard-cliente, muestras
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Tabla ── */
+.tabla-muestras {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+
+.tabla-muestras thead th {
+    background: transparent;
+    color: var(--verde);
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-bottom: 2px solid var(--verde);
+}
+
+.tabla-muestras tbody tr td {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+}
+
+.tabla-muestras tbody tr:hover td {
+    background: #f9fafb;
+    cursor: pointer;
+}
+
+.tabla-muestras tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.tabla-muestras td {
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+.tabla-muestras .btn-light {
+    background: var(--bg-surface);
+    border: 1px solid #daeacd;
+    color: var(--verde);
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+
+.tabla-muestras .btn-light:hover {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+
+/* ── Código de protocolo ── */
+.cod-badge {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: #edf7e0;
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: #2d6b0a;
+    border: 1px solid #c5e6a0;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+/* ── Badge de estado ── */
+.badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.badge-pendiente            .badge-dot { background: #d97706; }
+.badge-proceso              .badge-dot { background: #2563eb; }
+.badge-completo-sin-informe .badge-dot { background: #64748b; }
+.badge-demorada             .badge-dot { background: #dc2626; }
+.badge-informe              .badge-dot { background: #16a34a; }
+.badge-cancelado            .badge-dot { background: #9ca3af; }
+
+/* ── Fechas de vencimiento ── */
+.fecha-ok      { color: var(--color-text-secondary); }
+.fecha-warning { color: #fd7e14; font-weight: 600; }
+.fecha-vencida { color: #dc3545; font-weight: 600; }
+
+/* ── Botones de acción ── */
+.acciones-celda {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-accion {
+    background: var(--bg-surface);
+    border: 1px solid var(--color-border-tertiary);
+    color: var(--text-secondary);
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.btn-accion:hover {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-accion-verde {
+    border-color: #c5e6a0;
+    color: var(--verde);
+}
+
+.btn-accion-verde:hover {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+
+.btn-accion-gris {
+    color: var(--color-text-tertiary);
+}
+
+.btn-accion-rojo {
+    border-color: #f5c6cb;
+    color: #dc3545;
+}
+
+.btn-accion-rojo:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-accion.btn-avanzar:hover {
+    background: #d1e7dd;
+    color: #146c43;
+    border-color: #198754;
+}
+
+.btn-accion.btn-eliminar:hover {
+    background: #f8d7da;
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-accion.btn-pdf {
+    border-color: #fecaca;
+    color: #ef4444;
+}
+
+.btn-accion.btn-pdf:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+.btn-accion.btn-archivos:hover {
+    background: #e0f2fe;
+    border-color: #0ea5e9;
+    color: #0369a1;
+}

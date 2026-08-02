@@ -16,6 +16,9 @@ public class ParametroDE {
     @Column(name = "NOMBRE", nullable = false)
     private String nombre;
 
+    @Column(name = "UNIDAD")
+    private String unidad;
+
     @Column(name = "ACTIVO")
     private Boolean activo = true;
 

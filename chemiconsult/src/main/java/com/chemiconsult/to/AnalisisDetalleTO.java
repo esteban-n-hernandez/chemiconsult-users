@@ -24,5 +24,6 @@ public class AnalisisDetalleTO {
     private Long tipoMuestraId;
 
     private List<String> resolucionesAplicadas;
+    private List<Long> resolucionDestinoIds;
     private List<ParametroResultadoTO> parametros;
 }

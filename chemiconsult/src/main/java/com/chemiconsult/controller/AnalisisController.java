@@ -78,6 +78,7 @@ public class AnalisisController {
         return analisisService.updateEstudio(id, estudio);
     }
 
+    @SuppressWarnings("unchecked")
     @PatchMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> patchEstudio(@PathVariable Long id, @RequestBody Map<String, Object> body) {
@@ -86,13 +87,28 @@ public class AnalisisController {
         String puntoMuestreo = (String) body.get("puntoMuestreo");
         String fechaIngreso = (String) body.get("fechaIngreso");
         String fechaEntrega = (String) body.get("fechaEntrega");
-        analisisService.patchEstudio(id, matrizId, tipoMuestraId, puntoMuestreo, fechaIngreso, fechaEntrega);
+        List<Long> resolucionDestinoIds = body.get("resolucionDestinoIds") != null
+                ? ((List<Number>) body.get("resolucionDestinoIds")).stream().map(Number::longValue).toList()
+                : null;
+        List<Long> parametrosIds = body.get("parametrosIds") != null
+                ? ((List<Number>) body.get("parametrosIds")).stream().map(Number::longValue).toList()
+                : null;
+        analisisService.patchEstudio(id, matrizId, tipoMuestraId, puntoMuestreo, fechaIngreso, fechaEntrega,
+                resolucionDestinoIds, parametrosIds);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public void deleteEstudio(@PathVariable Long id) {
         analisisService.deleteEstudio(id);
+    }
+
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<Void> cancelarEstudio(@PathVariable Long id,
+                                                @RequestBody(required = false) Map<String, String> body) {
+        String motivo = body != null ? body.get("motivo") : null;
+        analisisService.cancelarEstudio(id, motivo);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/resultados")

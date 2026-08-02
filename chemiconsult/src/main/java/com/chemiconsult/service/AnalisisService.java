@@ -1,6 +1,7 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.*;
+import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.repository.*;
 import com.chemiconsult.to.AnalisisDetalleTO;
@@ -180,7 +181,8 @@ public class AnalisisService {
 
     @Transactional
     public void patchEstudio(Long id, Long matrizId, Long tipoMuestraId,
-                             String puntoMuestreo, String fechaIngreso, String fechaEntrega) {
+                             String puntoMuestreo, String fechaIngreso, String fechaEntrega,
+                             List<Long> resolucionDestinoIds, List<Long> parametrosIds) {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Muestra no encontrada: " + id));
         if (matrizId != null) {
@@ -197,12 +199,86 @@ public class AnalisisService {
         }
         analisis.setFechaEntrega(fechaEntrega != null && !fechaEntrega.isBlank()
                 ? LocalDate.parse(fechaEntrega) : null);
+
+        if (resolucionDestinoIds != null) {
+            analisis.getResolucionesAplicadas().clear();
+            for (Long destinoId : resolucionDestinoIds) {
+                ResolucionDestinoDE destino = resolucionDestinoRepository.findById(destinoId)
+                        .orElseThrow(() -> new RuntimeException("Destino regulatorio no encontrado: " + destinoId));
+                AnalisisResolucionDestinoDE ard = new AnalisisResolucionDestinoDE();
+                ard.setAnalisis(analisis);
+                ard.setResolucionDestino(destino);
+                analisis.getResolucionesAplicadas().add(ard);
+            }
+        }
+
+        if (parametrosIds != null) {
+            List<Long> destinoIdsParaLimites = resolucionDestinoIds != null ? resolucionDestinoIds :
+                    analisis.getResolucionesAplicadas().stream()
+                            .map(ard -> ard.getResolucionDestino().getId()).toList();
+
+            Map<Long, AnalisisParametroDE> existingByParamId = analisis.getParametros().stream()
+                    .collect(Collectors.toMap(ap -> ap.getParametro().getId(), ap -> ap));
+
+            analisis.getParametros().clear();
+
+            for (Long parametroId : parametrosIds) {
+                ParametroDE parametro = parametroRepository.findById(parametroId)
+                        .orElseThrow(() -> new RuntimeException("Parámetro no encontrado: " + parametroId));
+
+                AnalisisParametroDE ap = new AnalisisParametroDE();
+                ap.setAnalisis(analisis);
+                ap.setParametro(parametro);
+
+                AnalisisParametroDE old = existingByParamId.get(parametroId);
+                if (old != null) {
+                    ap.setValorResultado(old.getValorResultado());
+                    ap.setObservacion(old.getObservacion());
+                }
+
+                List<ResolucionDestinoParametroDE> limitesEncontrados = destinoIdsParaLimites.isEmpty()
+                        ? List.of()
+                        : resolucionDestinoParametroRepository.findByDestinoIdsAndParametroId(destinoIdsParaLimites, parametroId);
+
+                List<AnalisisParametroLimiteDE> limites = new ArrayList<>();
+                for (ResolucionDestinoParametroDE origen : limitesEncontrados) {
+                    AnalisisParametroLimiteDE limite = new AnalisisParametroLimiteDE();
+                    limite.setAnalisisParametro(ap);
+                    limite.setLimiteOrigen(origen);
+                    limite.setLimiteMin(origen.getValorMinimo());
+                    limite.setLimiteMax(origen.getValorMaximo());
+                    limite.setLimiteTexto(origen.getLimiteTexto());
+                    if (old != null && old.getValorResultado() != null && !old.getValorResultado().isBlank()) {
+                        limite.setCumple(evaluarCumple(old.getValorResultado(), limite));
+                    }
+                    limites.add(limite);
+                    if (ap.getMetodologiaUsada() == null) {
+                        ap.setMetodologiaUsada(origen.getMetodologiaEstandar());
+                    }
+                }
+                ap.setLimites(limites);
+                analisis.getParametros().add(ap);
+            }
+        }
+
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
     }
 
     public void deleteEstudio(Long id) {
         analisisRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void cancelarEstudio(Long id, String motivo) {
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Muestra no encontrada: " + id));
+        analisis.setEstado(EstadoMuestraEnum.CANCELADO);
+        if (motivo != null && !motivo.isBlank()) {
+            analisis.setObservaciones(motivo.trim());
+        }
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
     }
 
     @Transactional
@@ -230,16 +306,54 @@ public class AnalisisService {
     private Boolean evaluarCumple(String valorStr, AnalisisParametroLimiteDE limite) {
         if (valorStr == null || valorStr.isBlank()) return null;
         String tipo = limite.getLimiteOrigen().getTipoLimite();
-        if ("TEXTO".equals(tipo)) return null;
+        String limiteTexto = limite.getLimiteOrigen().getLimiteTexto();
+        boolean esAusencia = "AUSENCIA".equals(tipo) ||
+                ("TEXTO".equals(tipo) && "ausente".equalsIgnoreCase(limiteTexto));
+        if (esAusencia) {
+            String v = valorStr.trim().toLowerCase();
+            if (v.equals("ausente")) return true;
+            if (v.equals("presente")) return false;
+            try { Double.parseDouble(valorStr.replace(",", ".")); return false; }
+            catch (NumberFormatException ignored) { return null; }
+        }
+        if ("TEXTO".equals(tipo)) {
+            // Texto con formato "X/Y" se trata como rango
+            String txt = limite.getLimiteOrigen().getLimiteTexto();
+            double[] rango = parsearRangoTexto(txt);
+            if (rango == null) return null;
+            try {
+                double val = Double.parseDouble(valorStr.replace(",", ".").trim());
+                return val >= rango[0] && val <= rango[1];
+            } catch (NumberFormatException e) { return null; }
+        }
         try {
             double valor = Double.parseDouble(valorStr.replace(",", ".").trim());
+            Double sMin = limite.getLimiteMin() != null ? limite.getLimiteMin() : limite.getLimiteOrigen().getValorMinimo();
+            Double sMax = limite.getLimiteMax() != null ? limite.getLimiteMax() : limite.getLimiteOrigen().getValorMaximo();
+            // Fallback: si min/max nulos, intentar parsear limiteTexto como "X/Y"
+            if (sMin == null || sMax == null) {
+                double[] rango = parsearRangoTexto(limite.getLimiteOrigen().getLimiteTexto());
+                if (rango != null) { sMin = rango[0]; sMax = rango[1]; }
+            }
             return switch (tipo) {
-                case "MAX"   -> limite.getLimiteMax() != null && valor <= limite.getLimiteMax();
-                case "MIN"   -> limite.getLimiteMin() != null && valor >= limite.getLimiteMin();
-                case "RANGO" -> limite.getLimiteMin() != null && limite.getLimiteMax() != null
-                                && valor >= limite.getLimiteMin() && valor <= limite.getLimiteMax();
+                case "MAX"   -> sMax != null && valor <= sMax;
+                case "MIN"   -> sMin != null && valor >= sMin;
+                case "RANGO" -> sMin != null && sMax != null && valor >= sMin && valor <= sMax;
                 default      -> null;
             };
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static double[] parsearRangoTexto(String texto) {
+        if (texto == null || !texto.contains("/")) return null;
+        String[] parts = texto.replace(" ", "").split("/");
+        if (parts.length != 2) return null;
+        try {
+            double min = Double.parseDouble(parts[0].replace(",", "."));
+            double max = Double.parseDouble(parts[1].replace(",", "."));
+            return new double[]{min, max};
         } catch (NumberFormatException e) {
             return null;
         }

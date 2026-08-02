@@ -57,6 +57,7 @@ function labelEstado(estado) {
         COMPLETO_SIN_INFORME: "Completo sin informe",
         DEMORADA: "Demorada",
         COMPLETO: "Completo",
+        CANCELADO: "Cancelado",
     };
     return map[normalizarEstado(estado)] || (estado || "-");
 }
@@ -91,6 +92,18 @@ function filtrarTabla(estado, btn) {
 
     if (estado === "todos") {
         filteredMuestras = [...allMuestras];
+    } else if (estado === "CANCELADO") {
+        const canceladas = allEstudios.filter(
+            (m) => normalizarEstado(m.estado) === "CANCELADO"
+        );
+        canceladas.sort((a, b) => {
+            const fa = parseFecha(a.fechaAlta), fb = parseFecha(b.fechaAlta);
+            if (!fa && !fb) return 0;
+            if (!fa) return 1;
+            if (!fb) return -1;
+            return fb - fa;
+        });
+        filteredMuestras = canceladas.slice(0, 20);
     } else {
         filteredMuestras = allMuestras.filter(
             (m) => normalizarEstado(m.estado) === estado,
@@ -101,40 +114,6 @@ function filtrarTabla(estado, btn) {
     renderPage();
 }
 
-// ── Gráfico ──
-let grafico = new Chart(document.getElementById("graficoEstados"), {
-    type: "doughnut",
-    data: {
-        labels: [
-            "Pendiente",
-            "En proceso",
-            "Completo sin informe",
-            "Demorada",
-        ],
-        datasets: [
-            {
-                data: [4, 6, 3, 2],
-                backgroundColor: ["#fff3cd", "#cfe2ff", "#d1e7dd", "#f8d7da"],
-                borderColor: ["#856404", "#0d6efd", "#146c43", "#842029"],
-                borderWidth: 2,
-                hoverOffset: 6,
-            },
-        ],
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "65%",
-        plugins: {
-            legend: {display: false},
-            tooltip: {
-                callbacks: {
-                    label: (ctx) => ` ${ctx.label}: ${ctx.parsed} muestras`,
-                },
-            },
-        },
-    },
-});
 
 // ════════════════════════════════
 //  HELPER AUTENTICADO
@@ -622,6 +601,8 @@ document.addEventListener("keydown", (e) => {
     if (modalMuestra.classList.contains("visible")) cerrarModalMuestra();
     if (modalTarea.classList.contains("visible"))   cerrarModalTarea();
     if (modalStock.classList.contains("visible"))   cerrarModalStock();
+    if (modalAltaInforme && modalAltaInforme.classList.contains("visible"))       cerrarAltaInforme();
+    if (modalCancelarMuestra && modalCancelarMuestra.classList.contains("visible")) cerrarModalCancelar();
 });
 
 // ── Toast ──
@@ -632,71 +613,6 @@ function mostrarToast(msg) {
     setTimeout(() => toast.classList.remove("visible"), 3500);
 }
 
-function generarAlertas() {
-    const alertasBody = document.getElementById("alertasBody");
-    if (!alertasBody) return;
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    const estadosActivos = new Set(["PENDIENTE", "EN_PROCESO", "DEMORADA", "COMPLETO_SIN_INFORME"]);
-
-    // Ordenar activas con fecha por urgencia (más antiguas/próximas primero)
-    const items = allEstudios
-        .filter(m => estadosActivos.has(normalizarEstado(m.estado)))
-        .map(m => ({ ...m, _fecha: parseFecha(m.fecha) }))
-        .filter(m => m._fecha)
-        .sort((a, b) => a._fecha - b._fecha)
-        .reduce((acc, m) => {
-            const dias = Math.ceil((m._fecha - hoy) / 86400000);
-            if (dias > 7) return acc; // solo hasta 7 días adelante
-            let color, etiqueta;
-            if (dias < 0) {
-                color = "rojo";
-                etiqueta = `${Math.abs(dias)}d atrasada`;
-            } else if (dias === 0) {
-                color = "rojo";
-                etiqueta = "Hoy";
-            } else if (dias === 1) {
-                color = "naranja";
-                etiqueta = "Mañana";
-            } else if (dias <= 3) {
-                color = "naranja";
-                etiqueta = `En ${dias} días`;
-            } else {
-                color = "azul";
-                etiqueta = `En ${dias} días`;
-            }
-            acc.push({ color, etiqueta, m });
-            return acc;
-        }, []);
-
-    // Sin fecha de entrega cargada: COMPLETO_SIN_INFORME pendientes de informe
-    allEstudios
-        .filter(m => normalizarEstado(m.estado) === "COMPLETO_SIN_INFORME" && !parseFecha(m.fecha))
-        .slice(0, 2)
-        .forEach(m => items.push({ color: "naranja", etiqueta: "Sin informe", m }));
-
-    if (items.length === 0) {
-        alertasBody.innerHTML = `
-            <div class="alerta-vacio">
-                <i class="bi bi-calendar-check"></i>
-                Sin entregas próximas
-            </div>`;
-        return;
-    }
-
-    alertasBody.innerHTML = items.slice(0, 8).map(({ color, etiqueta, m }) => `
-        <div class="alerta-item">
-            <div class="alerta-dot ${color}"></div>
-            <div class="alerta-texto">
-                <p><strong>${m.codigo}</strong></p>
-                <span>${m.cliente} · ${m.tipo}</span>
-            </div>
-            <span class="alerta-fecha ${color}">${etiqueta}</span>
-        </div>
-    `).join("");
-}
 
 // ════════════════════════════════
 //  VER DETALLE
@@ -719,8 +635,8 @@ async function verDetalle(id) {
 
 function poblarModalDetalle(d) {
     const badge = document.getElementById("detalleEstadoBadge");
-    badge.className = badgeClassParaEstado(d.estado);
-    badge.textContent = labelEstado(d.estado);
+    badge.className = "";
+    badge.innerHTML = badgeHTML(d.estado);
 
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || "—";
     document.getElementById("detalleCliente").textContent = d.cliente || "—";
@@ -794,43 +710,197 @@ async function avanzarEstado(id, estadoActual, btn) {
 }
 
 // ════════════════════════════════
-//  ELIMINAR
+//  CANCELAR MUESTRA
 // ════════════════════════════════
-const modalEliminar = document.getElementById("modalEliminar");
-document.getElementById("modalEliminarClose").addEventListener("click", () => modalEliminar.classList.remove("visible"));
-document.getElementById("btnCancelarEliminar").addEventListener("click", () => modalEliminar.classList.remove("visible"));
-modalEliminar.addEventListener("click", e => { if (e.target === modalEliminar) modalEliminar.classList.remove("visible"); });
+let _cancelarMuestraId = null;
 
-function pedirConfirmacionEliminar(id, codigo) {
-    document.getElementById("modalEliminarMsg").textContent =
-        `¿Estás seguro de que querés eliminar la muestra ${codigo}? Esta acción no se puede deshacer.`;
-    document.getElementById("btnConfirmarEliminar").dataset.id = id;
-    modalEliminar.classList.add("visible");
+const modalCancelarMuestra = document.getElementById("modalCancelarMuestra");
+document.getElementById("modalCancelarClose").addEventListener("click", cerrarModalCancelar);
+document.getElementById("btnCancelarCancelar").addEventListener("click", cerrarModalCancelar);
+modalCancelarMuestra.addEventListener("click", e => { if (e.target === modalCancelarMuestra) cerrarModalCancelar(); });
+
+function abrirModalCancelar(id, codigo) {
+    _cancelarMuestraId = id;
+    document.getElementById("modalCancelarMsg").textContent =
+        `¿Cancelar la muestra ${codigo}? El registro se conserva con estado Cancelado.`;
+    document.getElementById("inputMotivoCancelacionM").value = "";
+    modalCancelarMuestra.classList.add("visible");
+    setTimeout(() => document.getElementById("inputMotivoCancelacionM").focus(), 100);
 }
 
-document.getElementById("btnConfirmarEliminar").addEventListener("click", async function () {
-    const id = this.dataset.id;
-    const token = localStorage.getItem("token");
+function cerrarModalCancelar() {
+    modalCancelarMuestra.classList.remove("visible");
+    _cancelarMuestraId = null;
+}
+
+document.getElementById("btnConfirmarCancelar").addEventListener("click", async function () {
+    const id = _cancelarMuestraId;
+    if (!id) return;
+    const motivo = document.getElementById("inputMotivoCancelacionM").value.trim();
     this.disabled = true;
-    this.innerHTML = `<i class="bi bi-hourglass-split"></i> Eliminando...`;
+    this.innerHTML = `<i class="bi bi-hourglass-split"></i> Cancelando...`;
 
     try {
-        const resp = await fetch(`${API_BASE}/api/estudios/${id}`, {
-            method: "DELETE",
+        const resp = await fetchDash(`${API_BASE}/api/estudios/${id}/cancelar`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ motivo }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        cerrarModalCancelar();
+        mostrarToast("Muestra cancelada correctamente");
+        await cargarEstudios();
+    } catch (err) {
+        console.error("Error cancelando muestra:", err);
+        mostrarToast("Error al cancelar la muestra");
+    } finally {
+        this.disabled = false;
+        this.innerHTML = `<i class="bi bi-x-circle"></i> Confirmar cancelación`;
+    }
+});
+
+// ════════════════════════════════
+//  ARCHIVOS DE MUESTRA
+// ════════════════════════════════
+let altaInformeAnalisisId = null;
+
+const modalAltaInforme = document.getElementById("modalAltaInforme");
+document.getElementById("altaInformeClose").addEventListener("click", cerrarAltaInforme);
+document.getElementById("altaInformeCancelar").addEventListener("click", cerrarAltaInforme);
+modalAltaInforme.addEventListener("click", e => { if (e.target === modalAltaInforme) cerrarAltaInforme(); });
+document.getElementById("btnUploadAltaInforme").addEventListener("click", onUploadAltaInforme);
+
+function abrirAltaInforme(id, protocolo) {
+    altaInformeAnalisisId = id;
+    document.getElementById("altaInformeTitulo").textContent = `Archivos — ${protocolo || id}`;
+    document.getElementById("inputAltaInformePdf").value = "";
+    const errEl = document.getElementById("altaInformeError");
+    if (errEl) { errEl.textContent = ""; errEl.style.display = "none"; }
+    modalAltaInforme.classList.add("visible");
+    cargarListaArchivos(id);
+}
+
+function cerrarAltaInforme() {
+    modalAltaInforme.classList.remove("visible");
+    altaInformeAnalisisId = null;
+}
+
+async function cargarListaArchivos(analisisId) {
+    const contenedor = document.getElementById("listaArchivos");
+    if (!contenedor) return;
+    contenedor.innerHTML = `<span style="font-size:13px;color:#888;">Cargando...</span>`;
+    try {
+        const r = await fetchDash(`${API_BASE}/api/estudios/${analisisId}/archivos`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const docs = await r.json();
+        if (!docs || docs.length === 0) {
+            contenedor.innerHTML = `<span class="text-muted" style="font-size:13px;">Sin archivos todavía.</span>`;
+            return;
+        }
+        contenedor.innerHTML = docs.map(d => `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:6px;">
+                <i class="bi bi-file-earmark-pdf" style="color:#ef4444;font-size:16px;flex-shrink:0;"></i>
+                <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.nombre || d.id}</span>
+                <button class="btn-accion" onclick="descargarArchivoModal(${analisisId},'${d.id}')" title="Descargar" style="width:28px;height:28px;"><i class="bi bi-download"></i></button>
+                <button class="btn-accion btn-accion-rojo" onclick="eliminarArchivoModal(${analisisId},'${d.id}')" title="Eliminar" style="width:28px;height:28px;"><i class="bi bi-trash"></i></button>
+            </div>`).join("");
+    } catch (err) {
+        contenedor.innerHTML = `<span style="font-size:13px;color:#ef4444;">Error al cargar archivos.</span>`;
+        console.error("Error cargando archivos:", err);
+    }
+}
+
+window.descargarArchivoModal = function(analisisId, docId) {
+    const token = localStorage.getItem("token");
+    fetch(`${API_BASE}/api/estudios/${analisisId}/archivos/${docId}`, {
+        headers: token ? { Authorization: "Bearer " + token } : {},
+    }).then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.blob();
+    }).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `documento_${docId}.pdf`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }).catch(err => {
+        console.error("Error descargando archivo:", err);
+        mostrarToast("Error al descargar el archivo.");
+    });
+};
+
+window.eliminarArchivoModal = async function(analisisId, docId) {
+    try {
+        const r = await fetchDash(`${API_BASE}/api/estudios/${analisisId}/archivos/${docId}`, { method: "DELETE" });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        mostrarToast("Archivo eliminado");
+        await cargarListaArchivos(analisisId);
+        await cargarEstudios();
+    } catch (err) {
+        console.error("Error eliminando archivo:", err);
+        mostrarToast("Error al eliminar el archivo.");
+    }
+};
+
+async function onUploadAltaInforme() {
+    const input = document.getElementById("inputAltaInformePdf");
+    const errEl = document.getElementById("altaInformeError");
+    const btn = document.getElementById("btnUploadAltaInforme");
+    if (!input.files || !input.files[0]) {
+        errEl.textContent = "Seleccioná un archivo PDF.";
+        errEl.style.display = "block";
+        return;
+    }
+    errEl.style.display = "none";
+    btn.disabled = true;
+    btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Subiendo...`;
+    try {
+        const fd = new FormData();
+        fd.append("file", input.files[0], input.files[0].name);
+        const token = localStorage.getItem("token");
+        const resp = await fetch(`${API_BASE}/api/estudios/${altaInformeAnalisisId}/documento`, {
+            method: "POST",
+            headers: token ? { Authorization: "Bearer " + token } : {},
+            body: fd,
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        mostrarToast("Archivo subido correctamente");
+        input.value = "";
+        await cargarListaArchivos(altaInformeAnalisisId);
+        await cargarEstudios();
+    } catch (err) {
+        console.error("Error subiendo archivo:", err);
+        errEl.textContent = "Error al subir el archivo.";
+        errEl.style.display = "block";
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-upload me-1"></i> Subir archivo`;
+    }
+}
+
+// ════════════════════════════════
+//  GENERAR INFORME PDF
+// ════════════════════════════════
+async function generarInformeDesdeDash(id) {
+    mostrarToast("Generando informe...");
+    try {
+        const token = localStorage.getItem("token");
+        const resp = await fetch(`${API_BASE}/api/estudios/${id}/generar-informe`, {
+            method: "POST",
             headers: token ? { Authorization: "Bearer " + token } : {},
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        modalEliminar.classList.remove("visible");
-        mostrarToast("Muestra eliminada correctamente");
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `informe_${id}.pdf`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        mostrarToast("Informe generado correctamente");
         await cargarEstudios();
     } catch (err) {
-        console.error("Error eliminando muestra:", err);
-        mostrarToast("Error al eliminar la muestra");
-    } finally {
-        this.disabled = false;
-        this.innerHTML = `<i class="bi bi-trash3"></i> Eliminar`;
+        console.error("Error generando informe:", err);
+        mostrarToast("Error al generar el informe.");
     }
-});
+}
 
 async function cargarEstudios() {
     const tablaBody = document.getElementById("tablaMuestrasBody");
@@ -862,36 +932,34 @@ async function cargarEstudios() {
     }
 }
 
-function badgeClassParaEstado(estado) {
-    if (!estado) return "badge-estado badge-pendiente";
-    const e = normalizarEstado(estado);
-    switch (e) {
-        case "DEMORADA":
-            return "badge-estado badge-demorada";
-        case "EN_PROCESO":
-            return "badge-estado badge-proceso";
-        case "COMPLETO_SIN_INFORME":
-            return "badge-estado badge-completo-sin-informe";
-        case "PENDIENTE":
-            return "badge-estado badge-pendiente";
-        default:
-            return "badge-estado";
-    }
+function badgeHTML(estado) {
+    const e = normalizarEstado(estado || "");
+    const classMap = {
+        PENDIENTE:            "badge-pendiente",
+        EN_PROCESO:           "badge-proceso",
+        COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
+        DEMORADA:             "badge-demorada",
+        COMPLETO:             "badge-informe",
+        CANCELADO:            "badge-cancelado",
+    };
+    const cls = classMap[e] || "";
+    const lbl = labelEstado(e);
+    return `<span class="badge-estado ${cls}"><span class="badge-dot"></span>${lbl}</span>`;
 }
 
 function mostrarMuestras(estudios) {
     const mapped = Array.isArray(estudios)
         ? estudios.map((est) => ({
             id: est.id || est._id || est.codigo || est.protocolo || null,
-            codigo: est.protocolo || est.codigo || est.id || "-",
+            codigo: est.nroProtocolo || est.protocolo || est.codigo || est.id || "-",
             cliente: est.cliente || est.clienteNombre || est.customer || "-",
             tipo: est.tipo || est.tipoAnalisis || est.tipo_de_analisis || "-",
             estado: est.estado || est.status || "-",
             tieneInforme: (est.estado || est.status || "").toString().toUpperCase() === "COMPLETO",
             fechaAlta: formatearFechaDMY(
-                est.fechaAlta || est.fecha_alta || est.fechaCreacion ||
-                est.fecha_creacion || est.createdDate || est.createdAt ||
-                est.fechaDeAlta || "-",
+                est.fechaIngreso || est.fechaAlta || est.fecha_alta ||
+                est.fechaCreacion || est.fecha_creacion || est.createdDate ||
+                est.createdAt || est.fechaDeAlta || "-",
             ),
             fecha: est.fechaEntrega || est.fecha_entrega || est.deliveryDate || est.fecha || "-",
         }))
@@ -923,47 +991,173 @@ function mostrarMuestras(estudios) {
     filteredMuestras = [...allMuestras];
     currentPage = 1;
     actualizarKPIs();
-    generarAlertas();
     renderPage();
 }
 
 function actualizarKPIs() {
-    const pendientes        = allEstudios.filter(m => normalizarEstado(m.estado) === "PENDIENTE").length;
-    const enProceso         = allEstudios.filter(m => normalizarEstado(m.estado) === "EN_PROCESO").length;
-    const demoradas         = allEstudios.filter(m => normalizarEstado(m.estado) === "DEMORADA").length;
-    const completoSinInforme= allEstudios.filter(m => normalizarEstado(m.estado) === "COMPLETO_SIN_INFORME").length;
-    const activas           = pendientes + enProceso + demoradas + completoSinInforme;
+    const pendientes         = allEstudios.filter(m => normalizarEstado(m.estado) === "PENDIENTE").length;
+    const enProceso          = allEstudios.filter(m => normalizarEstado(m.estado) === "EN_PROCESO").length;
+    const demoradas          = allEstudios.filter(m => normalizarEstado(m.estado) === "DEMORADA").length;
+    const completoSinInforme = allEstudios.filter(m => normalizarEstado(m.estado) === "COMPLETO_SIN_INFORME").length;
+    const activas            = pendientes + enProceso + demoradas + completoSinInforme;
 
-    const hoy     = new Date();
-    const en7dias = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const vencenProximo = allEstudios.filter(m => {
-        if (normalizarEstado(m.estado) === "COMPLETO") return false;
-        const f = parseFecha(m.fecha);
-        return f && f >= hoy && f <= en7dias;
-    }).length;
+    const elActivas    = document.getElementById("hub-activas");
+    const elDemoradas  = document.getElementById("hub-demoradas");
+    const elSinInforme = document.getElementById("hub-sin-informe");
 
-    const elMuestras    = document.getElementById("kpi-muestras-activas");
-    const elMuestrasSub = document.getElementById("kpi-muestras-sub");
-    const elDemoradas   = document.getElementById("kpi-demoradas");
-    const elDemoradasSub= document.getElementById("kpi-demoradas-sub");
+    if (elActivas)    elActivas.textContent = activas;
+    if (elDemoradas)  elDemoradas.textContent = demoradas;
+    if (elSinInforme) elSinInforme.textContent = completoSinInforme;
 
-    if (elMuestras) elMuestras.textContent = activas;
-    if (elMuestrasSub) {
-        elMuestrasSub.innerHTML = vencenProximo > 0
-            ? `<i class="bi bi-clock"></i> ${vencenProximo} vencen esta semana`
-            : `<i class="bi bi-check2"></i> Sin vencimientos próximos`;
+    renderHubMuestras();
+    renderGraficoMes();
+}
+
+let _graficoOffset = 0; // 0 = mes actual, -1 = mes anterior, etc.
+
+function renderGraficoMes() {
+    const ahora = new Date();
+    const target = new Date(ahora.getFullYear(), ahora.getMonth() + _graficoOffset, 1);
+    const mes  = target.getMonth();
+    const anio = target.getFullYear();
+
+    const delMes = allEstudios.filter(m => {
+        const f = parseFecha(m.fechaAlta);
+        return f && f.getMonth() === mes && f.getFullYear() === anio;
+    });
+
+    const grupos = { "Pendientes": 0, "En proceso": 0, "OK": 0, "Canceladas": 0 };
+    delMes.forEach(m => {
+        const est = normalizarEstado(m.estado);
+        if      (est === "PENDIENTE")                                                          grupos["Pendientes"]++;
+        else if (est === "EN_PROCESO" || est === "DEMORADA" || est === "COMPLETO_SIN_INFORME") grupos["En proceso"]++;
+        else if (est === "COMPLETO")                                                            grupos["OK"]++;
+        else                                                                                    grupos["Canceladas"]++;
+    });
+
+    const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    const elLabel = document.getElementById("graficoMesLabel");
+    if (elLabel) elLabel.textContent = `${MESES[mes]} ${anio}`;
+
+    const elTotal = document.getElementById("graficoTotal");
+    if (elTotal) elTotal.textContent = delMes.length;
+
+    // deshabilitar "siguiente" cuando ya estamos en el mes actual
+    const btnSig = document.getElementById("btnGraficoSiguiente");
+    if (btnSig) btnSig.disabled = _graficoOffset >= 0;
+
+    const canvas = document.getElementById("graficoEstados");
+    if (!canvas) return;
+
+    const labels = Object.keys(grupos);
+    const data   = Object.values(grupos);
+    const colors = ["#f59e0b", "#3b82f6", "#5EA504", "#9ca3af"];
+
+    if (window._graficoMes) {
+        window._graficoMes.data.datasets[0].data = data;
+        window._graficoMes.update();
+        return;
     }
-    if (elDemoradas) elDemoradas.textContent = demoradas;
-    if (elDemoradasSub) {
-        elDemoradasSub.innerHTML = demoradas > 0
-            ? `<i class="bi bi-arrow-right"></i> <a href="muestras.html">Ver muestras</a>`
-            : `<i class="bi bi-check2"></i> Sin demoradas`;
+
+    window._graficoMes = new Chart(canvas, {
+        type: "doughnut",
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "68%",
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        boxWidth: 10,
+                        padding: 10,
+                        font: { size: 11 },
+                        color: getComputedStyle(document.documentElement)
+                            .getPropertyValue("--text-main").trim() || "#1a1a2e",
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.parsed}`,
+                    }
+                }
+            }
+        }
+    });
+}
+
+document.getElementById("btnGraficoAnterior")?.addEventListener("click", () => {
+    _graficoOffset--;
+    renderGraficoMes();
+});
+document.getElementById("btnGraficoSiguiente")?.addEventListener("click", () => {
+    if (_graficoOffset >= 0) return;
+    _graficoOffset++;
+    renderGraficoMes();
+});
+
+function renderHubMuestras() {
+    const body = document.getElementById("hubMuestrasBody");
+    if (!body) return;
+
+    const estadosActivos = new Set(["PENDIENTE", "EN_PROCESO", "DEMORADA", "COMPLETO_SIN_INFORME"]);
+    const activas = allEstudios.filter(m => estadosActivos.has(normalizarEstado(m.estado)));
+
+    if (activas.length === 0) {
+        body.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-check2-circle"></i> Sin muestras activas</div>`;
+        return;
     }
 
-    if (grafico) {
-        grafico.data.datasets[0].data = [pendientes, enProceso, completoSinInforme, demoradas];
-        grafico.update();
-    }
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const sorted = [...activas].sort((a, b) => {
+        const aDem = normalizarEstado(a.estado) === "DEMORADA";
+        const bDem = normalizarEstado(b.estado) === "DEMORADA";
+        if (aDem && !bDem) return -1;
+        if (!aDem && bDem) return 1;
+        const fa = parseFecha(a.fecha), fb = parseFecha(b.fecha);
+        if (fa && fb) return fa - fb;
+        if (fa) return -1;
+        if (fb) return 1;
+        return 0;
+    });
+
+    body.innerHTML = sorted.slice(0, 3).map(m => {
+        const estado = normalizarEstado(m.estado);
+        let dotClass = "azul", badgeClass = "proc", badgeText = "En proceso";
+
+        if (estado === "DEMORADA") {
+            dotClass = "rojo"; badgeClass = "demo"; badgeText = "Demorada";
+        } else if (estado === "PENDIENTE") {
+            dotClass = "naranja";
+            const f = parseFecha(m.fecha);
+            if (f) {
+                const dias = Math.ceil((f - hoy) / 86400000);
+                if (dias < 0)      { badgeClass = "demo"; badgeText = `${Math.abs(dias)}d atrasada`; }
+                else if (dias === 0){ badgeClass = "hoy";  badgeText = "Hoy"; }
+                else if (dias === 1){ badgeClass = "pend"; badgeText = "Mañana"; }
+                else               { badgeClass = "pend"; badgeText = `${dias}d`; }
+            } else { badgeClass = "pend"; badgeText = "Pendiente"; }
+        } else if (estado === "COMPLETO_SIN_INFORME") {
+            dotClass = "gris"; badgeClass = "sin"; badgeText = "Sin informe";
+        }
+
+        return `<div class="mod-mini-row">
+            <span class="mod-mini-dot ${dotClass}"></span>
+            <span class="mod-mini-name">${m.cliente}</span>
+            <span class="mod-mini-badge ${badgeClass}">${badgeText}</span>
+        </div>`;
+    }).join("");
 }
 
 async function cargarTareasKPI() {
@@ -971,17 +1165,43 @@ async function cargarTareasKPI() {
         const r = await fetchDash(`${API_BASE}/api/task`);
         if (!r.ok) return;
         const tareas = await r.json();
+
         const todo       = tareas.filter(t => t.status === "TODO").length;
         const enProgreso = tareas.filter(t => t.status === "IN_PROGRESS").length;
+        const enRevision = tareas.filter(t => t.status === "EN_REVISION").length;
 
-        const el    = document.getElementById("kpi-tareas");
-        const elSub = document.getElementById("kpi-tareas-sub");
-        if (el) el.textContent = todo;
-        if (elSub) {
-            elSub.innerHTML = enProgreso > 0
-                ? `<i class="bi bi-arrow-right-circle"></i> ${enProgreso} en progreso`
-                : `<i class="bi bi-check2"></i> Ninguna en progreso`;
+        const elTodo     = document.getElementById("hub-tareas-todo");
+        const elProgreso = document.getElementById("hub-tareas-progreso");
+        const elRevision = document.getElementById("hub-tareas-revision");
+        if (elTodo)     elTodo.textContent = todo;
+        if (elProgreso) elProgreso.textContent = enProgreso;
+        if (elRevision) elRevision.textContent = enRevision;
+
+        const body = document.getElementById("hubTareasBody");
+        if (!body) return;
+
+        const activas = tareas.filter(t => t.status !== "DONE" && t.status !== "COMPLETO");
+        const sorted  = [...activas].sort((a, b) => {
+            const order = { "IN_PROGRESS": 0, "EN_REVISION": 1, "TODO": 2 };
+            return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+        });
+
+        if (sorted.length === 0) {
+            body.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-check2-circle"></i> Sin tareas pendientes</div>`;
+            return;
         }
+
+        body.innerHTML = sorted.slice(0, 3).map(t => {
+            let dotClass = "violeta", badgeClass = "pend", badgeText = "Pendiente";
+            if (t.status === "IN_PROGRESS") { dotClass = "azul";    badgeClass = "proc"; badgeText = "En progreso"; }
+            if (t.status === "EN_REVISION") { dotClass = "naranja"; badgeClass = "pend"; badgeText = "En revisión"; }
+            const titulo = t.title || t.titulo || "—";
+            return `<div class="mod-mini-row">
+                <span class="mod-mini-dot ${dotClass}"></span>
+                <span class="mod-mini-name">${titulo}</span>
+                <span class="mod-mini-badge ${badgeClass}">${badgeText}</span>
+            </div>`;
+        }).join("");
     } catch { /* no bloquea el dashboard */ }
 }
 
@@ -990,16 +1210,35 @@ async function cargarStockKPI() {
         const r = await fetchDash(`${API_BASE}/api/stock`);
         if (!r.ok) return;
         const items = await r.json();
-        const bajos = items.filter(i => i.nivel === "BAJO").length;
 
-        const el    = document.getElementById("kpi-stock");
-        const elSub = document.getElementById("kpi-stock-sub");
-        if (el) el.textContent = bajos;
-        if (elSub) {
-            elSub.innerHTML = bajos > 0
-                ? `<i class="bi bi-exclamation-triangle"></i> ${bajos} items con nivel bajo`
-                : `<i class="bi bi-check2"></i> Stock sin alertas`;
+        const bajos  = items.filter(i => i.nivel === "BAJO");
+        const medios = items.filter(i => i.nivel === "MEDIO");
+        const altos  = items.filter(i => i.nivel === "ALTO");
+
+        const elCritico = document.getElementById("hub-stock-critico");
+        const elBajo    = document.getElementById("hub-stock-bajo");
+        const elOk      = document.getElementById("hub-stock-ok");
+        if (elCritico) elCritico.textContent = bajos.length;
+        if (elBajo)    elBajo.textContent    = medios.length;
+        if (elOk)      elOk.textContent      = altos.length;
+
+        const body = document.getElementById("hubStockBody");
+        if (!body) return;
+
+        const alertas = [...bajos, ...medios].slice(0, 3);
+        if (alertas.length === 0) {
+            body.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-check2-circle"></i> Stock sin alertas</div>`;
+            return;
         }
+
+        body.innerHTML = alertas.map(item => {
+            const isBajo = item.nivel === "BAJO";
+            return `<div class="mod-mini-row">
+                <span class="mod-mini-dot ${isBajo ? "rojo" : "naranja"}"></span>
+                <span class="mod-mini-name">${item.nombre}</span>
+                <span class="mod-mini-badge ${isBajo ? "demo" : "pend"}">${isBajo ? "Crítico" : "Bajo"}</span>
+            </div>`;
+        }).join("");
     } catch { /* no bloquea el dashboard */ }
 }
 
@@ -1021,7 +1260,6 @@ function renderPage() {
         tablaBody.innerHTML = `<tr><td colspan="7" class="text-center">No hay muestras disponibles</td></tr>`;
     } else {
         filteredMuestras.slice(start, end).forEach((m) => {
-            const badgeClass = badgeClassParaEstado(m.estado);
             const acciones = [];
             const estadoNorm = normalizarEstado(m.estado);
 
@@ -1042,22 +1280,30 @@ function renderPage() {
             }
 
             acciones.push(
-                `<button class="btn-accion btn-subir" data-id="${m.id}" title="Subir informe"><i class="bi bi-upload"></i></button>`,
+                `<button class="btn-accion btn-accion-gris btn-archivos" data-id="${m.id}" data-codigo="${m.codigo}" title="Archivos"><i class="bi bi-paperclip"></i></button>`,
             );
 
-            acciones.push(
-                `<button class="btn-accion btn-eliminar" data-id="${m.id}" data-codigo="${m.codigo}" title="Eliminar"><i class="bi bi-trash3"></i></button>`,
-            );
+            if (estadoNorm === "COMPLETO_SIN_INFORME") {
+                acciones.push(
+                    `<button class="btn-accion btn-accion-verde btn-pdf" data-id="${m.id}" title="Generar informe PDF"><i class="bi bi-file-earmark-pdf"></i></button>`,
+                );
+            }
+
+            if (estadoNorm !== "CANCELADO") {
+                acciones.push(
+                    `<button class="btn-accion btn-accion-rojo btn-eliminar" data-id="${m.id}" data-codigo="${m.codigo}" title="Cancelar muestra"><i class="bi bi-x-circle"></i></button>`,
+                );
+            }
 
             const row = `
                     <tr data-estado="${(m.estado || "").toString().toUpperCase()}" data-id="${m.id}">
-                        <td><span class="cod-badge">${m.codigo}</span></td>
+                        <td><strong>${m.codigo}</strong></td>
                         <td>${m.cliente}</td>
                         <td>${m.tipo}</td>
-                        <td><span class="${badgeClass}">${labelEstado(m.estado)}</span></td>
+                        <td>${badgeHTML(m.estado)}</td>
                         <td>${m.fechaAlta || "-"}</td>
                         <td>${m.fecha}</td>
-                        <td>${acciones.join(" ")}</td>
+                        <td class="acciones-celda">${acciones.join(" ")}</td>
                     </tr>`;
 
             tablaBody.innerHTML += row;
@@ -1108,45 +1354,6 @@ function renderPage() {
         }
     });
     pagControls.appendChild(next);
-}
-
-// ── Upload de PDF (file input global y handlers) ──
-// Creamos un input file oculto que reutilizaremos
-const globalFileInput = document.createElement("input");
-globalFileInput.type = "file";
-globalFileInput.accept = "application/pdf";
-globalFileInput.style.display = "none";
-document.body.appendChild(globalFileInput);
-
-// Cuando el usuario seleccione un archivo, iniciamos el upload
-globalFileInput.addEventListener("change", async function (e) {
-    const file = this.files && this.files[0];
-    const targetId = this.dataset.targetId;
-    const triggerBtnSelector = this.dataset.triggerBtnSelector;
-    let triggerBtn = null;
-    if (triggerBtnSelector)
-        triggerBtn = document.querySelector(triggerBtnSelector);
-    if (!file || !targetId) return;
-    try {
-        await subirDocumento(targetId, file, triggerBtn);
-    } finally {
-        // limpiar el input para permitir seleccionar el mismo archivo otra vez
-        this.value = "";
-        delete this.dataset.targetId;
-        delete this.dataset.triggerBtnSelector;
-    }
-});
-
-// Función que dispara el file picker para un id dado
-function startUploadForId(id, triggerBtn) {
-    globalFileInput.dataset.targetId = id;
-    if (triggerBtn && triggerBtn instanceof Element) {
-        const attr =
-            "data-upload-trigger-" + Math.random().toString(36).slice(2, 9);
-        triggerBtn.setAttribute(attr, "1");
-        globalFileInput.dataset.triggerBtnSelector = "[" + attr + "]";
-    }
-    globalFileInput.click();
 }
 
 // Subir documento usando fetch + FormData
@@ -1252,10 +1459,10 @@ document.addEventListener("click", function (e) {
     }
 
     const btnEliminar = e.target.closest(".btn-eliminar");
-    if (btnEliminar) {
+    if (btnEliminar && btnEliminar.closest("#tablaMuestrasBody")) {
         const id = btnEliminar.getAttribute("data-id");
         const codigo = btnEliminar.getAttribute("data-codigo");
-        if (id) pedirConfirmacionEliminar(id, codigo);
+        if (id) abrirModalCancelar(id, codigo);
         return;
     }
 
@@ -1266,10 +1473,19 @@ document.addEventListener("click", function (e) {
         return;
     }
 
-    const btnSubir = e.target.closest(".btn-subir");
-    if (btnSubir) {
-        const id = btnSubir.getAttribute("data-id");
-        if (id) startUploadForId(id, btnSubir);
+    const btnArchivos = e.target.closest(".btn-archivos");
+    if (btnArchivos) {
+        const id = btnArchivos.getAttribute("data-id");
+        const codigo = btnArchivos.getAttribute("data-codigo");
+        if (id) abrirAltaInforme(id, codigo);
+        return;
+    }
+
+    const btnPdf = e.target.closest(".btn-pdf");
+    if (btnPdf) {
+        const id = btnPdf.getAttribute("data-id");
+        if (id) generarInformeDesdeDash(id);
+        return;
     }
 });
 
@@ -1278,18 +1494,66 @@ async function cargarMustreosKPI() {
         const r = await fetchDash(`${API_BASE}/api/muestreos`);
         if (!r.ok) return;
         const muestreos = await r.json();
-        const pendientes  = muestreos.filter(m => m.estado === "PENDIENTE").length;
-        const confirmados = muestreos.filter(m => m.estado === "CONFIRMADO").length;
-        const total = pendientes + confirmados;
 
-        const el    = document.getElementById("kpi-muestreos");
-        const elSub = document.getElementById("kpi-muestreos-sub");
-        if (el) el.textContent = total;
-        if (elSub) {
-            elSub.innerHTML = confirmados > 0
-                ? `<i class="bi bi-check2-circle"></i> ${confirmados} confirmados`
-                : `<i class="bi bi-calendar-plus"></i> Ninguno confirmado aún`;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const finSemana = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        const pendientes = muestreos.filter(m => m.estado === "PENDIENTE" || m.estado === "CONFIRMADO");
+
+        function getFecha(m) {
+            return parseFecha(m.fecha || m.fechaProgramada || m.fechaMuestreo || m.fechaInicio);
         }
+
+        const estaSemana = pendientes.filter(m => {
+            const f = getFecha(m);
+            return f && f >= hoy && f <= finSemana;
+        });
+        const deHoy = pendientes.filter(m => {
+            const f = getFecha(m);
+            return f && f.toDateString() === hoy.toDateString();
+        });
+
+        const elSemana = document.getElementById("hub-muestreos-semana");
+        const elHoy    = document.getElementById("hub-muestreos-hoy");
+        const elTotal  = document.getElementById("hub-muestreos-total");
+        if (elSemana) elSemana.textContent = estaSemana.length;
+        if (elHoy)    elHoy.textContent    = deHoy.length;
+        if (elTotal)  elTotal.textContent  = pendientes.length;
+
+        const body = document.getElementById("hubMustreosBody");
+        if (!body) return;
+
+        if (pendientes.length === 0) {
+            body.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-calendar-check"></i> Sin muestreos próximos</div>`;
+            return;
+        }
+
+        const sorted = [...pendientes].sort((a, b) => {
+            const fa = getFecha(a), fb = getFecha(b);
+            if (!fa && !fb) return 0;
+            if (!fa) return 1;
+            if (!fb) return -1;
+            return fa - fb;
+        });
+
+        body.innerHTML = sorted.slice(0, 3).map(m => {
+            const f = getFecha(m);
+            let dotClass = "azul", badgeClass = "hoy", badgeText = "—";
+            if (f) {
+                const dias = Math.ceil((f - hoy) / 86400000);
+                if (dias === 0)       { dotClass = "azul";    badgeClass = "hoy";  badgeText = "Hoy"; }
+                else if (dias === 1)  { dotClass = "naranja"; badgeClass = "pend"; badgeText = "Mañana"; }
+                else if (dias > 1)   { dotClass = "verde";   badgeClass = "ok";   badgeText = formatearFechaDMY(f); }
+                else                  { dotClass = "rojo";    badgeClass = "demo"; badgeText = "Vencido"; }
+            }
+            const cliente = m.cliente || m.clienteNombre || m.nombreCliente || "—";
+            return `<div class="mod-mini-row">
+                <span class="mod-mini-dot ${dotClass}"></span>
+                <span class="mod-mini-name">${cliente}</span>
+                <span class="mod-mini-badge ${badgeClass}">${badgeText}</span>
+            </div>`;
+        }).join("");
     } catch { /* no bloquea el dashboard */ }
 }
 
@@ -1299,91 +1563,3 @@ cargarTareasKPI();
 cargarStockKPI();
 cargarMustreosKPI();
 
-// ════════════════════════════════
-//  PANEL VISIBILITY MANAGER
-// ════════════════════════════════
-const DP_KEY = "chemiconsult_hidden_panels";
-
-const DP_META = {
-    // paneles
-    alertas:       { type: "panel", icon: "bi-calendar-check",  label: "Próximas entregas" },
-    acciones:      { type: "panel", icon: "bi-lightning-charge", label: "Acciones rápidas" },
-    grafico:       { type: "panel", icon: "bi-pie-chart",        label: "Distribución" },
-    // KPI cards
-    muestras:      { type: "kpi",   icon: "bi-flask",            label: "Muestras activas" },
-    tareas:        { type: "kpi",   icon: "bi-list-check",       label: "Tareas pendientes" },
-    stock:         { type: "kpi",   icon: "bi-box-seam",         label: "Stock bajo" },
-    demoradas:     { type: "kpi",   icon: "bi-clock-history",    label: "Demoradas" },
-    muestreos:     { type: "kpi",   icon: "bi-calendar-check",   label: "Muestreos pendientes" },
-};
-
-function dpLoad() {
-    try { return JSON.parse(localStorage.getItem(DP_KEY) || "[]"); }
-    catch { return []; }
-}
-
-function dpSave(hidden) {
-    localStorage.setItem(DP_KEY, JSON.stringify(hidden));
-}
-
-function dpRender() {
-    const hidden = dpLoad();
-    const bar = document.getElementById("dpRestoreBar");
-    if (!bar) return;
-
-    Object.keys(DP_META).forEach(id => {
-        const meta = DP_META[id];
-        const sel = meta.type === "kpi"
-            ? `.kpi-card[data-kpi="${id}"]`
-            : `[data-panel="${id}"]`;
-        const el = document.querySelector(sel);
-        if (el) el.classList.toggle("dp-hidden", hidden.includes(id));
-    });
-
-    if (hidden.length === 0) {
-        bar.style.display = "none";
-        bar.innerHTML = "";
-        return;
-    }
-
-    bar.style.display = "flex";
-    bar.innerHTML =
-        `<span class="dp-restore-bar-label">Ocultos:</span>` +
-        hidden.map(id => {
-            const m = DP_META[id];
-            if (!m) return "";
-            return `<button class="dp-restore-chip" data-restore="${id}">
-                        <i class="bi ${m.icon}"></i>${m.label}
-                        <i class="bi bi-eye" style="font-size:11px;opacity:.7"></i>
-                    </button>`;
-        }).join("");
-
-    bar.querySelectorAll("[data-restore]").forEach(btn =>
-        btn.addEventListener("click", () => {
-            dpSave(dpLoad().filter(id => id !== btn.dataset.restore));
-            dpRender();
-        })
-    );
-}
-
-document.querySelectorAll(".dp-toggle").forEach(btn =>
-    btn.addEventListener("click", () => {
-        const id = btn.dataset.panel;
-        const hidden = dpLoad();
-        if (!hidden.includes(id)) hidden.push(id);
-        dpSave(hidden);
-        dpRender();
-    })
-);
-
-document.querySelectorAll(".dp-kpi-close").forEach(btn =>
-    btn.addEventListener("click", () => {
-        const id = btn.dataset.kpi;
-        const hidden = dpLoad();
-        if (!hidden.includes(id)) hidden.push(id);
-        dpSave(hidden);
-        dpRender();
-    })
-);
-
-dpRender();

@@ -15,6 +15,26 @@
 }
 
 
+/* ── Ordenamiento de columnas ── */
+.th-sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.th-sortable:hover { color: var(--verde-oscuro, #1a6b3a); }
+
+.sort-icon {
+    font-size: 10px;
+    opacity: 0.4;
+    margin-left: 4px;
+    vertical-align: middle;
+    transition: opacity 0.15s;
+}
+
+.th-sortable:hover .sort-icon { opacity: 0.8; }
+.sort-icon.sort-activo { opacity: 1; color: var(--verde); }
+
 /* ── Fila central ── */
 .main-row {
     display: grid;
@@ -89,206 +109,6 @@
     border-color: var(--verde);
 }
 
-/* ── Tabla ── */
-.tabla-muestras {
-    width: 100%;
-    font-size: 13px;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.tabla-muestras thead th {
-    background: var(--bg-surface);
-    color: var(--verde);
-    font-weight: 600;
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 11.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    border-bottom: 2px solid var(--verde);
-}
-
-.tabla-muestras tbody tr {
-    transition: background 0.13s;
-}
-
-.tabla-muestras tbody tr:nth-child(even) td {
-    background: var(--verde-suave);
-}
-
-.tabla-muestras tbody tr:hover td {
-    background: var(--verde-suave-hover);
-}
-
-.tabla-muestras tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.tabla-muestras td {
-    padding: 10px 12px;
-    vertical-align: middle;
-    border-bottom: 1px solid #edf2e8;
-}
-
-.tabla-muestras .btn-light {
-    background: var(--bg-surface);
-    border: 1px solid #daeacd;
-    color: var(--verde);
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 7px;
-    transition: all 0.2s;
-    font-size: 13px;
-}
-
-.tabla-muestras .btn-light:hover {
-    background: var(--verde);
-    border-color: var(--verde);
-    color: white;
-}
-
-/* ── Botones de acción en la tabla ── */
-.acciones-celda {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.btn-accion {
-    background: var(--bg-surface);
-    border: 1px solid var(--color-border-tertiary);
-    color: var(--text-secondary);
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 13px;
-    flex-shrink: 0;
-}
-
-.btn-accion:hover {
-    background: var(--verde);
-    border-color: var(--verde);
-    color: white;
-}
-
-.btn-accion-verde {
-    border-color: #c5e6a0;
-    color: var(--verde);
-}
-
-.btn-accion-verde:hover {
-    background: var(--verde);
-    border-color: var(--verde);
-    color: white;
-}
-
-.btn-accion-gris {
-    color: var(--color-text-tertiary);
-}
-
-.btn-accion-rojo {
-    border-color: #f5c6cb;
-    color: #dc3545;
-}
-
-.btn-accion-rojo:hover {
-    background: #dc3545;
-    border-color: #dc3545;
-    color: white;
-}
-
-.cod-badge {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    background: #edf7e0;
-    padding: 3px 8px;
-    border-radius: 5px;
-    color: #2d6b0a;
-    border: 1px solid #c5e6a0;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-}
-
-.badge-estado {
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-    white-space: nowrap;
-    border: 1px solid transparent;
-}
-
-.badge-pendiente {
-    background: #fef9e7;
-    color: #856404;
-    border-color: #fcd34d;
-}
-
-.badge-proceso {
-    background: #e8f0fe;
-    color: #1a56db;
-    border-color: #93c5fd;
-}
-
-.badge-informe {
-    background: #dcfce7;
-    color: #166534;
-    border-color: #6ee7b7;
-}
-
-.badge-completo-sin-informe {
-    background: #f1f5f9;
-    color: #475569;
-    border-color: #cbd5e1;
-}
-
-.badge-demorada {
-    background: #fde8e8;
-    color: #991b1b;
-    border-color: #fca5a5;
-}
-
-.fecha-ok {
-    color: var(--color-text-secondary);
-}
-
-.fecha-warning {
-    color: #fd7e14;
-    font-weight: 600;
-}
-
-.fecha-vencida {
-    color: #dc3545;
-    font-weight: 600;
-}
-
-.btn-accion {
-    background: none;
-    border: 1px solid var(--color-border-tertiary);
-    border-radius: 6px;
-    padding: 3px 8px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--color-text-secondary);
-    transition: all 0.2s;
-}
-
-.btn-accion:hover {
-    background: var(--verde);
-    color: white;
-    border-color: var(--verde);
-}
 
 .paginacion-wrapper {
     display: flex;
@@ -377,6 +197,14 @@ button.btn-nueva-muestra-btn {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.param-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .parametros-header label {
@@ -386,6 +214,132 @@ button.btn-nueva-muestra-btn {
     text-transform: uppercase;
     letter-spacing: 0.4px;
     margin: 0;
+}
+
+.param-contador {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+}
+
+.param-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-param-bulk {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--bg-subtle);
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-param-bulk:hover {
+    background: var(--verde-light, #eaf5d3);
+    border-color: var(--verde);
+    color: var(--verde);
+}
+
+/* ── Cards de selección de parámetros ── */
+.param-select-card {
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: 8px;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, opacity 0.15s;
+    opacity: 0.55;
+    cursor: pointer;
+    user-select: none;
+}
+
+.param-select-card.selected {
+    border-color: #c5e6a0;
+    background: #f6fdf0;
+    opacity: 1;
+    box-shadow: 0 0 0 3px rgba(94, 165, 4, 0.08);
+}
+
+.param-select-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    margin: 0;
+    width: 100%;
+}
+
+.param-select-checkbox {
+    display: none;
+}
+
+.param-select-check-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--color-border-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: transparent;
+    background: var(--bg-surface);
+    transition: all 0.15s;
+    margin-top: 1px;
+}
+
+.param-select-card.selected .param-select-check-icon {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+
+.param-select-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.param-select-top {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.param-select-nombre {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.3;
+}
+
+.param-select-unidad {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+}
+
+.param-select-footer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+
+.param-select-metodo {
+    font-size: 9px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    margin-right: 2px;
 }
 
 .btn-add-param {
@@ -410,9 +364,9 @@ button.btn-nueva-muestra-btn {
 }
 
 .parametros-lista {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
 }
 
 .parametro-item {
@@ -513,7 +467,11 @@ button.btn-nueva-muestra-btn {
 .btn-guardar:disabled {
     background: #adb5bd;
     cursor: not-allowed;
+    opacity: 0.6;
 }
+
+.btn-generar-informe { background: #1a6b3a; }
+.btn-generar-informe:hover:not(:disabled) { background: #145230; }
 
 /* ══════════════════════════════════════════════
    MODAL DETALLE — tamaño y estructura
@@ -761,6 +719,52 @@ button.btn-nueva-muestra-btn {
     font-size: 12px;
 }
 
+.param-resultado-select {
+    width: 130px;
+    text-align: left;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.param-norma-count {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--bg-subtle);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-tertiary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.param-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    transition: color 0.15s;
+}
+
+.param-toggle:hover {
+    color: var(--verde);
+}
+
+.param-toggle-icon {
+    font-size: 11px;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.param-colapsable {
+    overflow: hidden;
+}
+
 .param-resultado-unidad {
     font-size: 11px;
     color: var(--color-text-secondary);
@@ -789,5 +793,124 @@ button.btn-nueva-muestra-btn {
     border-color: var(--color-border-tertiary);
     background: var(--bg-subtle);
     font-style: normal;
+}
+
+/* ── Wizard steps indicator ── */
+.wizard-steps {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border-tertiary, #e8ecf0);
+}
+
+.wizard-step-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+}
+
+.wizard-step-item.done {
+    cursor: pointer;
+}
+
+.wizard-step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border-tertiary, #d0d7de);
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.wizard-step-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.2s;
+}
+
+.wizard-step-line {
+    flex: 1;
+    height: 1px;
+    background: var(--color-border-tertiary, #e0e0e0);
+    margin: 0 8px;
+}
+
+.wizard-step-item.active .wizard-step-dot {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: white;
+}
+
+.wizard-step-item.active .wizard-step-label {
+    color: var(--verde);
+    font-weight: 600;
+}
+
+.wizard-step-item.done .wizard-step-dot {
+    background: var(--verde-suave, #eaf5d3);
+    border-color: var(--verde);
+    color: var(--verde);
+}
+
+.wizard-step-item.done .wizard-step-label {
+    color: var(--text-main);
+}
+
+/* ── Wizard panels ── */
+.wizard-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.wizard-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wizard-panel-header label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 0;
+}
+
+.wizard-btn-back {
+    margin-right: auto;
+}
+
+/* ── Chips de destino en la lista de parámetros ── */
+.param-destino-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 3px;
+}
+
+.param-destino-chip {
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+    font-weight: 500;
 }
 
