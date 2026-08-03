@@ -61,24 +61,23 @@
                 </div>
             </div>
             <div class="mod-kpis-row">
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="muestras" data-kpi="activas">
                     <div class="mod-kpi-num" id="hub-activas">—</div>
-                    <div class="mod-kpi-lbl">Activas</div>
+                    <div class="mod-kpi-lbl">Activas <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi mod-kpi-clickable" id="kpi-demoradas-btn" title="Ver detalle de muestras demoradas">
+                <div class="mod-kpi mod-kpi-clickable" data-card="muestras" data-kpi="demoradas">
                     <div class="mod-kpi-num mod-num-rojo" id="hub-demoradas">—</div>
                     <div class="mod-kpi-lbl">Demoradas <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="muestras" data-kpi="sin-informe">
                     <div class="mod-kpi-num mod-num-muted" id="hub-sin-informe">—</div>
-                    <div class="mod-kpi-lbl">Sin informe</div>
+                    <div class="mod-kpi-lbl">Sin informe <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
             </div>
-            <!-- Panel expandible demoradas -->
-            <div class="mod-demoradas-panel" id="modDemoradasPanel">
-                <div id="modDemoradasList"></div>
+            <div class="mod-card-panel" id="panel-muestras">
+                <div id="panel-muestras-content"></div>
             </div>
         </div>
 
@@ -92,24 +91,23 @@
                 <a href="agenda.html" class="mod-link">Ver agenda <i class="bi bi-arrow-right"></i></a>
             </div>
             <div class="mod-kpis-row">
-                <div class="mod-kpi mod-kpi-clickable" id="kpi-agenda-semana-btn" title="Ver muestreos de esta semana">
+                <div class="mod-kpi mod-kpi-clickable" data-card="agenda" data-kpi="semana">
                     <div class="mod-kpi-num mod-num-naranja" id="hub-muestreos-semana">—</div>
                     <div class="mod-kpi-lbl">Esta semana <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="agenda" data-kpi="hoy">
                     <div class="mod-kpi-num mod-num-verde" id="hub-muestreos-hoy">—</div>
-                    <div class="mod-kpi-lbl">Hoy</div>
+                    <div class="mod-kpi-lbl">Hoy <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="agenda" data-kpi="pendientes">
                     <div class="mod-kpi-num mod-num-muted" id="hub-muestreos-total">—</div>
-                    <div class="mod-kpi-lbl">Pendientes</div>
+                    <div class="mod-kpi-lbl">Pendientes <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
             </div>
-            <!-- Panel expandible agenda semana -->
-            <div class="mod-detail-panel mod-panel-azul" id="modAgendaPanel">
-                <div id="modAgendaList"></div>
+            <div class="mod-card-panel" id="panel-agenda">
+                <div id="panel-agenda-content"></div>
             </div>
         </div>
 
@@ -128,24 +126,23 @@
                 </div>
             </div>
             <div class="mod-kpis-row">
-                <div class="mod-kpi mod-kpi-clickable" id="kpi-stock-critico-btn" title="Ver ítems de stock crítico">
+                <div class="mod-kpi mod-kpi-clickable" data-card="stock" data-kpi="critico">
                     <div class="mod-kpi-num mod-num-rojo" id="hub-stock-critico">—</div>
                     <div class="mod-kpi-lbl">Crítico <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="stock" data-kpi="bajo">
                     <div class="mod-kpi-num mod-num-naranja" id="hub-stock-bajo">—</div>
-                    <div class="mod-kpi-lbl">Stock bajo</div>
+                    <div class="mod-kpi-lbl">Stock bajo <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="stock" data-kpi="ok">
                     <div class="mod-kpi-num mod-num-verde" id="hub-stock-ok">—</div>
-                    <div class="mod-kpi-lbl">OK</div>
+                    <div class="mod-kpi-lbl">OK <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
             </div>
-            <!-- Panel expandible stock crítico -->
-            <div class="mod-detail-panel mod-panel-naranja" id="modStockPanel">
-                <div id="modStockList"></div>
+            <div class="mod-card-panel" id="panel-stock">
+                <div id="panel-stock-content"></div>
             </div>
         </div>
 
@@ -164,24 +161,23 @@
                 </div>
             </div>
             <div class="mod-kpis-row">
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="tareas" data-kpi="progreso">
                     <div class="mod-kpi-num mod-num-azul" id="hub-tareas-progreso">—</div>
-                    <div class="mod-kpi-lbl">En progreso</div>
+                    <div class="mod-kpi-lbl">En progreso <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" data-card="tareas" data-kpi="todo">
                     <div class="mod-kpi-num mod-num-naranja" id="hub-tareas-todo">—</div>
-                    <div class="mod-kpi-lbl">Pendientes</div>
+                    <div class="mod-kpi-lbl">Pendientes <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi mod-kpi-clickable" id="kpi-tareas-revision-btn" title="Ver tareas en revisión">
+                <div class="mod-kpi mod-kpi-clickable" data-card="tareas" data-kpi="revision">
                     <div class="mod-kpi-num mod-num-muted" id="hub-tareas-revision">—</div>
                     <div class="mod-kpi-lbl">En revisión <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
             </div>
-            <!-- Panel expandible tareas en revisión -->
-            <div class="mod-detail-panel mod-panel-violeta" id="modTareasPanel">
-                <div id="modTareasList"></div>
+            <div class="mod-card-panel" id="panel-tareas">
+                <div id="panel-tareas-content"></div>
             </div>
         </div>
 

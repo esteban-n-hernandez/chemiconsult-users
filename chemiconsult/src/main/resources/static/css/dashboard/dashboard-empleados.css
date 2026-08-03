@@ -1207,7 +1207,7 @@ button.btn-nueva-muestra-btn {
     pointer-events: none;
 }
 
-/* ── KPI clickable (compartido por todos los paneles expandibles) ── */
+/* ── KPI clickable ── */
 .mod-kpi-clickable {
     cursor: pointer;
     border-radius: 8px;
@@ -1216,7 +1216,8 @@ button.btn-nueva-muestra-btn {
     transition: background .15s;
     user-select: none;
 }
-.mod-kpi-clickable:hover {
+.mod-kpi-clickable:hover,
+.mod-kpi-clickable.is-active {
     background: var(--bg-subtle);
 }
 .mod-kpi-chevron {
@@ -1225,74 +1226,32 @@ button.btn-nueva-muestra-btn {
     vertical-align: middle;
     transition: transform .2s;
 }
-.mod-kpi-clickable.is-open .mod-kpi-chevron {
+.mod-kpi-clickable.is-active .mod-kpi-chevron {
     transform: rotate(180deg);
 }
 
-.mod-demoradas-panel {
-    display: none;
-    border-top: 1px solid #fecaca;
-    background: #fff8f8;
-    padding: 8px 14px 12px;
-    animation: demSlideDown .15s ease;
-}
-.mod-demoradas-panel.is-open {
-    display: block;
-}
-
+/* ── Panel unificado por card ── */
 @keyframes demSlideDown {
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-.mod-demoradas-header {
-    font-size: 10px;
-    font-weight: 700;
-    color: #dc3545;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0 4px 6px;
-    border-bottom: 1px solid #fecaca;
-    margin-bottom: 4px;
-}
-
-.mod-demoradas-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 4px;
-    border-bottom: 1px solid rgba(220, 53, 69, .07);
-    font-size: 12px;
-}
-.mod-demoradas-item:last-child { border-bottom: none; }
-
-.mod-demoradas-codigo {
-    font-size: 10px;
-    color: var(--color-text-secondary);
-    flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
-}
-
-@media (prefers-color-scheme: dark) {
-    .mod-demoradas-panel { background: rgba(220, 53, 69, .08); border-top-color: rgba(220, 53, 69, .25); }
-    .mod-demoradas-header { color: #f87171; border-bottom-color: rgba(220, 53, 69, .25); }
-}
-:root[data-theme="dark"] .mod-demoradas-panel { background: rgba(220, 53, 69, .08); border-top-color: rgba(220, 53, 69, .25); }
-:root[data-theme="dark"] .mod-demoradas-header { color: #f87171; border-bottom-color: rgba(220, 53, 69, .25); }
-
-/* ── Paneles expandibles genéricos (agenda, stock, tareas) ── */
-.mod-detail-panel {
+.mod-card-panel {
     display: none;
     padding: 8px 14px 12px;
     border-top: 1px solid var(--color-border-soft);
     animation: demSlideDown .15s ease;
 }
-.mod-detail-panel.is-open { display: block; }
+.mod-card-panel.is-open { display: block; }
 
-.mod-detail-header {
+/* Color por tipo de card */
+.mod-card.mod-verde   .mod-card-panel { background: #f4fbea; border-top-color: #bbf7d0; }
+.mod-card.mod-azul    .mod-card-panel { background: #f0f7ff; border-top-color: #bfdbfe; }
+.mod-card.mod-naranja .mod-card-panel { background: #fffbf0; border-top-color: #fed7aa; }
+.mod-card.mod-violeta .mod-card-panel { background: #f5f3ff; border-top-color: #ddd6fe; }
+
+/* Encabezado del panel */
+.mod-panel-header {
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
@@ -1301,12 +1260,16 @@ button.btn-nueva-muestra-btn {
     align-items: center;
     gap: 5px;
     padding: 0 4px 6px;
-    border-bottom: 1px solid currentColor;
     margin-bottom: 4px;
-    opacity: .85;
+    opacity: .9;
 }
+.mod-card.mod-verde   .mod-panel-header { color: #15803d; border-bottom: 1px solid #bbf7d0; }
+.mod-card.mod-azul    .mod-panel-header { color: #1d4ed8; border-bottom: 1px solid #bfdbfe; }
+.mod-card.mod-naranja .mod-panel-header { color: #c2410c; border-bottom: 1px solid #fed7aa; }
+.mod-card.mod-violeta .mod-panel-header { color: #6d28d9; border-bottom: 1px solid #ddd6fe; }
 
-.mod-detail-item {
+/* Ítems del panel */
+.mod-panel-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1314,37 +1277,30 @@ button.btn-nueva-muestra-btn {
     border-bottom: 1px solid var(--color-border-soft);
     font-size: 12px;
 }
-.mod-detail-item:last-child { border-bottom: none; }
+.mod-panel-item:last-child { border-bottom: none; }
 
-.mod-detail-sub {
+.mod-panel-sub {
     font-size: 10px;
     color: var(--color-text-secondary);
     flex-shrink: 0;
 }
 
-/* Azul (agenda) */
-.mod-panel-azul { background: #f0f7ff; border-top-color: #bfdbfe; }
-.mod-panel-azul .mod-detail-header { color: #1d4ed8; border-bottom-color: #bfdbfe; }
-
-/* Naranja (stock) */
-.mod-panel-naranja { background: #fffbf0; border-top-color: #fed7aa; }
-.mod-panel-naranja .mod-detail-header { color: #c2410c; border-bottom-color: #fed7aa; }
-
-/* Violeta (tareas) */
-.mod-panel-violeta { background: #f5f3ff; border-top-color: #ddd6fe; }
-.mod-panel-violeta .mod-detail-header { color: #6d28d9; border-bottom-color: #ddd6fe; }
-
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
-    .mod-panel-azul    { background: rgba(59,130,246,.08); border-top-color: rgba(59,130,246,.25); }
-    .mod-panel-naranja { background: rgba(245,158,11,.08); border-top-color: rgba(245,158,11,.25); }
-    .mod-panel-violeta { background: rgba(139,92,246,.08); border-top-color: rgba(139,92,246,.25); }
-    .mod-panel-azul    .mod-detail-header { color: #93c5fd; border-bottom-color: rgba(59,130,246,.3); }
-    .mod-panel-naranja .mod-detail-header { color: #fcd34d; border-bottom-color: rgba(245,158,11,.3); }
-    .mod-panel-violeta .mod-detail-header { color: #c4b5fd; border-bottom-color: rgba(139,92,246,.3); }
+    .mod-card.mod-verde   .mod-card-panel { background: rgba(94,165,4,.08);   border-top-color: rgba(94,165,4,.25); }
+    .mod-card.mod-azul    .mod-card-panel { background: rgba(59,130,246,.08); border-top-color: rgba(59,130,246,.25); }
+    .mod-card.mod-naranja .mod-card-panel { background: rgba(245,158,11,.08); border-top-color: rgba(245,158,11,.25); }
+    .mod-card.mod-violeta .mod-card-panel { background: rgba(139,92,246,.08); border-top-color: rgba(139,92,246,.25); }
+    .mod-card.mod-verde   .mod-panel-header { color: #4ade80; border-bottom-color: rgba(94,165,4,.25); }
+    .mod-card.mod-azul    .mod-panel-header { color: #93c5fd; border-bottom-color: rgba(59,130,246,.3); }
+    .mod-card.mod-naranja .mod-panel-header { color: #fcd34d; border-bottom-color: rgba(245,158,11,.3); }
+    .mod-card.mod-violeta .mod-panel-header { color: #c4b5fd; border-bottom-color: rgba(139,92,246,.3); }
 }
-:root[data-theme="dark"] .mod-panel-azul    { background: rgba(59,130,246,.08); border-top-color: rgba(59,130,246,.25); }
-:root[data-theme="dark"] .mod-panel-naranja { background: rgba(245,158,11,.08); border-top-color: rgba(245,158,11,.25); }
-:root[data-theme="dark"] .mod-panel-violeta { background: rgba(139,92,246,.08); border-top-color: rgba(139,92,246,.25); }
-:root[data-theme="dark"] .mod-panel-azul    .mod-detail-header { color: #93c5fd; border-bottom-color: rgba(59,130,246,.3); }
-:root[data-theme="dark"] .mod-panel-naranja .mod-detail-header { color: #fcd34d; border-bottom-color: rgba(245,158,11,.3); }
-:root[data-theme="dark"] .mod-panel-violeta .mod-detail-header { color: #c4b5fd; border-bottom-color: rgba(139,92,246,.3); }
+:root[data-theme="dark"] .mod-card.mod-verde   .mod-card-panel { background: rgba(94,165,4,.08);   border-top-color: rgba(94,165,4,.25); }
+:root[data-theme="dark"] .mod-card.mod-azul    .mod-card-panel { background: rgba(59,130,246,.08); border-top-color: rgba(59,130,246,.25); }
+:root[data-theme="dark"] .mod-card.mod-naranja .mod-card-panel { background: rgba(245,158,11,.08); border-top-color: rgba(245,158,11,.25); }
+:root[data-theme="dark"] .mod-card.mod-violeta .mod-card-panel { background: rgba(139,92,246,.08); border-top-color: rgba(139,92,246,.25); }
+:root[data-theme="dark"] .mod-card.mod-verde   .mod-panel-header { color: #4ade80; border-bottom-color: rgba(94,165,4,.25); }
+:root[data-theme="dark"] .mod-card.mod-azul    .mod-panel-header { color: #93c5fd; border-bottom-color: rgba(59,130,246,.3); }
+:root[data-theme="dark"] .mod-card.mod-naranja .mod-panel-header { color: #fcd34d; border-bottom-color: rgba(245,158,11,.3); }
+:root[data-theme="dark"] .mod-card.mod-violeta .mod-panel-header { color: #c4b5fd; border-bottom-color: rgba(139,92,246,.3); }
