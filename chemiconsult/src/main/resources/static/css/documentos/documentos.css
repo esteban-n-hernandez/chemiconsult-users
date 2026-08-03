@@ -398,6 +398,64 @@ select.form-control-custom {
     margin: 0;
 }
 
+/* ── Modal vista previa ── */
+.modal-box-preview {
+    max-width: 940px;
+    width: 95vw;
+    height: 90vh;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-box-preview .modal-header { flex-shrink: 0; }
+
+.preview-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-subtle);
+    overflow: hidden;
+}
+
+.preview-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+.preview-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    padding: 1rem;
+}
+
+.preview-unsupported {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 3rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    font-size: 14px;
+}
+
+.preview-unsupported i { font-size: 3rem; color: var(--color-text-tertiary); }
+
+.preview-loading {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 /* ── Toast ── */
 .toast-confirm {
     position: fixed;

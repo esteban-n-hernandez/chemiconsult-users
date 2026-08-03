@@ -13,6 +13,9 @@ let documentosFiltrados = [];
 let editandoId = null;
 let eliminandoId = null;
 let tsCategoria = null;
+let _vistaId = null;
+let _vistaNombre = null;
+let _vistaBlobUrl = null;
 const POR_PAGINA = 10;
 let paginaActual = 1;
 
@@ -188,6 +191,9 @@ function renderTabla() {
             <td>${formatearFecha(d.createdDate)}</td>
             <td>
                 <div class="acciones-cell">
+                    <button class="btn-accion" onclick="abrirVista(${d.id}, '${(d.nombreArchivo || 'documento').replace(/'/g, "\\'")}')" title="Ver documento">
+                        <i class="bi bi-eye"></i>
+                    </button>
                     <button class="btn-accion download" onclick="descargarDocumento(${d.id}, '${(d.nombreArchivo || 'documento').replace(/'/g, "\\'")}')" title="Descargar">
                         <i class="bi bi-download"></i>
                     </button>
@@ -430,8 +436,17 @@ document.getElementById('btnDocCancelar').addEventListener('click', () => cerrar
 document.getElementById('modalEliminarClose').addEventListener('click', () => cerrarOverlay(modalEliminar));
 document.getElementById('btnCancelarEliminar').addEventListener('click', () => cerrarOverlay(modalEliminar));
 
-[modalDoc, modalEliminar].forEach(overlay => {
-    overlay.addEventListener('click', e => { if (e.target === overlay) cerrarOverlay(overlay); });
+document.getElementById('modalVistaClose').addEventListener('click', cerrarVista);
+document.getElementById('btnVistaDescargar').addEventListener('click', () => {
+    if (_vistaId && _vistaNombre) descargarDocumento(_vistaId, _vistaNombre);
+});
+
+[modalDoc, modalEliminar, document.getElementById('modalVista')].forEach(overlay => {
+    overlay.addEventListener('click', e => {
+        if (e.target !== overlay) return;
+        if (overlay.id === 'modalVista') cerrarVista();
+        else cerrarOverlay(overlay);
+    });
 });
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -440,6 +455,68 @@ function mostrarToast(msg, tipo = 'success') {
     toast.className = `toast-confirm visible ${tipo}`;
     toastIcon.className = tipo === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill';
     setTimeout(() => toast.classList.remove('visible'), 3000);
+}
+
+// ── Vista previa ─────────────────────────────────────────────────────────────
+async function abrirVista(id, nombreArchivo) {
+    _vistaId     = id;
+    _vistaNombre = nombreArchivo;
+
+    const modal = document.getElementById('modalVista');
+    const body  = document.getElementById('modalVistaBody');
+    document.getElementById('modalVistaNombre').textContent = nombreArchivo;
+
+    body.innerHTML = `<div class="preview-loading"><i class="bi bi-hourglass-split"></i> Cargando...</div>`;
+    abrirOverlay(modal);
+
+    // liberar blob anterior si quedó abierto
+    if (_vistaBlobUrl) { URL.revokeObjectURL(_vistaBlobUrl); _vistaBlobUrl = null; }
+
+    try {
+        const res = await apiFetch(`${API_URL}/${id}/archivo`);
+        if (!res || !res.ok) throw new Error();
+        const rawBlob = await res.blob();
+
+        const ext = (nombreArchivo || '').split('.').pop().toLowerCase();
+
+        const MIME = {
+            pdf:  'application/pdf',
+            png:  'image/png',
+            jpg:  'image/jpeg',
+            jpeg: 'image/jpeg',
+            gif:  'image/gif',
+            webp: 'image/webp',
+            bmp:  'image/bmp',
+        };
+        const mime = MIME[ext];
+        const blob = mime ? new Blob([rawBlob], { type: mime }) : rawBlob;
+        _vistaBlobUrl = URL.createObjectURL(blob);
+
+        if (ext === 'pdf') {
+            body.innerHTML = `<iframe class="preview-iframe" src="${_vistaBlobUrl}"></iframe>`;
+        } else if (MIME[ext] && ext !== 'pdf') {
+            body.innerHTML = `<img class="preview-img" src="${_vistaBlobUrl}" alt="${nombreArchivo}">`;
+        } else {
+            body.innerHTML = `
+                <div class="preview-unsupported">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <p>No se puede previsualizar este tipo de archivo.<br>
+                    <span style="font-size:12px;">Descargalo para abrirlo.</span></p>
+                </div>`;
+        }
+    } catch {
+        body.innerHTML = `
+            <div class="preview-unsupported">
+                <i class="bi bi-x-circle" style="color:#dc2626;"></i>
+                <p>Error al cargar el documento.</p>
+            </div>`;
+    }
+}
+
+function cerrarVista() {
+    cerrarOverlay(document.getElementById('modalVista'));
+    if (_vistaBlobUrl) { URL.revokeObjectURL(_vistaBlobUrl); _vistaBlobUrl = null; }
+    document.getElementById('modalVistaBody').innerHTML = '';
 }
 
 // ── Tom Select categoría ──────────────────────────────────────────────────────

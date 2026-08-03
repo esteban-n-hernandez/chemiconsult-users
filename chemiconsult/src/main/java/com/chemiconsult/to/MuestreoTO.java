@@ -18,5 +18,7 @@ public class MuestreoTO {
     private String responsableNombre;
     private String direccion;
     private String observaciones;
+    private String documentacion;
+    private String deQuien;
     private String estado;
 }

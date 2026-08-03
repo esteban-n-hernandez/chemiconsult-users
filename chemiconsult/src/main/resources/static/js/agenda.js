@@ -83,9 +83,11 @@ async function cargarEventos(info, successCallback, failureCallback) {
         const data  = await apiFetch(`${API_URL}/muestreos?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
         let eventos = (data || []).map(m => {
             const tipo = m.tipo || 'MUESTREO';
-            const title = (tipo === 'MUESTREO' || tipo === 'VENCIMIENTO' || tipo === 'DOCUMENTACION' || tipo === 'VISITA_TECNICA') && m.clienteNombre
-                ? m.clienteNombre
-                : (TIPO_LABELS[tipo] || 'Evento');
+            const title = tipo === 'VENCIMIENTO' && m.documentacion
+                ? m.documentacion
+                : (tipo === 'MUESTREO' && m.clienteNombre)
+                    ? m.clienteNombre
+                    : (TIPO_LABELS[tipo] || 'Evento');
             return {
                 id:    String(m.id),
                 title,
@@ -117,12 +119,27 @@ function abrirDetalle(event) {
 
     const tipoEl = document.getElementById('detalle-tipo');
     if (tipoEl) tipoEl.textContent = TIPO_LABELS[m.tipo || 'MUESTREO'] || 'Muestreo';
-    document.getElementById('detalle-cliente').textContent    = m.clienteNombre || '—';
-    document.getElementById('detalle-sucursal').textContent   = m.sucursalNombre || '—';
-    document.getElementById('detalle-fecha').textContent       = formatearFecha(m.fechaHora);
-    document.getElementById('detalle-responsable').textContent = m.responsableNombre || 'Sin asignar';
-    document.getElementById('detalle-direccion').textContent  = m.direccion || '—';
-    document.getElementById('detalle-obs').textContent        = m.observaciones || '—';
+
+    const esVencimiento = (m.tipo === 'VENCIMIENTO');
+    const rowCliente  = document.getElementById('detalle-row-cliente');
+    const rowSucursal = document.getElementById('detalle-row-sucursal');
+    const rowDoc      = document.getElementById('detalle-row-documentacion');
+    const rowDeQuien  = document.getElementById('detalle-row-dequien');
+    if (rowCliente)  rowCliente.style.display  = esVencimiento ? 'none' : '';
+    if (rowSucursal) rowSucursal.style.display = esVencimiento ? 'none' : '';
+    if (rowDoc)      rowDoc.style.display      = esVencimiento ? '' : 'none';
+    if (rowDeQuien)  rowDeQuien.style.display  = esVencimiento ? '' : 'none';
+    const rowDireccion = document.getElementById('detalle-row-direccion');
+    if (rowDireccion) rowDireccion.style.display = esVencimiento ? 'none' : '';
+
+    document.getElementById('detalle-cliente').textContent       = m.clienteNombre || '—';
+    document.getElementById('detalle-sucursal').textContent      = m.sucursalNombre || '—';
+    document.getElementById('detalle-documentacion').textContent = m.documentacion || '—';
+    document.getElementById('detalle-dequien').textContent       = m.deQuien || '—';
+    document.getElementById('detalle-fecha').textContent          = formatearFecha(m.fechaHora);
+    document.getElementById('detalle-responsable').textContent    = m.responsableNombre || 'Sin asignar';
+    document.getElementById('detalle-direccion').textContent      = m.direccion || '—';
+    document.getElementById('detalle-obs').textContent            = m.observaciones || '—';
 
     const badge = document.getElementById('detalle-estado');
     badge.textContent = labelEstado(m.estado);
@@ -172,19 +189,23 @@ function abrirNuevoEnFecha(dateStr) {
 function abrirNuevo() { abrirFormulario({}); }
 
 function actualizarVisibilidadCliente(tipo) {
-    const sec = document.getElementById('form-cliente-section');
-    if (!sec) return;
-    // MUESTREO → requerido; DOCUMENTACION → visible pero opcional; resto → oculto
-    sec.style.display = (tipo === 'MUESTREO' || tipo === 'VENCIMIENTO') ? '' : 'none';
+    const secCliente = document.getElementById('form-cliente-section');
+    const secVenc    = document.getElementById('form-vencimiento-section');
+    const secDonde   = document.getElementById('form-donde-section');
+    if (secCliente) secCliente.style.display = tipo === 'MUESTREO' ? '' : 'none';
+    if (secVenc)    secVenc.style.display    = tipo === 'VENCIMIENTO' ? '' : 'none';
+    if (secDonde)   secDonde.style.display   = tipo === 'VENCIMIENTO' ? 'none' : '';
 }
 
 async function abrirFormulario(m = {}) {
     muestreoEditandoId = m.id || null;
 
     document.getElementById('formModalTitle').textContent = m.id ? 'Editar evento' : 'Nuevo evento';
-    document.getElementById('form-fecha').value     = m.fechaHora ? m.fechaHora.substring(0, 16) : '';
-    document.getElementById('form-direccion').value = m.direccion || '';
-    document.getElementById('form-obs').value        = m.observaciones || '';
+    document.getElementById('form-fecha').value          = m.fechaHora ? m.fechaHora.substring(0, 16) : '';
+    document.getElementById('form-direccion').value      = m.direccion || '';
+    document.getElementById('form-obs').value            = m.observaciones || '';
+    document.getElementById('form-documentacion').value  = m.documentacion || '';
+    document.getElementById('form-dequien').value        = m.deQuien || '';
     const radioEstado = document.querySelector(`input[name="form-estado"][value="${m.estado || 'PENDIENTE'}"]`);
     if (radioEstado) radioEstado.checked = true;
 
@@ -265,9 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         const tipoVal = document.querySelector('input[name="form-tipo"]:checked')?.value || 'MUESTREO';
-        const necesitaCliente = tipoVal === 'MUESTREO';
         const clienteId = document.getElementById('form-cliente').value;
-        if (necesitaCliente && !clienteId) { mostrarToast('Seleccioná un cliente', true); return; }
+        if (tipoVal === 'MUESTREO' && !clienteId) { mostrarToast('Seleccioná un cliente', true); return; }
+        if (tipoVal === 'VENCIMIENTO' && !document.getElementById('form-documentacion').value.trim()) {
+            mostrarToast('Ingresá la documentación', true); return;
+        }
 
         const fechaRaw = document.getElementById('form-fecha').value;
         if (!fechaRaw) { mostrarToast('Ingresá la fecha y hora', true); return; }
@@ -277,12 +300,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const to = {
             tipo:          tipoVal,
-            clienteId:     clienteId ? Number(clienteId) : null,
-            sucursalId:    sucursalVal    ? Number(sucursalVal)    : null,
+            clienteId:     tipoVal === 'MUESTREO' && clienteId ? Number(clienteId) : null,
+            sucursalId:    tipoVal === 'MUESTREO' && sucursalVal ? Number(sucursalVal) : null,
             fechaHora:     fechaRaw.length === 16 ? fechaRaw + ':00' : fechaRaw,
             responsableId: responsableVal ? Number(responsableVal) : null,
-            direccion:       document.getElementById('form-direccion').value || null,
+            direccion:       tipoVal !== 'VENCIMIENTO' ? (document.getElementById('form-direccion').value || null) : null,
             observaciones:   document.getElementById('form-obs').value || null,
+            documentacion:   tipoVal === 'VENCIMIENTO' ? (document.getElementById('form-documentacion').value.trim() || null) : null,
+            deQuien:         tipoVal === 'VENCIMIENTO' ? (document.getElementById('form-dequien').value.trim() || null) : null,
             estado:          document.querySelector('input[name="form-estado"]:checked')?.value || 'PENDIENTE'
         };
 

@@ -30,6 +30,8 @@ public class MuestreoMapper {
                 .responsableNombre(e.getResponsable() != null ? e.getResponsable().getUsername() : null)
                 .direccion(e.getDireccion())
                 .observaciones(e.getObservaciones())
+                .documentacion(e.getDocumentacion())
+                .deQuien(e.getDeQuien())
                 .estado(e.getEstado() != null ? e.getEstado().name() : null)
                 .build();
     }

@@ -114,6 +114,8 @@ public class MuestreoService {
         entity.setFechaHora(LocalDateTime.parse(to.getFechaHora()));
         entity.setDireccion(to.getDireccion());
         entity.setObservaciones(to.getObservaciones());
+        entity.setDocumentacion(to.getDocumentacion());
+        entity.setDeQuien(to.getDeQuien());
 
         if (to.getEstado() != null) {
             entity.setEstado(EstadoMuestreoEnum.valueOf(to.getEstado()));

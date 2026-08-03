@@ -110,16 +110,28 @@
                             <span class="detalle-value" id="detalle-tipo">—</span>
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6">
+                    <div class="col-12 col-sm-6" id="detalle-row-cliente">
                         <div class="detalle-row">
                             <span class="detalle-label">Cliente</span>
                             <span class="detalle-value" id="detalle-cliente">—</span>
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6">
+                    <div class="col-12 col-sm-6" id="detalle-row-sucursal">
                         <div class="detalle-row">
                             <span class="detalle-label">Sucursal / Punto</span>
                             <span class="detalle-value" id="detalle-sucursal">—</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6" id="detalle-row-documentacion" style="display:none">
+                        <div class="detalle-row">
+                            <span class="detalle-label">Documentación</span>
+                            <span class="detalle-value" id="detalle-documentacion">—</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6" id="detalle-row-dequien" style="display:none">
+                        <div class="detalle-row">
+                            <span class="detalle-label">De quién</span>
+                            <span class="detalle-value" id="detalle-dequien">—</span>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
@@ -134,7 +146,7 @@
                             <span class="detalle-value" id="detalle-responsable">—</span>
                         </div>
                     </div>
-                    <div class="col-12">
+                    <div class="col-12" id="detalle-row-direccion">
                         <div class="detalle-row">
                             <span class="detalle-label">Dirección de visita</span>
                             <span class="detalle-value" id="detalle-direccion">—</span>
@@ -214,7 +226,7 @@
                     </div>
                 </div>
 
-                <!-- Sección: Cliente -->
+                <!-- Sección: Cliente (solo MUESTREO) -->
                 <div class="form-section" id="form-cliente-section">
                     <div class="form-section-label">
                         <i class="bi bi-person-fill"></i> Cliente
@@ -231,6 +243,25 @@
                             <select class="field-input" id="form-sucursal">
                                 <option value="">Dirección principal</option>
                             </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Vencimiento (solo VENCIMIENTO) -->
+                <div class="form-section" id="form-vencimiento-section" style="display:none">
+                    <div class="form-section-label">
+                        <i class="bi bi-file-earmark-x-fill"></i> Vencimiento
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-field">
+                            <label class="field-label">Documentación <span class="required">*</span></label>
+                            <input type="text" class="field-input" id="form-documentacion"
+                                   placeholder="Ej: Seguro de responsabilidad civil" autocomplete="off"/>
+                        </div>
+                        <div class="form-field">
+                            <label class="field-label">De quién <span class="field-opt">opcional</span></label>
+                            <input type="text" class="field-input" id="form-dequien"
+                                   placeholder="Ej: Empresa XYZ" autocomplete="off"/>
                         </div>
                     </div>
                 </div>
@@ -270,7 +301,7 @@
                 </div>
 
                 <!-- Sección: Dónde / Quién -->
-                <div class="form-section">
+                <div class="form-section" id="form-donde-section">
                     <div class="form-section-label">
                         <i class="bi bi-geo-alt-fill"></i> Dónde y quién
                     </div>

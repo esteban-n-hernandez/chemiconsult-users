@@ -5,51 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Documentación - CHEMICONSULT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.default.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet"/>
     <style>
-        /* Tom Select — integrado con el diseño de la app */
-        .ts-wrapper .ts-control {
-            border: 1.5px solid var(--color-border-tertiary);
-            border-radius: 7px;
-            padding: 6px 10px;
-            font-size: 13px;
-            color: var(--text-main);
-            background: var(--bg-surface);
-            box-shadow: none;
-            min-height: unset;
-            cursor: text;
+        /* Variables de Bootstrap que necesita el tema tom-select.bootstrap5, mapeadas al sistema */
+        :root {
+            --bs-body-bg:         var(--bg-surface);
+            --bs-body-color:      var(--text-main);
+            --bs-border-color:    var(--color-border-tertiary);
+            --bs-secondary-bg:    var(--bg-subtle);
+            --bs-emphasis-color:  var(--text-main);
+            --bs-primary:         var(--verde);
+            --bs-primary-rgb:     94, 165, 4;
+            --bs-border-radius:   7px;
+            --bs-body-font-size:  13px;
         }
+        /* Ajuste de foco para que use el verde del sistema */
         .ts-wrapper.focus .ts-control {
-            border-color: var(--verde);
-            box-shadow: 0 0 0 3px rgba(94,165,4,.12);
-            outline: none;
+            border-color: var(--verde) !important;
+            box-shadow: 0 0 0 3px rgba(94,165,4,.15) !important;
         }
-        .ts-wrapper .ts-control input {
-            color: var(--text-main);
-            font-size: 13px;
-            line-height: 1.4;
-        }
-        .ts-wrapper .ts-control input::placeholder { color: var(--color-text-tertiary); }
-        .ts-dropdown {
-            background: var(--bg-surface);
-            border: 1.5px solid var(--color-border-tertiary);
-            border-radius: 7px;
-            box-shadow: 0 6px 20px rgba(0,0,0,.13);
-            font-size: 13px;
-            color: var(--text-main);
-            z-index: 10000;
-        }
-        .ts-dropdown .ts-dropdown-content { padding: 4px 0; }
-        .ts-dropdown .ts-option {
-            padding: 8px 12px;
-            color: var(--text-main);
-            cursor: pointer;
-        }
-        .ts-dropdown .ts-option:hover,
-        .ts-dropdown .ts-option.active { background: var(--bg-subtle); color: var(--text-main); }
-        .ts-dropdown .ts-option.selected { background: rgba(94,165,4,.1); color: var(--verde); }
-        .ts-dropdown .create { color: var(--verde); font-weight: 600; }
-        .ts-wrapper .ts-control .item { color: var(--text-main); }
+        .ts-dropdown { z-index: 10000; }
     </style>
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
@@ -237,6 +212,24 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- MODAL VISTA PREVIA DOCUMENTO -->
+<div class="modal-overlay" id="modalVista">
+    <div class="modal-box modal-box-preview">
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-eye"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Vista previa</div>
+                <h5 id="modalVistaNombre">—</h5>
+            </div>
+            <button class="btn-cancelar" id="btnVistaDescargar" style="margin-left:auto; margin-right:8px; display:flex; align-items:center; gap:5px;">
+                <i class="bi bi-download"></i> Descargar
+            </button>
+            <button class="modal-close" id="modalVistaClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="preview-body" id="modalVistaBody"></div>
     </div>
 </div>
 

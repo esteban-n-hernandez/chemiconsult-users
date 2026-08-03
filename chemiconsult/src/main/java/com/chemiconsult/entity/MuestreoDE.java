@@ -53,6 +53,12 @@ public class MuestreoDE {
     @Column(name = "OBSERVACIONES")
     private String observaciones;
 
+    @Column(name = "DOCUMENTACION")
+    private String documentacion;
+
+    @Column(name = "DE_QUIEN")
+    private String deQuien;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "ESTADO", nullable = false)
     private EstadoMuestreoEnum estado = EstadoMuestreoEnum.PENDIENTE;

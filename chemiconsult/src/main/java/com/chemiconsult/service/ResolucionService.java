@@ -136,6 +136,8 @@ public class ResolucionService {
         ParametroDE parametro = parametroRepository.findById(parametroId)
                 .orElseThrow(() -> new EntityNotFoundException("Parámetro no encontrado: " + parametroId));
 
+        String unidadFinal = (unidad != null && !unidad.isBlank()) ? unidad : parametro.getUnidad();
+
         List<ResolucionDestinoDE> destinos = resolucion.getDestinos();
         if (destinos == null || destinos.isEmpty()) {
             ResolucionDestinoDE destino = new ResolucionDestinoDE();
@@ -150,14 +152,14 @@ public class ResolucionService {
                     .ifPresentOrElse(
                             rel -> {
                                 rel.setActivo(true);
-                                rel.setUnidad(unidad);
+                                rel.setUnidad(unidadFinal);
                                 destinoParametroRepository.save(rel);
                             },
                             () -> {
                                 ResolucionDestinoParametroDE rel = new ResolucionDestinoParametroDE();
                                 rel.setDestino(destino);
                                 rel.setParametro(parametro);
-                                rel.setUnidad(unidad);
+                                rel.setUnidad(unidadFinal);
                                 rel.setTipoLimite("NE");
                                 rel.setActivo(true);
                                 destinoParametroRepository.save(rel);
