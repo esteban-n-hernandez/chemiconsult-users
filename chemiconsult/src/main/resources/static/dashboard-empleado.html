@@ -66,15 +66,19 @@
                     <div class="mod-kpi-lbl">Activas</div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" id="kpi-demoradas-btn" title="Ver detalle de muestras demoradas">
                     <div class="mod-kpi-num mod-num-rojo" id="hub-demoradas">—</div>
-                    <div class="mod-kpi-lbl">Demoradas</div>
+                    <div class="mod-kpi-lbl">Demoradas <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
                 <div class="mod-kpi">
                     <div class="mod-kpi-num mod-num-muted" id="hub-sin-informe">—</div>
                     <div class="mod-kpi-lbl">Sin informe</div>
                 </div>
+            </div>
+            <!-- Panel expandible demoradas -->
+            <div class="mod-demoradas-panel" id="modDemoradasPanel">
+                <div id="modDemoradasList"></div>
             </div>
         </div>
 
@@ -88,9 +92,9 @@
                 <a href="agenda.html" class="mod-link">Ver agenda <i class="bi bi-arrow-right"></i></a>
             </div>
             <div class="mod-kpis-row">
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" id="kpi-agenda-semana-btn" title="Ver muestreos de esta semana">
                     <div class="mod-kpi-num mod-num-naranja" id="hub-muestreos-semana">—</div>
-                    <div class="mod-kpi-lbl">Esta semana</div>
+                    <div class="mod-kpi-lbl">Esta semana <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
                 <div class="mod-kpi">
@@ -102,6 +106,10 @@
                     <div class="mod-kpi-num mod-num-muted" id="hub-muestreos-total">—</div>
                     <div class="mod-kpi-lbl">Pendientes</div>
                 </div>
+            </div>
+            <!-- Panel expandible agenda semana -->
+            <div class="mod-detail-panel mod-panel-azul" id="modAgendaPanel">
+                <div id="modAgendaList"></div>
             </div>
         </div>
 
@@ -120,9 +128,9 @@
                 </div>
             </div>
             <div class="mod-kpis-row">
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" id="kpi-stock-critico-btn" title="Ver ítems de stock crítico">
                     <div class="mod-kpi-num mod-num-rojo" id="hub-stock-critico">—</div>
-                    <div class="mod-kpi-lbl">Crítico</div>
+                    <div class="mod-kpi-lbl">Crítico <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
                 <div class="mod-kpi-sep"></div>
                 <div class="mod-kpi">
@@ -134,6 +142,10 @@
                     <div class="mod-kpi-num mod-num-verde" id="hub-stock-ok">—</div>
                     <div class="mod-kpi-lbl">OK</div>
                 </div>
+            </div>
+            <!-- Panel expandible stock crítico -->
+            <div class="mod-detail-panel mod-panel-naranja" id="modStockPanel">
+                <div id="modStockList"></div>
             </div>
         </div>
 
@@ -162,10 +174,14 @@
                     <div class="mod-kpi-lbl">Pendientes</div>
                 </div>
                 <div class="mod-kpi-sep"></div>
-                <div class="mod-kpi">
+                <div class="mod-kpi mod-kpi-clickable" id="kpi-tareas-revision-btn" title="Ver tareas en revisión">
                     <div class="mod-kpi-num mod-num-muted" id="hub-tareas-revision">—</div>
-                    <div class="mod-kpi-lbl">En revisión</div>
+                    <div class="mod-kpi-lbl">En revisión <i class="bi bi-chevron-down mod-kpi-chevron"></i></div>
                 </div>
+            </div>
+            <!-- Panel expandible tareas en revisión -->
+            <div class="mod-detail-panel mod-panel-violeta" id="modTareasPanel">
+                <div id="modTareasList"></div>
             </div>
         </div>
 

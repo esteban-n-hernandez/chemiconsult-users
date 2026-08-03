@@ -1015,6 +1015,9 @@ function actualizarKPIs() {
     if (elDemoradas)  elDemoradas.textContent = demoradas;
     if (elSinInforme) elSinInforme.textContent = completoSinInforme;
 
+    const panelDem = document.getElementById("modDemoradasPanel");
+    if (panelDem && panelDem.classList.contains("is-open")) renderDemoradasPanel();
+
     renderHubMuestras();
     renderGraficoMes();
 }
@@ -1166,6 +1169,11 @@ function renderHubMuestras() {
     }).join("");
 }
 
+// Datos para paneles expandibles
+let muestreosSemanaDatos = [];
+let stockCriticoDatos    = [];
+let tareasRevisionDatos  = [];
+
 async function cargarTareasKPI() {
     try {
         const r = await fetchDash(`${API_BASE}/api/task`);
@@ -1182,6 +1190,10 @@ async function cargarTareasKPI() {
         if (elTodo)     elTodo.textContent = todo;
         if (elProgreso) elProgreso.textContent = enProgreso;
         if (elRevision) elRevision.textContent = enRevision;
+
+        tareasRevisionDatos = tareas.filter(t => t.status === "EN_REVISION");
+        const panelT = document.getElementById("modTareasPanel");
+        if (panelT && panelT.classList.contains("is-open")) renderTareasPanel();
 
         const body = document.getElementById("hubTareasBody");
         if (!body) return;
@@ -1227,6 +1239,10 @@ async function cargarStockKPI() {
         if (elCritico) elCritico.textContent = bajos.length;
         if (elBajo)    elBajo.textContent    = medios.length;
         if (elOk)      elOk.textContent      = altos.length;
+
+        stockCriticoDatos = bajos;
+        const panelS = document.getElementById("modStockPanel");
+        if (panelS && panelS.classList.contains("is-open")) renderStockPanel();
 
         const body = document.getElementById("hubStockBody");
         if (!body) return;
@@ -1527,6 +1543,10 @@ async function cargarMustreosKPI() {
         if (elHoy)    elHoy.textContent    = deHoy.length;
         if (elTotal)  elTotal.textContent  = pendientes.length;
 
+        muestreosSemanaDatos = estaSemana;
+        const panelA = document.getElementById("modAgendaPanel");
+        if (panelA && panelA.classList.contains("is-open")) renderAgendaPanel();
+
         const body = document.getElementById("hubMustreosBody");
         if (!body) return;
 
@@ -1562,6 +1582,149 @@ async function cargarMustreosKPI() {
         }).join("");
     } catch { /* no bloquea el dashboard */ }
 }
+
+// ════════════════════════════════
+//  PANEL DEMORADAS
+// ════════════════════════════════
+function renderDemoradasPanel() {
+    const cont = document.getElementById("modDemoradasList");
+    if (!cont) return;
+    const lista = allEstudios.filter(m => normalizarEstado(m.estado) === "DEMORADA");
+    if (lista.length === 0) {
+        cont.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-check2-circle me-1"></i>Sin muestras demoradas</div>`;
+        return;
+    }
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const n = lista.length;
+    cont.innerHTML =
+        `<div class="mod-demoradas-header"><i class="bi bi-exclamation-circle-fill"></i>${n} muestra${n !== 1 ? "s" : ""} demorada${n !== 1 ? "s" : ""}</div>` +
+        lista.map(m => {
+            const fEntrega = parseFecha(m.fecha);
+            let badgeText;
+            if (fEntrega) {
+                const dias = Math.ceil((hoy - fEntrega) / 86400000);
+                badgeText = dias > 0 ? `${dias}d tarde` : (dias === 0 ? "Hoy" : "—");
+            } else {
+                const fAlta = parseFecha(m.fechaAlta);
+                badgeText = fAlta ? `${Math.ceil((hoy - fAlta) / 86400000)}d` : "—";
+            }
+            return `<div class="mod-demoradas-item">
+                <span class="mod-mini-dot rojo"></span>
+                <span class="mod-mini-name">${m.cliente}</span>
+                <span class="mod-demoradas-codigo">${m.codigo}</span>
+                <span class="mod-mini-badge demo" style="margin-left:auto">${badgeText}</span>
+            </div>`;
+        }).join("");
+}
+
+document.getElementById("kpi-demoradas-btn").addEventListener("click", function () {
+    const panel = document.getElementById("modDemoradasPanel");
+    const isOpen = panel.classList.contains("is-open");
+    panel.classList.toggle("is-open", !isOpen);
+    this.classList.toggle("is-open", !isOpen);
+    if (!isOpen) renderDemoradasPanel();
+});
+
+// ════════════════════════════════
+//  PANELES EXPANDIBLES — AGENDA / STOCK / TAREAS
+// ════════════════════════════════
+
+function _togglePanel(panelId, btnId, renderFn) {
+    const panel = document.getElementById(panelId);
+    const btn   = document.getElementById(btnId);
+    if (!panel || !btn) return;
+    const isOpen = panel.classList.contains("is-open");
+    panel.classList.toggle("is-open", !isOpen);
+    btn.classList.toggle("is-open", !isOpen);
+    if (!isOpen) renderFn();
+}
+
+// ── Agenda: esta semana ──
+function renderAgendaPanel() {
+    const cont = document.getElementById("modAgendaList");
+    if (!cont) return;
+    const lista = muestreosSemanaDatos;
+    if (lista.length === 0) {
+        cont.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-calendar-check me-1"></i>Sin muestreos esta semana</div>`;
+        return;
+    }
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const n = lista.length;
+    function getFecha(m) { return parseFecha(m.fecha || m.fechaProgramada || m.fechaMuestreo || m.fechaInicio); }
+    cont.innerHTML =
+        `<div class="mod-detail-header"><i class="bi bi-calendar-week-fill"></i>${n} muestreo${n !== 1 ? "s" : ""} esta semana</div>` +
+        [...lista].sort((a, b) => { const fa = getFecha(a), fb = getFecha(b); return (fa||0) - (fb||0); })
+        .map(m => {
+            const f = getFecha(m);
+            let badge = "—";
+            if (f) {
+                const dias = Math.ceil((f - hoy) / 86400000);
+                badge = dias === 0 ? "Hoy" : dias === 1 ? "Mañana" : formatearFechaDMY(f);
+            }
+            const cliente = m.cliente || m.clienteNombre || m.nombreCliente || "—";
+            return `<div class="mod-detail-item">
+                <span class="mod-mini-dot azul"></span>
+                <span class="mod-mini-name">${cliente}</span>
+                <span class="mod-detail-sub">${badge}</span>
+            </div>`;
+        }).join("");
+}
+
+document.getElementById("kpi-agenda-semana-btn")?.addEventListener("click", function () {
+    _togglePanel("modAgendaPanel", "kpi-agenda-semana-btn", renderAgendaPanel);
+});
+
+// ── Stock: crítico ──
+function renderStockPanel() {
+    const cont = document.getElementById("modStockList");
+    if (!cont) return;
+    const lista = stockCriticoDatos;
+    if (lista.length === 0) {
+        cont.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-check2-circle me-1"></i>Sin ítems críticos</div>`;
+        return;
+    }
+    const n = lista.length;
+    cont.innerHTML =
+        `<div class="mod-detail-header"><i class="bi bi-exclamation-triangle-fill"></i>${n} ítem${n !== 1 ? "s" : ""} en nivel crítico</div>` +
+        lista.map(i => {
+            const cat = (i.categoria || "").replace(/_/g, " ").toLowerCase();
+            return `<div class="mod-detail-item">
+                <span class="mod-mini-dot rojo"></span>
+                <span class="mod-mini-name">${i.nombre || "—"}</span>
+                <span class="mod-detail-sub">${cat}</span>
+            </div>`;
+        }).join("");
+}
+
+document.getElementById("kpi-stock-critico-btn")?.addEventListener("click", function () {
+    _togglePanel("modStockPanel", "kpi-stock-critico-btn", renderStockPanel);
+});
+
+// ── Tareas: en revisión ──
+function renderTareasPanel() {
+    const cont = document.getElementById("modTareasList");
+    if (!cont) return;
+    const lista = tareasRevisionDatos;
+    if (lista.length === 0) {
+        cont.innerHTML = `<div class="mod-mini-empty"><i class="bi bi-check2-circle me-1"></i>Sin tareas en revisión</div>`;
+        return;
+    }
+    const n = lista.length;
+    cont.innerHTML =
+        `<div class="mod-detail-header"><i class="bi bi-eye-fill"></i>${n} tarea${n !== 1 ? "s" : ""} en revisión</div>` +
+        lista.map(t => {
+            const asig = t.assignedTo || t.nombreAsignado || t.userName || "";
+            return `<div class="mod-detail-item">
+                <span class="mod-mini-dot violeta"></span>
+                <span class="mod-mini-name">${t.title || t.titulo || "—"}</span>
+                ${asig ? `<span class="mod-detail-sub">${asig}</span>` : ""}
+            </div>`;
+        }).join("");
+}
+
+document.getElementById("kpi-tareas-revision-btn")?.addEventListener("click", function () {
+    _togglePanel("modTareasPanel", "kpi-tareas-revision-btn", renderTareasPanel);
+});
 
 // Cargar al iniciar
 cargarEstudios();

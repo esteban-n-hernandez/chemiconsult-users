@@ -1256,6 +1256,12 @@ function renderizarTablaMuestras(lista) {
         const puedeGenerar  = m.estado === "COMPLETO_SIN_INFORME";
         const esCancelado   = m.estado === "CANCELADO";
         const protocolo     = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
+        const avanzarMap = {
+            PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
+            EN_PROCESO: { label: "Marcar completo", icono: "bi-check2-circle" },
+            DEMORADA:   { label: "Reactivar",        icono: "bi-arrow-counterclockwise" },
+        };
+        const avanzar = avanzarMap[m.estado];
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
@@ -1268,6 +1274,11 @@ function renderizarTablaMuestras(lista) {
                         onclick="verDetalleMuestra(${m.id})">
                     <i class="bi bi-eye"></i>
                 </button>
+                ${avanzar ? `
+                <button class="btn-accion" title="${avanzar.label}"
+                        onclick="avanzarEstadoMuestra(${m.id}, '${m.estado}', this)">
+                    <i class="bi ${avanzar.icono}"></i>
+                </button>` : ''}
                 ${!esCancelado ? `
                 <button class="btn-accion" title="Editar datos"
                         onclick="abrirEdicionMuestra(${m.id})">
@@ -1294,6 +1305,33 @@ function renderizarTablaMuestras(lista) {
 
     actualizarPaginacion(lista.length, fin);
 }
+
+window.avanzarEstadoMuestra = async function(id, estadoActual, btn) {
+    const mapa = {
+        PENDIENTE: "EN_PROCESO",
+        EN_PROCESO: "COMPLETO_SIN_INFORME",
+        DEMORADA: "EN_PROCESO",
+    };
+    const siguiente = mapa[estadoActual];
+    if (!siguiente) return;
+    const htmlOrig = btn ? btn.innerHTML : "";
+    if (btn) { btn.disabled = true; btn.innerHTML = `<i class="bi bi-hourglass-split"></i>`; }
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ estado: siguiente }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const labels = { EN_PROCESO: "En proceso", COMPLETO_SIN_INFORME: "Completo sin informe" };
+        mostrarToast(`Estado actualizado: ${labels[siguiente] || siguiente}`);
+        await cargarMuestrasActivas();
+    } catch (err) {
+        console.error("Error avanzando estado:", err);
+        mostrarToast("Error al actualizar el estado.", true);
+        if (btn) { btn.disabled = false; btn.innerHTML = htmlOrig; }
+    }
+};
 
 function actualizarPaginacion(total, fin) {
     const inicio = paginaActual * ITEMS_POR_PAGINA;

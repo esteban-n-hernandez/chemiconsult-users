@@ -37,9 +37,25 @@ public class AnalisisService {
         return analisisRepository.findAll();
     }
 
+    @Transactional
     public List<EstudioTO> getEstudiosTO() {
-        return analisisRepository.findAll()
-                .stream()
+        List<AnalisisDE> all = analisisRepository.findAll();
+        LocalDate hoy = LocalDate.now();
+        List<AnalisisDE> vencidas = all.stream()
+                .filter(a -> a.getFechaEntrega() != null
+                        && a.getFechaEntrega().isBefore(hoy)
+                        && (EstadoMuestraEnum.PENDIENTE.equals(a.getEstado())
+                         || EstadoMuestraEnum.EN_PROCESO.equals(a.getEstado())))
+                .collect(Collectors.toList());
+        if (!vencidas.isEmpty()) {
+            vencidas.forEach(a -> {
+                a.setEstado(EstadoMuestraEnum.DEMORADA);
+                a.setUpdateDate(hoy);
+            });
+            analisisRepository.saveAll(vencidas);
+            log.info("Marcadas {} muestra(s) como DEMORADA por fecha de entrega vencida.", vencidas.size());
+        }
+        return all.stream()
                 .map(EstudiosMapper::mapEntityToEstudioTO)
                 .toList();
     }
