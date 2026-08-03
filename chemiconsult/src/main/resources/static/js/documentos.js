@@ -12,6 +12,7 @@ let documentos = [];
 let documentosFiltrados = [];
 let editandoId = null;
 let eliminandoId = null;
+let tsCategoria = null;
 const POR_PAGINA = 10;
 let paginaActual = 1;
 
@@ -64,6 +65,7 @@ async function cargarDocumentos() {
     }
     aplicarFiltros();
     actualizarKpis();
+    popularFiltroCategoria();
 }
 
 // ── KPIs ─────────────────────────────────────────────────────────────────────
@@ -72,6 +74,50 @@ function actualizarKpis() {
     document.getElementById('kpi-vigentes').textContent = documentos.filter(d => d.estado === 'VIGENTE').length;
     document.getElementById('kpi-proximos').textContent = documentos.filter(d => d.estado === 'PROXIMO_VENCER').length;
     document.getElementById('kpi-vencidos').textContent = documentos.filter(d => d.estado === 'VENCIDO').length;
+    mostrarAlertaVencimiento();
+}
+
+function mostrarAlertaVencimiento() {
+    const proximos = documentos.filter(d => d.estado === 'PROXIMO_VENCER');
+    const vencidos = documentos.filter(d => d.estado === 'VENCIDO');
+    const alerta = document.getElementById('alertaVencimiento');
+    const msg    = document.getElementById('alertaVencimientoMsg');
+
+    if (proximos.length === 0 && vencidos.length === 0) {
+        alerta.style.display = 'none';
+        return;
+    }
+
+    const partes = [];
+    if (vencidos.length > 0)
+        partes.push(`${vencidos.length} documento${vencidos.length > 1 ? 's' : ''} vencido${vencidos.length > 1 ? 's' : ''}`);
+    if (proximos.length > 0)
+        partes.push(`${proximos.length} próximo${proximos.length > 1 ? 's' : ''} a vencer (≤ 15 días)`);
+
+    msg.textContent = partes.join(' y ') + '. Revisá la lista para renovarlos.';
+    alerta.style.display = 'flex';
+}
+
+function popularFiltroCategoria() {
+    const visto = new Set();
+    const cats = [];
+    documentos.forEach(d => {
+        if (d.categoriaId && !visto.has(d.categoriaId)) {
+            visto.add(d.categoriaId);
+            cats.push({ id: d.categoriaId, nombre: d.categoria || String(d.categoriaId) });
+        }
+    });
+    cats.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    const sel = document.getElementById('selectCategoria');
+    const valorActual = sel.value;
+    sel.innerHTML = '<option value="">Todas las categorías</option>';
+    cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = String(c.id);
+        opt.textContent = c.nombre;
+        sel.appendChild(opt);
+    });
+    if (valorActual) sel.value = valorActual;
 }
 
 // ── Filtros ──────────────────────────────────────────────────────────────────
@@ -85,7 +131,7 @@ function aplicarFiltros() {
             (d.nombre || '').toLowerCase().includes(texto) ||
             (d.descripcion || '').toLowerCase().includes(texto) ||
             (d.nombreArchivo || '').toLowerCase().includes(texto);
-        const coincideCategoria = !categoria || d.categoria === categoria;
+        const coincideCategoria = !categoria || String(d.categoriaId) === categoria;
         const coincideEstado    = !estado    || d.estado === estado;
         return coincideTexto && coincideCategoria && coincideEstado;
     });
@@ -99,14 +145,6 @@ selectCategoria.addEventListener('change', aplicarFiltros);
 selectEstado.addEventListener('change', aplicarFiltros);
 
 // ── Tabla ────────────────────────────────────────────────────────────────────
-const CATEGORIA_LABEL = {
-    CERT_CALIBRACION:  'Cert. Calibración',
-    CERT_ACREDITACION: 'Cert. Acreditación',
-    CERT_CALIDAD:      'Cert. Calidad',
-    MANUAL_EQUIPO:     'Manual de equipo',
-    NORMATIVA:         'Normativa',
-    OTRO:              'Otro'
-};
 
 const ESTADO_LABEL = {
     VIGENTE:        'Vigente',
@@ -139,7 +177,7 @@ function renderTabla() {
                 <div class="doc-nombre">${d.nombre}</div>
                 ${d.descripcion ? `<div class="doc-desc">${d.descripcion}</div>` : ''}
             </td>
-            <td><span class="cat-badge">${CATEGORIA_LABEL[d.categoria] || d.categoria}</span></td>
+            <td><span class="cat-badge">${d.categoria || '—'}</span></td>
             <td>${formatearFecha(d.fechaVencimiento)}</td>
             <td>
                 <span class="estado-badge estado-${d.estado}">
@@ -228,7 +266,10 @@ function abrirEdicion(id) {
     editandoId = id;
     document.getElementById('modalDocTitulo').textContent = 'Editar documento';
     inputNombre.value      = doc.nombre;
-    inputCategoria.value   = doc.categoria;
+    if (tsCategoria) {
+        if (doc.categoriaId) tsCategoria.setValue(String(doc.categoriaId), true);
+        else tsCategoria.clear(true);
+    }
     inputDescripcion.value = doc.descripcion || '';
     inputVencimiento.value = doc.fechaVencimiento || '';
     grupoArchivo.style.display = 'none';
@@ -238,6 +279,7 @@ function abrirEdicion(id) {
 
 function limpiarFormulario() {
     formDoc.reset();
+    if (tsCategoria) tsCategoria.clear(true);
     resetFileInput();
     limpiarErrores();
 }
@@ -248,7 +290,6 @@ function limpiarErrores() {
         if (el) el.classList.remove('visible');
     });
     inputNombre.classList.remove('error');
-    inputCategoria.classList.remove('error');
 }
 
 // ── File input ────────────────────────────────────────────────────────────────
@@ -312,7 +353,7 @@ async function guardarAlta() {
     const fd = new FormData();
     fd.append('nombre', inputNombre.value.trim());
     fd.append('descripcion', inputDescripcion.value.trim());
-    fd.append('categoria', inputCategoria.value);
+    if (tsCategoria && tsCategoria.getValue()) fd.append('categoriaId', tsCategoria.getValue());
     if (inputVencimiento.value) fd.append('fechaVencimiento', inputVencimiento.value);
     fd.append('file', inputArchivo.files[0]);
 
@@ -325,10 +366,11 @@ async function guardarAlta() {
 }
 
 async function guardarEdicion() {
+    const catVal = tsCategoria ? tsCategoria.getValue() : null;
     const payload = {
         nombre:           inputNombre.value.trim(),
         descripcion:      inputDescripcion.value.trim() || null,
-        categoria:        inputCategoria.value,
+        categoriaId:      catVal ? Number(catVal) : null,
         fechaVencimiento: inputVencimiento.value || null
     };
     const res = await apiFetch(`${API_URL}/${editandoId}`, {
@@ -348,8 +390,7 @@ function validar() {
         document.getElementById('errNombre').classList.add('visible');
         ok = false;
     }
-    if (!inputCategoria.value) {
-        inputCategoria.classList.add('error');
+    if (!tsCategoria || !tsCategoria.getValue()) {
         document.getElementById('errCategoria').classList.add('visible');
         ok = false;
     }
@@ -401,6 +442,30 @@ function mostrarToast(msg, tipo = 'success') {
     setTimeout(() => toast.classList.remove('visible'), 3000);
 }
 
+// ── Tom Select categoría ──────────────────────────────────────────────────────
+async function inicializarTomSelectCategoria() {
+    const res = await apiFetch(`${API_BASE}/api/categorias-documento`);
+    const cats = (res && res.ok) ? await res.json() : [];
+
+    tsCategoria = new TomSelect('#inputCategoria', {
+        valueField: 'id',
+        labelField: 'nombre',
+        searchField: 'nombre',
+        options: cats.map(c => ({ id: String(c.id), nombre: c.nombre })),
+        placeholder: 'Buscar o crear categoría...',
+        create: function(input, callback) {
+            apiFetch(`${API_BASE}/api/categorias-documento`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: input })
+            }).then(r => r.json())
+              .then(cat => callback({ id: String(cat.id), nombre: cat.nombre }));
+        },
+        dropdownParent: 'body',
+    });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 inicializarHeader();
+inicializarTomSelectCategoria();
 cargarDocumentos();

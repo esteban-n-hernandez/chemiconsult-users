@@ -39,19 +39,19 @@ public class DocumentoController {
     public ResponseEntity<DocumentoTO> create(
             @RequestParam("nombre") String nombre,
             @RequestParam(value = "descripcion", required = false) String descripcion,
-            @RequestParam("categoria") String categoria,
+            @RequestParam(value = "categoriaId", required = false) Long categoriaId,
             @RequestParam(value = "fechaVencimiento", required = false) String fechaVencimiento,
             @RequestParam("file") MultipartFile file) {
         log.info("Subiendo documento: {}", nombre);
         return ResponseEntity.status(201).body(
-                documentoService.create(nombre, descripcion, categoria, fechaVencimiento, file));
+                documentoService.create(nombre, descripcion, categoriaId, fechaVencimiento, file));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DocumentoTO> update(@PathVariable Long id, @RequestBody DocumentoTO to) {
         log.info("Actualizando metadatos del documento ID: {}", id);
         return ResponseEntity.ok(documentoService.updateMetadata(
-                id, to.getNombre(), to.getDescripcion(), to.getCategoria(), to.getFechaVencimiento()));
+                id, to.getNombre(), to.getDescripcion(), to.getCategoriaId(), to.getFechaVencimiento()));
     }
 
     @GetMapping("/{id}/archivo")

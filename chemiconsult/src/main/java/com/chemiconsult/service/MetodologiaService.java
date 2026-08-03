@@ -23,6 +23,14 @@ public class MetodologiaService {
         return repository.save(metodologia);
     }
 
+    public MetodologiaDE actualizar(Long id, String nombre, String descripcion) {
+        MetodologiaDE m = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Metodología no encontrada: " + id));
+        m.setNombre(nombre);
+        m.setDescripcion(descripcion);
+        return repository.save(m);
+    }
+
     public void bajaLogica(Long id) {
         // Si existe, le cambiamos el estado a activo = false
         repository.findById(id).ifPresent(met -> {

@@ -9,6 +9,7 @@ public class DocumentoTO {
     private Long id;
     private String nombre;
     private String descripcion;
+    private Long categoriaId;
     private String categoria;
     private String fechaVencimiento;
     private String estado;

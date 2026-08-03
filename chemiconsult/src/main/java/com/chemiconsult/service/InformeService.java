@@ -45,12 +45,21 @@ public class InformeService {
             "Habilitado por el Organismo provincial para el desarrollo sostenible (OPDS) N°26",
             "Inscripto en RELADA N°29",
             "Inscripto en el ROLA (Provincia De Cordoba) N°16",
-            "Inscripto en el ROLA (Provincia De Cordoba) N°16",
-            "de Gobierno de Salud del entonces Ministerio de Salud y Desarrollo Social y ex Secretaría de Infraestructura y",
-            "Política Hídrica del entonces Ministerio del Interior, Obras Públicas y Vivienda. La Comisión Nacional de",
-            "Alimentos deberá recomendar el límite máximo admitido para dichas regiones del país en base a los estudios",
-            "antes referidos."
     };
+
+    private static final String NOTA_ARSENICO =
+            "+En aquellas regiones del país con suelos de alto contenido de arsénico, " +
+            "la autoridad sanitaria competente podrá admitir valores mayores a 0,01 mg/l con un límite " +
+            "máximo de 0,05 mg/l cuando la composición normal del agua de la zona y la imposibilidad " +
+            "de aplicar tecnologías de corrección lo hicieran necesario; ello hasta contar con los " +
+            "resultados del estudio “Hidroarsenicismo y Saneamiento Básico en la República Argentina " +
+            "– Estudios básicos para el establecimiento de criterios y prioridades sanitarias en " +
+            "cobertura y calidad de aguas”, cuyos términos fueron elaborados por la Coordinación " +
+            "Políticas Socioambientales de la entonces Secretaría de Gobierno de Salud del entonces " +
+            "Ministerio de Salud y Desarrollo Social y ex Secretaría de Infraestructura y Política " +
+            "Hídrica del entonces Ministerio del Interior, Obras Públicas y Vivienda. La Comisión " +
+            "Nacional de Alimentos deberá recomendar el límite máximo admitido para dichas " +
+            "regiones del país en base a los estudios antes referidos.";
 
     private final AnalisisRepository analisisRepository;
     private final AnalisisArchivoRepository analisisArchivoRepository;
@@ -190,6 +199,9 @@ public class InformeService {
 
         // Párrafo de conclusión
         addConclusion(doc, d, fConcl);
+
+        // Nota arsénico (solo cuando el resultado supera 0,01 mg/l)
+        addNotaArsenico(doc, d, fNota);
 
         // Firma
         addFirma(doc);
@@ -416,6 +428,37 @@ public class InformeService {
         }
         return "Respecto a los parámetros analizados, se detectaron incumplimientos en: "
                 + String.join(", ", noOk) + ".";
+    }
+
+    private boolean tieneArsenicoCritico(AnalisisDetalleTO d) {
+        if (d.getParametros() == null) return false;
+        return d.getParametros().stream()
+                .filter(p -> {
+                    String nombre = p.getNombre();
+                    if (nombre == null) return false;
+                    String norm = nombre.toLowerCase()
+                            .replace("é", "e").replace("è", "e");
+                    return norm.contains("arsen");
+                })
+                .anyMatch(p -> {
+                    String val = p.getValorResultado();
+                    if (val == null || val.isBlank()) return false;
+                    String clean = val.trim();
+                    if (clean.startsWith("<") || clean.startsWith(">")) return false;
+                    try {
+                        return Double.parseDouble(clean.replace(",", ".")) > 0.01;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                });
+    }
+
+    private void addNotaArsenico(Document doc, AnalisisDetalleTO d, Font fNota) throws DocumentException {
+        if (!tieneArsenicoCritico(d)) return;
+        Paragraph p = new Paragraph(NOTA_ARSENICO, fNota);
+        p.setSpacingBefore(6);
+        p.setSpacingAfter(20);
+        doc.add(p);
     }
 
     private void addFirma(Document doc) throws Exception {

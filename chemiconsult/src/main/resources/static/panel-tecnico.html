@@ -51,6 +51,9 @@
         <button class="tab-btn-custom" onclick="cambiarPestaña('numeradores')">
             <i class="bi bi-hash"></i> Numeradores
         </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('categoriasDoc')">
+            <i class="bi bi-tags"></i> Categ. Documentación
+        </button>
     </div>
 
     <!-- ==========================================
@@ -291,6 +294,51 @@
                         <tr><td colspan="2" class="text-center" style="padding:16px;color:#6c757d;">Cargando...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PÁGINA / SECCIÓN: CATEGORÍAS DE DOCUMENTACIÓN
+         ========================================== -->
+    <div id="tab-categoriasDoc" class="tab-content-panel">
+        <div class="main-row-config">
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <h5><i class="bi bi-plus-circle text-success"></i> Nueva categoría</h5>
+                </div>
+                <div class="panel-body-custom">
+                    <form id="formCategoriaDoc">
+                        <div class="form-group-custom">
+                            <label>Nombre de la categoría</label>
+                            <input type="text" id="catDocNombre" class="form-control-custom"
+                                   placeholder="Ej: Cert. Calibración, Habilitación..." required>
+                        </div>
+                        <button type="submit" class="btn-guardar-custom">
+                            <i class="bi bi-check-lg"></i> Guardar categoría
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <div class="panel-header-row">
+                        <h5><i class="bi bi-table text-primary"></i> Categorías registradas</h5>
+                        <input type="text" id="filtroCategoriasDoc" class="tabla-filtro" placeholder="Buscar...">
+                    </div>
+                </div>
+                <div class="panel-body-custom" style="padding:0;">
+                    <table class="tabla-config">
+                        <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaCategoriasDocBody"></tbody>
+                    </table>
+                    <div class="tabla-paginador" id="paginadorCategoriasDoc"></div>
+                </div>
             </div>
         </div>
     </div>

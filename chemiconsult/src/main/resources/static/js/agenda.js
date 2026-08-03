@@ -23,9 +23,11 @@ const COLORES = {
 const TIPO_LABELS = {
     MUESTREO:       'Muestreo',
     COMPRA_INSUMOS: 'Compra de insumos',
-    ANALISIS:       'Análisis',
-    VISITA_TECNICA: 'Visita técnica',
-    OTRO:           'Otro'
+    VENCIMIENTO:    'Vencimiento',
+    OTRO:           'Otro',
+    DOCUMENTACION:  'Vencimiento',
+    VISITA_TECNICA: 'Vencimiento',
+    ANALISIS:       'Muestreo'
 };
 
 // ── Auth helper ───────────────────────────────────────────
@@ -81,7 +83,7 @@ async function cargarEventos(info, successCallback, failureCallback) {
         const data  = await apiFetch(`${API_URL}/muestreos?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
         let eventos = (data || []).map(m => {
             const tipo = m.tipo || 'MUESTREO';
-            const title = (tipo === 'MUESTREO' || tipo === 'VISITA_TECNICA') && m.clienteNombre
+            const title = (tipo === 'MUESTREO' || tipo === 'VENCIMIENTO' || tipo === 'DOCUMENTACION' || tipo === 'VISITA_TECNICA') && m.clienteNombre
                 ? m.clienteNombre
                 : (TIPO_LABELS[tipo] || 'Evento');
             return {
@@ -172,7 +174,8 @@ function abrirNuevo() { abrirFormulario({}); }
 function actualizarVisibilidadCliente(tipo) {
     const sec = document.getElementById('form-cliente-section');
     if (!sec) return;
-    sec.style.display = (tipo === 'MUESTREO' || tipo === 'VISITA_TECNICA') ? '' : 'none';
+    // MUESTREO → requerido; DOCUMENTACION → visible pero opcional; resto → oculto
+    sec.style.display = (tipo === 'MUESTREO' || tipo === 'VENCIMIENTO') ? '' : 'none';
 }
 
 async function abrirFormulario(m = {}) {
@@ -262,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         const tipoVal = document.querySelector('input[name="form-tipo"]:checked')?.value || 'MUESTREO';
-        const necesitaCliente = tipoVal === 'MUESTREO' || tipoVal === 'VISITA_TECNICA';
+        const necesitaCliente = tipoVal === 'MUESTREO';
         const clienteId = document.getElementById('form-cliente').value;
         if (necesitaCliente && !clienteId) { mostrarToast('Seleccioná un cliente', true); return; }
 

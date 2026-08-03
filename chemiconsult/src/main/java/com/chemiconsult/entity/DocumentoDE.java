@@ -1,6 +1,5 @@
 package com.chemiconsult.entity;
 
-import com.chemiconsult.enums.CategoriaDocumentoEnum;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -22,9 +21,9 @@ public class DocumentoDE {
     @Column(length = 500)
     private String descripcion;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private CategoriaDocumentoEnum categoria;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CATEGORIA_ID")
+    private CategoriaDocumentoDE categoria;
 
     @Column(name = "FECHA_VENCIMIENTO")
     private LocalDate fechaVencimiento;

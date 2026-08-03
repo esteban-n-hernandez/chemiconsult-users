@@ -3,7 +3,12 @@ package com.chemiconsult.enums;
 public enum TipoEventoAgendaEnum {
     MUESTREO,
     COMPRA_INSUMOS,
-    ANALISIS,
-    VISITA_TECNICA,
-    OTRO
+    VENCIMIENTO,
+    OTRO,
+    /** @deprecated use VENCIMIENTO */
+    @Deprecated DOCUMENTACION,
+    /** @deprecated use VENCIMIENTO */
+    @Deprecated VISITA_TECNICA,
+    /** @deprecated removed */
+    @Deprecated ANALISIS
 }

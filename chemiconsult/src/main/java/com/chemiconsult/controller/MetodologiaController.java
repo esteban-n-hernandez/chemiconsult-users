@@ -26,10 +26,15 @@ public class MetodologiaController {
         return ResponseEntity.ok(nuevaMetodologia);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<MetodologiaDE> actualizar(@PathVariable Long id,
+                                                     @RequestBody MetodologiaDE body) {
+        return ResponseEntity.ok(service.actualizar(id, body.getNombre(), body.getDescripcion()));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.bajaLogica(id);
-        // Retornamos 204 No Content indicando que la operaciÃ³n fue exitosa
         return ResponseEntity.noContent().build();
     }
 }

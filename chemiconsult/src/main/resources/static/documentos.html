@@ -5,6 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Documentación - CHEMICONSULT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.default.min.css" rel="stylesheet"/>
+    <style>
+        /* Tom Select — integrado con el diseño de la app */
+        .ts-wrapper .ts-control {
+            border: 1.5px solid var(--color-border-tertiary);
+            border-radius: 7px;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: var(--text-main);
+            background: var(--bg-surface);
+            box-shadow: none;
+            min-height: unset;
+            cursor: text;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: var(--verde);
+            box-shadow: 0 0 0 3px rgba(94,165,4,.12);
+            outline: none;
+        }
+        .ts-wrapper .ts-control input {
+            color: var(--text-main);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .ts-wrapper .ts-control input::placeholder { color: var(--color-text-tertiary); }
+        .ts-dropdown {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--color-border-tertiary);
+            border-radius: 7px;
+            box-shadow: 0 6px 20px rgba(0,0,0,.13);
+            font-size: 13px;
+            color: var(--text-main);
+            z-index: 10000;
+        }
+        .ts-dropdown .ts-dropdown-content { padding: 4px 0; }
+        .ts-dropdown .ts-option {
+            padding: 8px 12px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .ts-dropdown .ts-option:hover,
+        .ts-dropdown .ts-option.active { background: var(--bg-subtle); color: var(--text-main); }
+        .ts-dropdown .ts-option.selected { background: rgba(94,165,4,.1); color: var(--verde); }
+        .ts-dropdown .create { color: var(--verde); font-weight: 600; }
+        .ts-wrapper .ts-control .item { color: var(--text-main); }
+    </style>
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
     <link rel="stylesheet" href="css/documentos/documentos.css"/>
@@ -35,6 +81,11 @@
         <button class="btn-nuevo-doc" id="btnNuevoDoc">
             <i class="bi bi-upload"></i> Subir documento
         </button>
+    </div>
+
+    <div id="alertaVencimiento" class="alerta-vencimiento" style="display:none">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span id="alertaVencimientoMsg"></span>
     </div>
 
     <div class="kpi-grid">
@@ -75,12 +126,6 @@
                 <input type="text" id="inputBusqueda" class="filtro-input" placeholder="Buscar documento..." autocomplete="off"/>
                 <select id="selectCategoria" class="filtro-select">
                     <option value="">Todas las categorías</option>
-                    <option value="CERT_CALIBRACION">Cert. Calibración</option>
-                    <option value="CERT_ACREDITACION">Cert. Acreditación</option>
-                    <option value="CERT_CALIDAD">Cert. Calidad</option>
-                    <option value="MANUAL_EQUIPO">Manual de equipo</option>
-                    <option value="NORMATIVA">Normativa</option>
-                    <option value="OTRO">Otro</option>
                 </select>
                 <select id="selectEstado" class="filtro-select">
                     <option value="">Todos los estados</option>
@@ -148,15 +193,7 @@
                     </div>
                     <div class="form-group">
                         <label>Categoría <span class="required">*</span></label>
-                        <select id="inputCategoria" class="form-control-custom">
-                            <option value="">Seleccioná una categoría...</option>
-                            <option value="CERT_CALIBRACION">Cert. Calibración</option>
-                            <option value="CERT_ACREDITACION">Cert. Acreditación</option>
-                            <option value="CERT_CALIDAD">Cert. Calidad</option>
-                            <option value="MANUAL_EQUIPO">Manual de equipo</option>
-                            <option value="NORMATIVA">Normativa</option>
-                            <option value="OTRO">Otro</option>
-                        </select>
+                        <select id="inputCategoria" class="form-control-custom"></select>
                         <span class="field-error" id="errCategoria">Seleccioná una categoría</span>
                     </div>
                 </div>
@@ -231,6 +268,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/sidebar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="js/documentos.js"></script>
 </body>
 </html>

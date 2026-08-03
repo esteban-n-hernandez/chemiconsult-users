@@ -24,6 +24,29 @@
 }
 .btn-nuevo-doc:hover { background: var(--verde-oscuro); }
 
+/* ── Alerta vencimiento ── */
+.alerta-vencimiento {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 1rem;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #78350f;
+}
+.alerta-vencimiento i { font-size: 16px; color: #d97706; flex-shrink: 0; }
+
+[data-theme="dark"] .alerta-vencimiento {
+    background: #292009;
+    border-color: #92400e;
+    color: #fcd34d;
+}
+[data-theme="dark"] .alerta-vencimiento i { color: #fcd34d; }
+
 /* ── KPI cards ── */
 .kpi-grid {
     display: grid;

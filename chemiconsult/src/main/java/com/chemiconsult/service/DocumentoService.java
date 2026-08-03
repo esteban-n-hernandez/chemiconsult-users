@@ -1,14 +1,17 @@
 package com.chemiconsult.service;
 
+import com.chemiconsult.entity.CategoriaDocumentoDE;
 import com.chemiconsult.entity.DocumentoDE;
-import com.chemiconsult.enums.CategoriaDocumentoEnum;
 import com.chemiconsult.mapper.DocumentoMapper;
+import com.chemiconsult.repository.CategoriaDocumentoRepository;
 import com.chemiconsult.repository.DocumentoRepository;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.DocumentoTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,12 +24,15 @@ public class DocumentoService {
     private static final String PREFIX = "documentos";
 
     private final DocumentoRepository documentoRepository;
+    private final CategoriaDocumentoRepository categoriaRepository;
     private final SupabaseBucketService supabaseBucketService;
 
     @Autowired
     public DocumentoService(DocumentoRepository documentoRepository,
+                            CategoriaDocumentoRepository categoriaRepository,
                             SupabaseBucketService supabaseBucketService) {
         this.documentoRepository = documentoRepository;
+        this.categoriaRepository = categoriaRepository;
         this.supabaseBucketService = supabaseBucketService;
     }
 
@@ -38,12 +44,12 @@ public class DocumentoService {
         return DocumentoMapper.toTO(findOrThrow(id));
     }
 
-    public DocumentoTO create(String nombre, String descripcion, String categoria,
+    public DocumentoTO create(String nombre, String descripcion, Long categoriaId,
                                String fechaVencimiento, MultipartFile file) {
         DocumentoDE entity = new DocumentoDE();
         entity.setNombre(nombre);
         entity.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion : null);
-        entity.setCategoria(CategoriaDocumentoEnum.valueOf(categoria));
+        entity.setCategoria(findCategoria(categoriaId));
         if (fechaVencimiento != null && !fechaVencimiento.isBlank()) {
             entity.setFechaVencimiento(LocalDate.parse(fechaVencimiento));
         }
@@ -59,11 +65,11 @@ public class DocumentoService {
     }
 
     public DocumentoTO updateMetadata(Long id, String nombre, String descripcion,
-                                       String categoria, String fechaVencimiento) {
+                                       Long categoriaId, String fechaVencimiento) {
         DocumentoDE entity = findOrThrow(id);
         entity.setNombre(nombre);
         entity.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion : null);
-        entity.setCategoria(CategoriaDocumentoEnum.valueOf(categoria));
+        entity.setCategoria(findCategoria(categoriaId));
         entity.setFechaVencimiento(
                 (fechaVencimiento != null && !fechaVencimiento.isBlank())
                         ? LocalDate.parse(fechaVencimiento) : null);
@@ -76,17 +82,24 @@ public class DocumentoService {
         return supabaseBucketService.descargarArchivo(BUCKET, entity.getArchivoUrl());
     }
 
-    public DocumentoTO delete(Long id) {
+    public void delete(Long id) {
         DocumentoDE entity = findOrThrow(id);
         if (entity.getArchivoUrl() != null) {
             supabaseBucketService.eliminarArchivo(BUCKET, entity.getArchivoUrl());
         }
         documentoRepository.deleteById(id);
-        return null;
+    }
+
+    private CategoriaDocumentoDE findCategoria(Long categoriaId) {
+        if (categoriaId == null) return null;
+        return categoriaRepository.findById(categoriaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Categoría no encontrada: " + categoriaId));
     }
 
     private DocumentoDE findOrThrow(Long id) {
         return documentoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Documento no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Documento no encontrado con ID: " + id));
     }
 }

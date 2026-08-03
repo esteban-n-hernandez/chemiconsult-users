@@ -34,6 +34,14 @@ public class ResolucionController {
         return ResponseEntity.status(201).body(resolucionService.crear(to));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ResolucionDE> actualizar(@PathVariable Long id,
+                                                    @RequestBody Map<String, String> body) {
+        String nombre = body.getOrDefault("nombre", "").trim();
+        String descripcion = body.get("descripcion");
+        return ResponseEntity.ok(resolucionService.actualizar(id, nombre, descripcion));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         resolucionService.eliminar(id);

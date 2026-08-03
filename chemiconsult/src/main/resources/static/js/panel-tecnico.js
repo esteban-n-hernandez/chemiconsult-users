@@ -1,6 +1,10 @@
 const API_URL = `${API_BASE}/api`;
 const POR_PAGINA = 10;
 
+function esc(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ── Estado por tabla ──
 const tablas = {
     resoluciones: {
@@ -14,6 +18,11 @@ const tablas = {
         textoVacio: 'No hay resoluciones registradas.',
         textoBuscar: r => `${r.nombre} ${r.descripcion || ''}`,
         renderAccionesExtra: r => `<button class="btn-accion-info" onclick="verParametros(${r.id})" title="Ver parámetros"><i class="bi bi-eye"></i></button>`,
+        editUrl: id => `${API_URL}/resoluciones/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-desc" value="${esc(r.descripcion || '')}" placeholder="Organismo emisor" style="width:100%"></td>`,
+        buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim(), descripcion: document.getElementById('ef-desc').value.trim() || null }),
     },
     parametros: {
         url: `${API_URL}/parametros`,
@@ -25,6 +34,10 @@ const tablas = {
         renderFila: r => `<td>${r.nombre}</td>`,
         textoVacio: 'No hay parámetros cargados.',
         textoBuscar: r => r.nombre,
+        editUrl: id => `${API_URL}/parametros/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>`,
+        buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim() }),
     },
     metodologias: {
         url: `${API_URL}/metodologias`,
@@ -36,6 +49,11 @@ const tablas = {
         renderFila: r => `<td>${r.nombre}</td><td>${r.descripcion || '-'}</td>`,
         textoVacio: 'No hay metodologías cargadas.',
         textoBuscar: r => `${r.nombre} ${r.descripcion || ''}`,
+        editUrl: id => `${API_URL}/metodologias/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-desc" value="${esc(r.descripcion || '')}" placeholder="Referencia bibliográfica" style="width:100%"></td>`,
+        buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim(), descripcion: document.getElementById('ef-desc').value.trim() || null }),
     },
     tiposmuestra: {
         url: `${API_URL}/tipos-muestra`,
@@ -47,6 +65,26 @@ const tablas = {
         renderFila: r => `<td>${r.nombre}</td><td>${r.matriz?.nombre || '-'}</td>`,
         textoVacio: 'No hay tipos de muestra registrados.',
         textoBuscar: r => `${r.nombre} ${r.matriz?.nombre || ''}`,
+        editUrl: id => `${API_URL}/tipos-muestra/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
+            <td>${r.matriz?.nombre || '-'}</td>`,
+        buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim(), matrizId: r.matriz?.id || null }),
+    },
+    categoriasDoc: {
+        url: `${API_URL}/categorias-documento`,
+        tbodyId: 'tablaCategoriasDocBody',
+        filtroId: 'filtroCategoriasDoc',
+        pagId:    'paginadorCategoriasDoc',
+        colSpan:  2,
+        data: [], filtro: '', pagina: 1,
+        renderFila: r => `<td>${r.nombre}</td>`,
+        textoVacio: 'No hay categorías registradas.',
+        textoBuscar: r => r.nombre,
+        editUrl: id => `${API_URL}/categorias-documento/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>`,
+        buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim() }),
     },
 };
 
@@ -155,11 +193,12 @@ function renderTabla(nombre) {
         </td></tr>`;
     } else {
         tbody.innerHTML = pagina.map(r => `
-            <tr>
+            <tr data-id="${r.id}">
                 ${t.renderFila(r)}
                 <td>
                     <div class="tabla-acciones">
                         ${t.renderAccionesExtra ? t.renderAccionesExtra(r) : ''}
+                        ${t.editUrl ? `<button class="btn-accion-info" onclick="iniciarEdicion('${nombre}', ${r.id})" title="Editar"><i class="bi bi-pencil"></i></button>` : ''}
                         <button class="btn-accion-danger" onclick="eliminar('${nombre}', ${r.id})" title="Eliminar">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -285,6 +324,26 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('Error guardando metodología:', err);
             mostrarToast('No se pudo guardar la metodología.', 'danger');
+        }
+    });
+
+    document.getElementById('formCategoriaDoc').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const nombre = document.getElementById('catDocNombre').value.trim();
+        try {
+            const res = await fetch(`${API_URL}/categorias-documento`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ nombre }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            cargarTabla('categoriasDoc');
+            mostrarToast('Categoría guardada.');
+        } catch (err) {
+            console.error('Error guardando categoría:', err);
+            mostrarToast('No se pudo guardar la categoría.', 'danger');
         }
     });
 });
@@ -557,16 +616,83 @@ function cerrarModalParams(event) {
     }
 }
 
+// ── Edición inline ──
+function iniciarEdicion(tablaNombre, id) {
+    const t = tablas[tablaNombre];
+    if (!t.editUrl) return;
+    const r = t.data.find(x => x.id === id);
+    if (!r) return;
+
+    const tr = document.querySelector(`#${t.tbodyId} tr[data-id="${id}"]`);
+    if (!tr) return;
+
+    tr.innerHTML = `
+        ${t.renderFilaEdit(r)}
+        <td>
+            <div class="tabla-acciones">
+                <button class="btn-accion-success" onclick="guardarEdicionFila('${tablaNombre}', ${id})" title="Guardar">
+                    <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="btn-accion-muted" onclick="renderTabla('${tablaNombre}')" title="Cancelar">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </td>`;
+
+    const primer = tr.querySelector('input');
+    if (primer) { primer.focus(); primer.select(); }
+
+    tr.querySelector('input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') guardarEdicionFila(tablaNombre, id);
+        if (e.key === 'Escape') renderTabla(tablaNombre);
+    });
+}
+
+async function guardarEdicionFila(tablaNombre, id) {
+    const t = tablas[tablaNombre];
+    const r = t.data.find(x => x.id === id);
+    if (!r) return;
+
+    const body = t.buildPutBody(r);
+    if (!body.nombre?.trim()) {
+        mostrarToast('El nombre no puede estar vacío.', 'danger');
+        return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(t.editUrl(id), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        mostrarToast('Guardado correctamente.');
+        cargarTabla(tablaNombre);
+    } catch (err) {
+        console.error('Error guardando edición:', err);
+        mostrarToast('No se pudo guardar.', 'danger');
+    }
+}
+
 // ── Eliminar ──
 async function eliminar(nombre, id) {
-    const labels = { resoluciones: 'resolución', parametros: 'parámetro', metodologias: 'metodología' };
-    const ok = await UI.confirmar({ titulo: `¿Eliminar esta ${labels[nombre]}?`, subtexto: 'Esta acción no se puede deshacer.', textoConfirmar: 'Eliminar', tipo: 'danger' });
+    const labels = {
+        resoluciones:  'resolución',
+        parametros:    'parámetro',
+        metodologias:  'metodología',
+        tiposmuestra:  'tipo de muestra',
+        categoriasDoc: 'categoría',
+    };
+    const ok = await UI.confirmar({ titulo: `¿Eliminar esta ${labels[nombre] || 'entrada'}?`, subtexto: 'Esta acción no se puede deshacer.', textoConfirmar: 'Eliminar', tipo: 'danger' });
     if (!ok) return;
 
     const endpoints = {
-        resoluciones: `${API_URL}/resoluciones/${id}`,
-        parametros:   `${API_URL}/parametros/${id}`,
-        metodologias: `${API_URL}/metodologias/${id}`,
+        resoluciones:  `${API_URL}/resoluciones/${id}`,
+        parametros:    `${API_URL}/parametros/${id}`,
+        metodologias:  `${API_URL}/metodologias/${id}`,
+        tiposmuestra:  `${API_URL}/tipos-muestra/${id}`,
+        categoriasDoc: `${API_URL}/categorias-documento/${id}`,
     };
 
     const token = localStorage.getItem('token');

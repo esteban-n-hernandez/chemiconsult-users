@@ -43,6 +43,15 @@ public class ResolucionService {
         return resolucionRepository.findAll();
     }
 
+    @Transactional
+    public ResolucionDE actualizar(Long id, String nombre, String descripcion) {
+        ResolucionDE r = resolucionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Resolución no encontrada: " + id));
+        r.setNombre(nombre);
+        r.setDescripcion(descripcion);
+        return resolucionRepository.save(r);
+    }
+
     @Transactional(readOnly = true)
     public List<ResolucionDestinoTO> listarTodosLosDestinos() {
         return destinoRepository.findAll().stream()

@@ -14,7 +14,8 @@ public class DocumentoMapper {
                 .id(e.getId())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
-                .categoria(e.getCategoria() != null ? e.getCategoria().name() : null)
+                .categoriaId(e.getCategoria() != null ? e.getCategoria().getId() : null)
+                .categoria(e.getCategoria() != null ? e.getCategoria().getNombre() : null)
                 .fechaVencimiento(e.getFechaVencimiento() != null
                         ? e.getFechaVencimiento().format(DateTimeFormatter.ISO_LOCAL_DATE) : null)
                 .estado(computarEstado(e.getFechaVencimiento()))
@@ -32,7 +33,7 @@ public class DocumentoMapper {
         if (vencimiento == null) return "VIGENTE";
         LocalDate hoy = LocalDate.now();
         if (vencimiento.isBefore(hoy)) return "VENCIDO";
-        if (vencimiento.isBefore(hoy.plusDays(30))) return "PROXIMO_VENCER";
+        if (vencimiento.isBefore(hoy.plusDays(15))) return "PROXIMO_VENCER";
         return "VIGENTE";
     }
 }
