@@ -5,6 +5,7 @@ import com.chemiconsult.entity.ClienteSucursalDE;
 import com.chemiconsult.entity.MuestreoDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.enums.EstadoMuestreoEnum;
+import com.chemiconsult.enums.TipoEventoAgendaEnum;
 import com.chemiconsult.mapper.MuestreoMapper;
 import com.chemiconsult.repository.ClienteRepository;
 import com.chemiconsult.repository.ClienteSucursalRepository;
@@ -82,9 +83,17 @@ public class MuestreoService {
     }
 
     private void applyFields(MuestreoDE entity, MuestreoTO to) {
-        ClienteDE cliente = clienteRepository.findById(to.getClienteId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID: " + to.getClienteId()));
-        entity.setCliente(cliente);
+        entity.setTipo(to.getTipo() != null
+                ? TipoEventoAgendaEnum.valueOf(to.getTipo())
+                : TipoEventoAgendaEnum.MUESTREO);
+
+        if (to.getClienteId() != null) {
+            ClienteDE cliente = clienteRepository.findById(to.getClienteId())
+                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID: " + to.getClienteId()));
+            entity.setCliente(cliente);
+        } else {
+            entity.setCliente(null);
+        }
 
         if (to.getSucursalId() != null) {
             ClienteSucursalDE sucursal = sucursalRepository.findById(to.getSucursalId())

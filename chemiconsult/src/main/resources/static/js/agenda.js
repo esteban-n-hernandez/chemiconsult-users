@@ -11,12 +11,21 @@ let muestreoEditandoId = null;
 let clientesCache = [];
 let sucursalesCache = {};
 let usuariosCache = [];
+let tipoFiltroActivo = '';
 
 const COLORES = {
     PENDIENTE:  '#f59e0b',
     CONFIRMADO: '#5EA504',
     REALIZADO:  '#64748b',
     CANCELADO:  '#ef4444'
+};
+
+const TIPO_LABELS = {
+    MUESTREO:       'Muestreo',
+    COMPRA_INSUMOS: 'Compra de insumos',
+    ANALISIS:       'Análisis',
+    VISITA_TECNICA: 'Visita técnica',
+    OTRO:           'Otro'
 };
 
 // ── Auth helper ───────────────────────────────────────────
@@ -70,13 +79,22 @@ async function cargarEventos(info, successCallback, failureCallback) {
         const start = info.startStr.substring(0, 19);
         const end   = info.endStr.substring(0, 19);
         const data  = await apiFetch(`${API_URL}/muestreos?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-        const eventos = (data || []).map(m => ({
-            id:    String(m.id),
-            title: m.clienteNombre || 'Muestreo',
-            start: m.fechaHora,
-            color: COLORES[m.estado] || '#5EA504',
-            extendedProps: m
-        }));
+        let eventos = (data || []).map(m => {
+            const tipo = m.tipo || 'MUESTREO';
+            const title = (tipo === 'MUESTREO' || tipo === 'VISITA_TECNICA') && m.clienteNombre
+                ? m.clienteNombre
+                : (TIPO_LABELS[tipo] || 'Evento');
+            return {
+                id:    String(m.id),
+                title,
+                start: m.fechaHora,
+                color: COLORES[m.estado] || '#5EA504',
+                extendedProps: m
+            };
+        });
+        if (tipoFiltroActivo) {
+            eventos = eventos.filter(ev => (ev.extendedProps.tipo || 'MUESTREO') === tipoFiltroActivo);
+        }
         successCallback(eventos);
     } catch (e) {
         console.error('Error cargando muestreos:', e);
@@ -95,6 +113,8 @@ function cambiarVista(vista, btn) {
 function abrirDetalle(event) {
     const m = event.extendedProps;
 
+    const tipoEl = document.getElementById('detalle-tipo');
+    if (tipoEl) tipoEl.textContent = TIPO_LABELS[m.tipo || 'MUESTREO'] || 'Muestreo';
     document.getElementById('detalle-cliente').textContent    = m.clienteNombre || '—';
     document.getElementById('detalle-sucursal').textContent   = m.sucursalNombre || '—';
     document.getElementById('detalle-fecha').textContent       = formatearFecha(m.fechaHora);
@@ -149,15 +169,26 @@ function abrirNuevoEnFecha(dateStr) {
 
 function abrirNuevo() { abrirFormulario({}); }
 
+function actualizarVisibilidadCliente(tipo) {
+    const sec = document.getElementById('form-cliente-section');
+    if (!sec) return;
+    sec.style.display = (tipo === 'MUESTREO' || tipo === 'VISITA_TECNICA') ? '' : 'none';
+}
+
 async function abrirFormulario(m = {}) {
     muestreoEditandoId = m.id || null;
 
-    document.getElementById('formModalTitle').textContent = m.id ? 'Editar muestreo' : 'Nuevo muestreo';
+    document.getElementById('formModalTitle').textContent = m.id ? 'Editar evento' : 'Nuevo evento';
     document.getElementById('form-fecha').value     = m.fechaHora ? m.fechaHora.substring(0, 16) : '';
     document.getElementById('form-direccion').value = m.direccion || '';
     document.getElementById('form-obs').value        = m.observaciones || '';
     const radioEstado = document.querySelector(`input[name="form-estado"][value="${m.estado || 'PENDIENTE'}"]`);
     if (radioEstado) radioEstado.checked = true;
+
+    const tipoVal = m.tipo || 'MUESTREO';
+    const radioTipo = document.querySelector(`input[name="form-tipo"][value="${tipoVal}"]`);
+    if (radioTipo) radioTipo.checked = true;
+    actualizarVisibilidadCliente(tipoVal);
 
     const selCliente = document.getElementById('form-cliente');
     selCliente.innerHTML = '<option value="">Seleccionar cliente…</option>'
@@ -216,11 +247,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.querySelectorAll('input[name="form-tipo"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            actualizarVisibilidadCliente(this.value);
+        });
+    });
+
+    document.getElementById('filtro-tipo')?.addEventListener('change', function () {
+        tipoFiltroActivo = this.value;
+        calendar.refetchEvents();
+    });
+
     document.getElementById('muestreoForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const tipoVal = document.querySelector('input[name="form-tipo"]:checked')?.value || 'MUESTREO';
+        const necesitaCliente = tipoVal === 'MUESTREO' || tipoVal === 'VISITA_TECNICA';
         const clienteId = document.getElementById('form-cliente').value;
-        if (!clienteId) { mostrarToast('Seleccioná un cliente', true); return; }
+        if (necesitaCliente && !clienteId) { mostrarToast('Seleccioná un cliente', true); return; }
 
         const fechaRaw = document.getElementById('form-fecha').value;
         if (!fechaRaw) { mostrarToast('Ingresá la fecha y hora', true); return; }
@@ -229,7 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const responsableVal = document.getElementById('form-responsable').value;
 
         const to = {
-            clienteId:     Number(clienteId),
+            tipo:          tipoVal,
+            clienteId:     clienteId ? Number(clienteId) : null,
             sucursalId:    sucursalVal    ? Number(sucursalVal)    : null,
             fechaHora:     fechaRaw.length === 16 ? fechaRaw + ':00' : fechaRaw,
             responsableId: responsableVal ? Number(responsableVal) : null,

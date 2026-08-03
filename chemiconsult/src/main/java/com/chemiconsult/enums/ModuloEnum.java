@@ -7,6 +7,7 @@ public enum ModuloEnum {
     AGENDA,
     CLIENTES,
     STOCK,
+    DOCUMENTOS,
     PANEL_TECNICO,
     FACTURACION,
     USUARIOS

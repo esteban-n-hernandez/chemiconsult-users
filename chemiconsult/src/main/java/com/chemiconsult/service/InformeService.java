@@ -44,7 +44,12 @@ public class InformeService {
             "Habilitado por el Consejo Profesional de Quimica N°1908009",
             "Habilitado por el Organismo provincial para el desarrollo sostenible (OPDS) N°26",
             "Inscripto en RELADA N°29",
-            "Inscripto en el ROLA (Provincia De Cordoba) N°16"
+            "Inscripto en el ROLA (Provincia De Cordoba) N°16",
+            "Inscripto en el ROLA (Provincia De Cordoba) N°16",
+            "de Gobierno de Salud del entonces Ministerio de Salud y Desarrollo Social y ex Secretaría de Infraestructura y",
+            "Política Hídrica del entonces Ministerio del Interior, Obras Públicas y Vivienda. La Comisión Nacional de",
+            "Alimentos deberá recomendar el límite máximo admitido para dichas regiones del país en base a los estudios",
+            "antes referidos."
     };
 
     private final AnalisisRepository analisisRepository;
@@ -246,8 +251,8 @@ public class InformeService {
         tabla.setSpacingAfter(6);
         tabla.setHeaderRows(1);
 
-        Font fHeader = new Font(Font.HELVETICA, 9, Font.BOLD, new Color(255, 255, 255));
-        Color headerBg = new Color(94, 165, 4);
+        Font fHeader = new Font(Font.HELVETICA, 9, Font.BOLD, new Color(0, 0, 0));
+        Color headerBg = new Color(226, 239, 217);
 
         addHeaderCell(tabla, "Analito", fHeader, headerBg);
         addHeaderCell(tabla, "Unidad", fHeader, headerBg);
@@ -305,9 +310,9 @@ public class InformeService {
 
         // Pesos con clamp por tipo de columna
         float[] weights = new float[cols];
-        weights[0]       = clampW(maxLen[0],       18, 40); // Analito: puede ser largo
-        weights[1]       = clampW(maxLen[1],         5,  9); // Unidad: corto
-        weights[2]       = clampW(maxLen[2],         8, 13); // Resultados: número corto
+        weights[0] = clampW(maxLen[0], 18, 40); // Analito: puede ser largo
+        weights[1] = clampW(maxLen[1], 5, 9); // Unidad: corto
+        weights[2] = clampW(maxLen[2], 8, 13); // Resultados: número corto
         for (int i = 0; i < resoluciones.size(); i++) {
             weights[3 + i] = clampW(maxLen[3 + i], 10, 24); // Límites
         }
@@ -321,8 +326,13 @@ public class InformeService {
         return result;
     }
 
-    private int slen(String s) { return s != null ? s.length() : 0; }
-    private float clampW(int val, int min, int max) { return Math.min(max, Math.max(min, val)); }
+    private int slen(String s) {
+        return s != null ? s.length() : 0;
+    }
+
+    private float clampW(int val, int min, int max) {
+        return Math.min(max, Math.max(min, val));
+    }
 
     private String buildLimiteHeader(String origenNombre) {
         String nombre = origenNombre;
@@ -348,7 +358,7 @@ public class InformeService {
             case "MIN" -> l.getLimiteMin() != null ? fmtNum(l.getLimiteMin()) : "-";
             case "RANGO" -> (l.getLimiteMin() != null && l.getLimiteMax() != null)
                     ? fmtNum(l.getLimiteMin()) + "-" + fmtNum(l.getLimiteMax()) : "-";
-            case "TEXTO"    -> l.getLimiteTexto() != null ? l.getLimiteTexto() : "-";
+            case "TEXTO" -> l.getLimiteTexto() != null ? l.getLimiteTexto() : "-";
             case "AUSENCIA" -> "Ausente";
             default -> "-";
         };
@@ -538,11 +548,11 @@ public class InformeService {
             // Logo en esquina superior izquierda
             Image logo = Image.getInstance(logoBytes);
             logo.scaleToFit(115, 52);
-            logo.setAbsolutePosition(left, top - 10 - logo.getScaledHeight());
+            logo.setAbsolutePosition(left, top - 30 - logo.getScaledHeight());
             cb.addImage(logo);
 
             // Datos de contacto alineados a la derecha
-            float textTop = top - 10;
+            float textTop = top - 30;
             float lineH = 11f;
             cb.beginText();
             cb.setFontAndSize(bf, 8);

@@ -31,4 +31,10 @@ public class StockItemDE {
     @Column(length = 1000)
     private String observaciones;
 
+    @Column(name = "CANTIDAD_FRASCOS")
+    private Integer cantidadFrascos;
+
+    @Column(name = "UBICACION", length = 200)
+    private String ubicacion;
+
 }

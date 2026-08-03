@@ -1,0 +1,92 @@
+package com.chemiconsult.service;
+
+import com.chemiconsult.entity.DocumentoDE;
+import com.chemiconsult.enums.CategoriaDocumentoEnum;
+import com.chemiconsult.mapper.DocumentoMapper;
+import com.chemiconsult.repository.DocumentoRepository;
+import com.chemiconsult.supabase.service.SupabaseBucketService;
+import com.chemiconsult.to.DocumentoTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+public class DocumentoService {
+
+    private static final String BUCKET = "chemiconsult-bucket";
+    private static final String PREFIX = "documentos";
+
+    private final DocumentoRepository documentoRepository;
+    private final SupabaseBucketService supabaseBucketService;
+
+    @Autowired
+    public DocumentoService(DocumentoRepository documentoRepository,
+                            SupabaseBucketService supabaseBucketService) {
+        this.documentoRepository = documentoRepository;
+        this.supabaseBucketService = supabaseBucketService;
+    }
+
+    public List<DocumentoTO> getAll() {
+        return DocumentoMapper.toTO(documentoRepository.findAllByOrderByCreatedDateDesc());
+    }
+
+    public DocumentoTO getById(Long id) {
+        return DocumentoMapper.toTO(findOrThrow(id));
+    }
+
+    public DocumentoTO create(String nombre, String descripcion, String categoria,
+                               String fechaVencimiento, MultipartFile file) {
+        DocumentoDE entity = new DocumentoDE();
+        entity.setNombre(nombre);
+        entity.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion : null);
+        entity.setCategoria(CategoriaDocumentoEnum.valueOf(categoria));
+        if (fechaVencimiento != null && !fechaVencimiento.isBlank()) {
+            entity.setFechaVencimiento(LocalDate.parse(fechaVencimiento));
+        }
+        entity.setCreatedDate(LocalDateTime.now());
+        entity.setUpdateDate(LocalDateTime.now());
+        entity = documentoRepository.save(entity);
+
+        String path = PREFIX + "/" + entity.getId() + "/" + file.getOriginalFilename();
+        supabaseBucketService.subirArchivo(BUCKET, path, file);
+        entity.setArchivoUrl(path);
+        entity.setNombreArchivo(file.getOriginalFilename());
+        return DocumentoMapper.toTO(documentoRepository.save(entity));
+    }
+
+    public DocumentoTO updateMetadata(Long id, String nombre, String descripcion,
+                                       String categoria, String fechaVencimiento) {
+        DocumentoDE entity = findOrThrow(id);
+        entity.setNombre(nombre);
+        entity.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion : null);
+        entity.setCategoria(CategoriaDocumentoEnum.valueOf(categoria));
+        entity.setFechaVencimiento(
+                (fechaVencimiento != null && !fechaVencimiento.isBlank())
+                        ? LocalDate.parse(fechaVencimiento) : null);
+        entity.setUpdateDate(LocalDateTime.now());
+        return DocumentoMapper.toTO(documentoRepository.save(entity));
+    }
+
+    public byte[] descargarArchivo(Long id) {
+        DocumentoDE entity = findOrThrow(id);
+        return supabaseBucketService.descargarArchivo(BUCKET, entity.getArchivoUrl());
+    }
+
+    public DocumentoTO delete(Long id) {
+        DocumentoDE entity = findOrThrow(id);
+        if (entity.getArchivoUrl() != null) {
+            supabaseBucketService.eliminarArchivo(BUCKET, entity.getArchivoUrl());
+        }
+        documentoRepository.deleteById(id);
+        return null;
+    }
+
+    private DocumentoDE findOrThrow(Long id) {
+        return documentoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Documento no encontrado con ID: " + id));
+    }
+}

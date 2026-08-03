@@ -8,6 +8,7 @@ import lombok.Data;
 public class MuestreoTO {
 
     private Long id;
+    private String tipo;
     private Long clienteId;
     private String clienteNombre;
     private Long sucursalId;

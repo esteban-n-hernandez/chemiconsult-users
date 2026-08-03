@@ -21,6 +21,8 @@ public class StockItemMapper {
                 .categoria(item.getCategoria() != null ? item.getCategoria().name() : null)
                 .nivel(item.getNivel() != null ? item.getNivel().name() : null)
                 .observaciones(item.getObservaciones())
+                .cantidadFrascos(item.getCantidadFrascos())
+                .ubicacion(item.getUbicacion())
                 .build();
     }
 
@@ -31,6 +33,8 @@ public class StockItemMapper {
         entity.setCategoria(CategoriaStockEnum.valueOf(to.getCategoria()));
         entity.setNivel(NivelStockEnum.valueOf(to.getNivel()));
         entity.setObservaciones(to.getObservaciones());
+        entity.setCantidadFrascos(to.getCantidadFrascos());
+        entity.setUbicacion(to.getUbicacion());
         return entity;
     }
 
@@ -40,6 +44,8 @@ public class StockItemMapper {
         entity.setCategoria(CategoriaStockEnum.valueOf(to.getCategoria()));
         entity.setNivel(NivelStockEnum.valueOf(to.getNivel()));
         entity.setObservaciones(to.getObservaciones());
+        entity.setCantidadFrascos(to.getCantidadFrascos());
+        entity.setUbicacion(to.getUbicacion());
         return entity;
     }
 }

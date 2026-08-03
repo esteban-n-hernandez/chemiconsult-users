@@ -239,6 +239,8 @@ let sortDir = "desc";
 // ID del análisis abierto actualmente en el modal de detalle
 let detalleAnalisisId = null;
 let _autoGuardarTimer = null;
+let modoEdicionCompleto = false;
+let detalleEstadoActual = null;
 
 // ID de la muestra que se está editando (null = modo alta)
 let editandoMuestraId = null;
@@ -372,6 +374,23 @@ function vincularEventos() {
 
     // — Generar informe PDF —
     document.getElementById("btnGenerarInforme").addEventListener("click", onGenerarInforme);
+
+    // — Desbloquear edición de resultados cuando COMPLETO —
+    document.getElementById("btnEditarResultados").addEventListener("click", () => {
+        modoEdicionCompleto = true;
+        document.querySelectorAll("#detalleParametros .param-resultado-input").forEach(el => {
+            el.removeAttribute("readonly");
+            el.removeAttribute("disabled");
+            el.style.opacity = "";
+            el.style.cursor = "";
+        });
+        document.querySelectorAll("#detalleParametros .param-obs-input").forEach(el => {
+            el.removeAttribute("readonly");
+            el.style.opacity = "";
+            el.style.cursor = "";
+        });
+        document.getElementById("btnEditarResultados").style.display = "none";
+    });
 
     // Live re-evaluation de badges y auto-guardado
     function onResultadoChange(e) {
@@ -1398,6 +1417,8 @@ window.verDetalleMuestra = async function(id) {
 };
 
 function cerrarModalDetalle() {
+    modoEdicionCompleto = false;
+    detalleEstadoActual = null;
     if (_autoGuardarTimer) {
         clearTimeout(_autoGuardarTimer);
         _autoGuardarTimer = null;
@@ -1438,17 +1459,29 @@ function renderizarDetalleMuestra(d) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || `#${d.id}`;
 
     const btnGenerar  = document.getElementById("btnGenerarInforme");
+    const btnEditar   = document.getElementById("btnEditarResultados");
     const statusEl    = document.getElementById("autoGuardadoStatus");
     const esCancelado = d.estado === "CANCELADO";
+    const esCompleto  = d.estado === "COMPLETO";
+
+    modoEdicionCompleto = false;
+    detalleEstadoActual = d.estado;
 
     if (esCancelado) {
         btnGenerar.style.display = "none";
+        btnEditar.style.display = "none";
         if (statusEl) statusEl.style.display = "none";
-    } else if (d.estado === "COMPLETO") {
-        btnGenerar.style.display = "none";
+    } else if (esCompleto) {
+        btnGenerar.style.display = "";
+        btnGenerar.disabled = false;
+        btnGenerar.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> Regenerar informe';
+        btnGenerar.title = "";
+        btnEditar.style.display = "";
         if (statusEl) statusEl.style.display = "";
     } else {
         btnGenerar.style.display = "";
+        btnGenerar.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> Generar informe';
+        btnEditar.style.display = "none";
         if (statusEl) statusEl.style.display = "";
         const todosCompletos = d.parametros && d.parametros.length > 0 &&
             d.parametros.every(p => p.valorResultado && p.valorResultado.trim() !== "");
@@ -1538,15 +1571,16 @@ function renderizarDetalleMuestra(d) {
 
         const soloAusencia = p.limites && p.limites.length > 0 && p.limites.every(l => esLimiteAusencia(l));
         const val = p.valorResultado || "";
+        const bloqueado = esCancelado || esCompleto;
         const inputResultado = soloAusencia
-            ? `<select class="param-resultado-input param-resultado-select" data-parametro-id="${p.id}" ${esCancelado ? 'disabled style="opacity:.6;"' : ''}>
+            ? `<select class="param-resultado-input param-resultado-select" data-parametro-id="${p.id}" ${bloqueado ? 'disabled style="opacity:.6;"' : ''}>
                    <option value="">— Seleccionar —</option>
                    <option value="Ausente"  ${val === "Ausente"  ? "selected" : ""}>Ausente</option>
                    <option value="Presente" ${val === "Presente" ? "selected" : ""}>Presente</option>
                </select>`
             : `<input class="param-resultado-input" type="text" data-parametro-id="${p.id}"
                    value="${val}" placeholder="Resultado..."
-                   ${esCancelado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`;
+                   ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`;
 
         const hayLimites = p.limites && p.limites.length > 0;
         const nLimites   = hayLimites ? p.limites.length : 0;
@@ -1575,6 +1609,7 @@ function renderizarDetalleMuestra(d) {
                         id="obs-param-${p.id}"
                         value="${p.observacion || ''}"
                         placeholder="Observación..."
+                        ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}
                     >
                 </div>
                 ${limitesHtml}
@@ -1697,6 +1732,7 @@ function aplicarCumpleBadge(badge, cumple) {
 }
 
 function dispararAutoGuardar() {
+    if (detalleEstadoActual === "COMPLETO" && !modoEdicionCompleto) return;
     if (_autoGuardarTimer) clearTimeout(_autoGuardarTimer);
     mostrarAutoGuardadoStatus("pending");
     _autoGuardarTimer = setTimeout(autoGuardar, 1500);

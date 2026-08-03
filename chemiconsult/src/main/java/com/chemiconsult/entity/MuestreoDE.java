@@ -1,6 +1,7 @@
 package com.chemiconsult.entity;
 
 import com.chemiconsult.enums.EstadoMuestreoEnum;
+import com.chemiconsult.enums.TipoEventoAgendaEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -18,8 +19,12 @@ public class MuestreoDE {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "TIPO")
+    private TipoEventoAgendaEnum tipo;
+
     @ManyToOne
-    @JoinColumn(name = "CLIENTE_ID", nullable = false)
+    @JoinColumn(name = "CLIENTE_ID")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

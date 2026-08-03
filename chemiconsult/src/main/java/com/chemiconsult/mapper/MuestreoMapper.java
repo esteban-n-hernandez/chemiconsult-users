@@ -1,6 +1,7 @@
 package com.chemiconsult.mapper;
 
 import com.chemiconsult.entity.MuestreoDE;
+import com.chemiconsult.enums.TipoEventoAgendaEnum;
 import com.chemiconsult.to.MuestreoTO;
 
 import java.time.format.DateTimeFormatter;
@@ -19,6 +20,7 @@ public class MuestreoMapper {
 
         return MuestreoTO.builder()
                 .id(e.getId())
+                .tipo(e.getTipo() != null ? e.getTipo().name() : TipoEventoAgendaEnum.MUESTREO.name())
                 .clienteId(e.getCliente() != null ? e.getCliente().getId() : null)
                 .clienteNombre(nombre.trim())
                 .sucursalId(e.getSucursal() != null ? e.getSucursal().getId() : null)

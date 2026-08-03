@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${puedeVer('AGENDA')        ? link('agenda.html',             'bi-calendar-check',        'Agenda')        : ''}
         ${puedeVer('CLIENTES')      ? link('clientes.html',           'bi-people',                'Clientes')      : ''}
         ${puedeVer('STOCK')         ? link('stock.html',              'bi-box-seam',              'Stock')         : ''}
+        ${puedeVer('DOCUMENTOS')   ? link('documentos.html',         'bi-folder2-open',          'Documentación') : ''}
         ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html',      'bi-gear-fill',             'Panel Técnico') : ''}
         ${puedeVer('FACTURACION')   ? link('facturacion.html',        'bi-receipt',               'Facturación')   : ''}
         ${puedeVer('USUARIOS')      ? link('usuarios.html',           'bi-shield-lock',           'Usuarios')      : ''}

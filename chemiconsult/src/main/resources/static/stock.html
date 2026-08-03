@@ -90,13 +90,15 @@
                     <th>Descripción</th>
                     <th>Categoría</th>
                     <th>Nivel</th>
+                    <th>Cant.</th>
+                    <th>Ubicación</th>
                     <th>Observaciones</th>
                     <th>Acciones</th>
                 </tr>
                 </thead>
                 <tbody id="tablaStockBody">
                 <tr>
-                    <td colspan="6" class="text-center" style="padding:2rem; color:#adb5bd;">Cargando...</td>
+                    <td colspan="8" class="text-center" style="padding:2rem; color:#adb5bd;">Cargando...</td>
                 </tr>
                 </tbody>
             </table>
@@ -154,6 +156,17 @@
                 <div class="form-group">
                     <label>Descripción</label>
                     <input type="text" id="inputDescripcion" class="form-control-custom" placeholder="Ej: H₂SO₄ 98% — frasco 1L" autocomplete="off"/>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cantidad (unidades/frascos)</label>
+                        <input type="number" id="inputCantidad" class="form-control-custom" placeholder="Ej: 5" min="0" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Ubicación</label>
+                        <input type="text" id="inputUbicacion" class="form-control-custom" placeholder="Ej: Estante A3, Heladera 2" autocomplete="off"/>
+                    </div>
                 </div>
 
                 <div class="form-group">

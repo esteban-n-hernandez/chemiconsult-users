@@ -23,7 +23,7 @@
     <!-- Encabezado de página -->
     <div class="page-header">
         <div>
-            <h1>Agenda de muestreos</h1>
+            <h1>Agenda</h1>
             <p id="fecha-hoy"></p>
         </div>
         <div class="header-user">
@@ -50,9 +50,17 @@
             <button class="view-btn" onclick="cambiarVista('listMonth', this)">
                 <i class="bi bi-list-ul"></i> Lista
             </button>
+            <select class="filtro-tipo-select" id="filtro-tipo">
+                <option value="">Todos los tipos</option>
+                <option value="MUESTREO">Muestreo</option>
+                <option value="COMPRA_INSUMOS">Compra de insumos</option>
+                <option value="ANALISIS">Análisis</option>
+                <option value="VISITA_TECNICA">Visita técnica</option>
+                <option value="OTRO">Otro</option>
+            </select>
         </div>
         <button class="btn-nuevo-muestreo" id="btn-nuevo">
-            <i class="bi bi-plus-lg"></i> Nuevo muestreo
+            <i class="bi bi-plus-lg"></i> Nuevo evento
         </button>
     </div>
 
@@ -97,6 +105,12 @@
             </div>
             <div class="modal-body">
                 <div class="row">
+                    <div class="col-12 col-sm-6">
+                        <div class="detalle-row">
+                            <span class="detalle-label">Tipo</span>
+                            <span class="detalle-value" id="detalle-tipo">—</span>
+                        </div>
+                    </div>
                     <div class="col-12 col-sm-6">
                         <div class="detalle-row">
                             <span class="detalle-label">Cliente</span>
@@ -166,8 +180,8 @@
             <div class="modal-header">
                 <div class="mh-icon"><i class="bi bi-calendar-plus"></i></div>
                 <div class="mh-info">
-                    <div class="mh-eyebrow">Muestreo</div>
-                    <h5 class="modal-title" id="formModalTitle">Nuevo muestreo</h5>
+                    <div class="mh-eyebrow">Evento</div>
+                    <h5 class="modal-title" id="formModalTitle">Nuevo evento</h5>
                 </div>
                 <button type="button" class="modal-close" data-bs-dismiss="modal" aria-label="Cerrar">
                     <i class="bi bi-x-lg"></i>
@@ -176,15 +190,44 @@
 
             <div class="modal-body agenda-modal-body">
 
-                <!-- Sección: Cliente -->
+                <!-- Sección: Tipo de evento -->
                 <div class="form-section">
+                    <div class="form-section-label">
+                        <i class="bi bi-tag-fill"></i> Tipo de evento
+                    </div>
+                    <div class="tipo-picker">
+                        <label class="tipo-option">
+                            <input type="radio" name="form-tipo" value="MUESTREO" checked/>
+                            <i class="bi bi-droplet-fill"></i> Muestreo
+                        </label>
+                        <label class="tipo-option">
+                            <input type="radio" name="form-tipo" value="COMPRA_INSUMOS"/>
+                            <i class="bi bi-cart-fill"></i> Compra de insumos
+                        </label>
+                        <label class="tipo-option">
+                            <input type="radio" name="form-tipo" value="ANALISIS"/>
+                            <i class="bi bi-flask-fill"></i> Análisis
+                        </label>
+                        <label class="tipo-option">
+                            <input type="radio" name="form-tipo" value="VISITA_TECNICA"/>
+                            <i class="bi bi-person-badge-fill"></i> Visita técnica
+                        </label>
+                        <label class="tipo-option">
+                            <input type="radio" name="form-tipo" value="OTRO"/>
+                            <i class="bi bi-three-dots"></i> Otro
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sección: Cliente -->
+                <div class="form-section" id="form-cliente-section">
                     <div class="form-section-label">
                         <i class="bi bi-person-fill"></i> Cliente
                     </div>
                     <div class="form-row-2">
                         <div class="form-field">
                             <label class="field-label">Empresa / Persona <span class="required">*</span></label>
-                            <select class="field-input" id="form-cliente" required>
+                            <select class="field-input" id="form-cliente">
                                 <option value="">Seleccioná un cliente…</option>
                             </select>
                         </div>
@@ -266,7 +309,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
                 <button type="submit" class="btn-guardar">
-                    <i class="bi bi-check-lg"></i> Guardar muestreo
+                    <i class="bi bi-check-lg"></i> Guardar evento
                 </button>
             </div>
 

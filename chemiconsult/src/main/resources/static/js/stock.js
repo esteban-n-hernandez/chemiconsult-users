@@ -26,9 +26,11 @@ const selectNivel    = document.getElementById('selectNivel');
 const modalStock     = document.getElementById('modalStock');
 const modalTitulo    = document.getElementById('modalTitulo');
 const formStock      = document.getElementById('formStock');
-const inputNombre    = document.getElementById('inputNombre');
-const inputCategoria = document.getElementById('inputCategoria');
-const inputDescripcion = document.getElementById('inputDescripcion');
+const inputNombre        = document.getElementById('inputNombre');
+const inputCategoria     = document.getElementById('inputCategoria');
+const inputDescripcion   = document.getElementById('inputDescripcion');
+const inputCantidad      = document.getElementById('inputCantidad');
+const inputUbicacion     = document.getElementById('inputUbicacion');
 const inputObservaciones = document.getElementById('inputObservaciones');
 const errNombre      = document.getElementById('errNombre');
 const errCategoria   = document.getElementById('errCategoria');
@@ -77,7 +79,8 @@ function aplicarFiltros() {
     itemsFiltrados = items.filter(item => {
         const coincideTexto = !texto ||
             item.nombre.toLowerCase().includes(texto) ||
-            (item.descripcion || '').toLowerCase().includes(texto);
+            (item.descripcion || '').toLowerCase().includes(texto) ||
+            (item.ubicacion || '').toLowerCase().includes(texto);
         const coincideCategoria = !categoria || item.categoria === categoria;
         const coincideNivel     = !nivel     || item.nivel === nivel;
         return coincideTexto && coincideCategoria && coincideNivel;
@@ -116,6 +119,8 @@ function renderTabla() {
             <td class="item-descripcion">${item.descripcion || '—'}</td>
             <td><span class="cat-badge">${CATEGORIA_LABEL[item.categoria] || item.categoria}</span></td>
             <td>${NIVEL_BADGE[item.nivel] || item.nivel}</td>
+            <td class="text-center">${item.cantidadFrascos != null ? item.cantidadFrascos : '—'}</td>
+            <td class="item-ubicacion">${item.ubicacion || '—'}</td>
             <td class="item-obs" title="${item.observaciones || ''}">${item.observaciones || '—'}</td>
             <td>
                 <div class="acciones-cell">
@@ -178,6 +183,8 @@ function abrirEdicion(id) {
     inputNombre.value = item.nombre;
     inputCategoria.value = item.categoria;
     inputDescripcion.value = item.descripcion || '';
+    inputCantidad.value = item.cantidadFrascos != null ? item.cantidadFrascos : '';
+    inputUbicacion.value = item.ubicacion || '';
     inputObservaciones.value = item.observaciones || '';
     const radio = formStock.querySelector(`input[name="nivel"][value="${item.nivel}"]`);
     if (radio) radio.checked = true;
@@ -196,11 +203,13 @@ formStock.addEventListener('submit', async (e) => {
 
     const nivelSeleccionado = formStock.querySelector('input[name="nivel"]:checked')?.value;
     const payload = {
-        nombre:        inputNombre.value.trim(),
-        categoria:     inputCategoria.value,
-        descripcion:   inputDescripcion.value.trim() || null,
-        nivel:         nivelSeleccionado,
-        observaciones: inputObservaciones.value.trim() || null,
+        nombre:          inputNombre.value.trim(),
+        categoria:       inputCategoria.value,
+        descripcion:     inputDescripcion.value.trim() || null,
+        nivel:           nivelSeleccionado,
+        observaciones:   inputObservaciones.value.trim() || null,
+        cantidadFrascos: inputCantidad.value !== '' ? parseInt(inputCantidad.value) : null,
+        ubicacion:       inputUbicacion.value.trim() || null,
     };
 
     const url    = itemEditandoId ? `${API_URL}/${itemEditandoId}` : API_URL;
