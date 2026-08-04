@@ -403,6 +403,108 @@
     z-index: 1100;
 }
 
+/* ── Secciones de destino en el modal de resolución ── */
+.destino-crear-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-border-tertiary);
+}
+
+.destino-crear-form .unidad-inline-input {
+    flex: 1;
+    font-size: 13px;
+    padding: 6px 10px;
+}
+
+.destino-crear-form .btn-guardar-custom {
+    width: auto;
+    margin: 0;
+    padding: 7px 16px;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.destino-section {
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.destino-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--color-border-tertiary);
+    gap: 8px;
+}
+
+.destino-nombre {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--verde);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.destino-section .params-section-label {
+    padding: 8px 14px 0;
+    margin: 0;
+}
+
+.destino-section .tabla-config {
+    margin: 0;
+}
+
+.destino-agregar-params {
+    border-top: 1px solid var(--color-border-soft);
+    padding: 0;
+}
+
+.destino-agregar-params summary {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.destino-agregar-params summary::before {
+    content: '›';
+    display: inline-block;
+    transition: transform 0.15s;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.destino-agregar-params[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.destino-agregar-params summary:hover {
+    color: var(--verde);
+    background: var(--bg-subtle);
+}
+
+.destino-agregar-params .params-buscador {
+    margin: 8px 14px 4px;
+    width: calc(100% - 28px);
+}
+
+.destino-agregar-params .tabla-config {
+    border-top: none;
+}
+
 /* ── Panel header con buscador ── */
 .panel-header-row {
     display: flex;

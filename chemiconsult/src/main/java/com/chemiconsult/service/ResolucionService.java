@@ -191,6 +191,74 @@ public class ResolucionService {
         resolucionRepository.deleteById(id);
     }
 
+    @Transactional
+    public ResolucionDestinoTO crearDestino(Long resolucionId, String nombre) {
+        ResolucionDE resolucion = resolucionRepository.findById(resolucionId)
+                .orElseThrow(() -> new EntityNotFoundException("Resolución no encontrada: " + resolucionId));
+        ResolucionDestinoDE destino = new ResolucionDestinoDE();
+        destino.setResolucion(resolucion);
+        destino.setNombre(nombre.trim());
+        destinoRepository.save(destino);
+        ResolucionDestinoTO dto = new ResolucionDestinoTO();
+        dto.setId(destino.getId());
+        dto.setNombre(destino.getNombre());
+        dto.setParametros(List.of());
+        return dto;
+    }
+
+    @Transactional
+    public void eliminarDestino(Long destinoId) {
+        destinoRepository.deleteById(destinoId);
+    }
+
+    @Transactional
+    public void agregarParametroADestino(Long destinoId, Long parametroId, String unidad) {
+        ResolucionDestinoDE destino = destinoRepository.findById(destinoId)
+                .orElseThrow(() -> new EntityNotFoundException("Destino no encontrado: " + destinoId));
+        ParametroDE parametro = parametroRepository.findById(parametroId)
+                .orElseThrow(() -> new EntityNotFoundException("Parámetro no encontrado: " + parametroId));
+        String unidadFinal = (unidad != null && !unidad.isBlank()) ? unidad
+                : (parametro.getUnidad() != null ? parametro.getUnidad() : "");
+        destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
+                .ifPresentOrElse(
+                        rel -> { rel.setActivo(true); rel.setUnidad(unidadFinal); destinoParametroRepository.save(rel); },
+                        () -> {
+                            ResolucionDestinoParametroDE rel = new ResolucionDestinoParametroDE();
+                            rel.setDestino(destino);
+                            rel.setParametro(parametro);
+                            rel.setUnidad(unidadFinal);
+                            rel.setTipoLimite("NE");
+                            rel.setActivo(true);
+                            destinoParametroRepository.save(rel);
+                        }
+                );
+    }
+
+    @Transactional
+    public void actualizarLimiteDestino(Long destinoId, Long parametroId, String tipoLimite,
+                                         Double valorMinimo, Double valorMaximo, String limiteTexto) {
+        destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
+                .ifPresent(rel -> {
+                    rel.setTipoLimite(tipoLimite);
+                    rel.setValorMinimo(valorMinimo);
+                    rel.setValorMaximo(valorMaximo);
+                    rel.setLimiteTexto(limiteTexto);
+                    destinoParametroRepository.save(rel);
+                });
+    }
+
+    @Transactional
+    public void actualizarUnidadDestino(Long destinoId, Long parametroId, String unidad) {
+        destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
+                .ifPresent(rel -> { rel.setUnidad(unidad); destinoParametroRepository.save(rel); });
+    }
+
+    @Transactional
+    public void quitarParametroDeDestino(Long destinoId, Long parametroId) {
+        destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
+                .ifPresent(rel -> { rel.setActivo(false); destinoParametroRepository.save(rel); });
+    }
+
     // ── Helpers ──
     private ResolucionDestinoTO mapDestinoSimple(ResolucionDestinoDE destino) {
         ResolucionDestinoTO dto = new ResolucionDestinoTO();

@@ -100,4 +100,57 @@ public class ResolucionController {
     public ResponseEntity<List<ParametroNormaTO>> getParametros(@PathVariable Long id) {
         return ResponseEntity.ok(resolucionService.obtenerParametrosPorDestino(id));
     }
+
+    @PostMapping("/{id}/destinos")
+    public ResponseEntity<ResolucionDestinoTO> crearDestino(@PathVariable Long id,
+                                                             @RequestBody Map<String, String> body) {
+        String nombre = body.getOrDefault("nombre", "").trim();
+        return ResponseEntity.status(201).body(resolucionService.crearDestino(id, nombre));
+    }
+
+    @DeleteMapping("/{id}/destinos/{destinoId}")
+    public ResponseEntity<Void> eliminarDestino(@PathVariable Long id, @PathVariable Long destinoId) {
+        resolucionService.eliminarDestino(destinoId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/destinos/{destinoId}/parametros/{parametroId}")
+    public ResponseEntity<Void> agregarParamADestino(@PathVariable Long id,
+                                                      @PathVariable Long destinoId,
+                                                      @PathVariable Long parametroId,
+                                                      @RequestBody(required = false) Map<String, String> body) {
+        String unidad = body != null ? body.get("unidad") : null;
+        resolucionService.agregarParametroADestino(destinoId, parametroId, unidad);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/destinos/{destinoId}/parametros/{parametroId}/limite")
+    public ResponseEntity<Void> actualizarLimiteDestino(@PathVariable Long id,
+                                                         @PathVariable Long destinoId,
+                                                         @PathVariable Long parametroId,
+                                                         @RequestBody Map<String, Object> body) {
+        String tipoLimite  = (String) body.get("tipoLimite");
+        Double valorMinimo = body.get("valorMinimo") != null ? ((Number) body.get("valorMinimo")).doubleValue() : null;
+        Double valorMaximo = body.get("valorMaximo") != null ? ((Number) body.get("valorMaximo")).doubleValue() : null;
+        String limiteTexto = (String) body.get("limiteTexto");
+        resolucionService.actualizarLimiteDestino(destinoId, parametroId, tipoLimite, valorMinimo, valorMaximo, limiteTexto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/destinos/{destinoId}/parametros/{parametroId}/unidad")
+    public ResponseEntity<Void> actualizarUnidadDestino(@PathVariable Long id,
+                                                         @PathVariable Long destinoId,
+                                                         @PathVariable Long parametroId,
+                                                         @RequestBody Map<String, String> body) {
+        resolucionService.actualizarUnidadDestino(destinoId, parametroId, body.get("unidad"));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/destinos/{destinoId}/parametros/{parametroId}")
+    public ResponseEntity<Void> quitarParamDeDestino(@PathVariable Long id,
+                                                      @PathVariable Long destinoId,
+                                                      @PathVariable Long parametroId) {
+        resolucionService.quitarParametroDeDestino(destinoId, parametroId);
+        return ResponseEntity.noContent().build();
+    }
 }

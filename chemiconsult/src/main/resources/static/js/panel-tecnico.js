@@ -410,133 +410,180 @@ async function _cargarYRenderModalParams() {
 
 function _renderEditorParams(detalle, todosLosParams) {
     const cuerpo = document.getElementById('paramsModalCuerpo');
+    const destinos = detalle.destinos || [];
 
-    // Aplanar params incluidos deduplicados por param ID
-    const includedMap = new Map();
-    for (const destino of (detalle.destinos || [])) {
-        for (const p of (destino.parametros || [])) {
-            if (!includedMap.has(p.id)) includedMap.set(p.id, p);
-        }
+    const crearDestinoHtml = `
+        <div class="destino-crear-form">
+            <input type="text" id="nuevoDestinoNombre" class="unidad-inline-input"
+                   placeholder="Nombre del destino (ej: Colectora Cloacal)">
+            <button type="button" class="btn-guardar-custom" onclick="crearDestino()">
+                <i class="bi bi-plus-circle"></i> Agregar destino
+            </button>
+        </div>`;
+
+    if (destinos.length === 0) {
+        cuerpo.innerHTML = crearDestinoHtml +
+            `<p class="params-vacio" style="padding:2rem 0;">No hay destinos configurados. Agreguá el primero.</p>`;
+        return;
     }
-    const included = [...includedMap.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-    const includedIds = new Set(included.map(p => p.id));
-    const excluded = todosLosParams.filter(p => !includedIds.has(p.id)).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
-    const filasIncluidos = included.length > 0
-        ? included.map(p => `
-            <tr>
-                <td>${p.nombre}</td>
-                <td>
-                    <input type="text" class="unidad-inline-input" value="${p.unidad || ''}"
-                           placeholder="sin unidad"
-                           onblur="actualizarUnidadParam(${p.id}, this.value)"
-                           onkeydown="if(event.key==='Enter'){this.blur();}">
-                </td>
-                <td>${formatearLimite(p)}</td>
-                <td>
-                    <div class="tabla-acciones">
-                        <button class="btn-accion-info" onclick="abrirEditorLimite(${p.id})" title="Editar límite">
-                            <i class="bi bi-sliders"></i>
-                        </button>
-                        <button class="btn-accion-danger" onclick="quitarParametroResolucion(${p.id})" title="Quitar parámetro">
-                            <i class="bi bi-dash-circle"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>`).join('')
-        : `<tr><td colspan="4" class="params-vacio">No hay parámetros configurados.</td></tr>`;
+    const destinosSections = destinos.map(d => {
+        const includedIds = new Set((d.parametros || []).map(p => p.id));
+        const excluded = todosLosParams
+            .filter(p => !includedIds.has(p.id))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
-    const filasExcluidos = excluded.length > 0
-        ? excluded.map(p => `
-            <tr data-nombre="${p.nombre.toLowerCase()}">
-                <td>${p.nombre}</td>
-                <td>
-                    <input type="text" id="unidadInput_${p.id}" class="unidad-inline-input"
-                           placeholder="ej: µg/L, mg/kg">
-                </td>
-                <td>
-                    <button class="btn-accion-info" onclick="agregarParametroResolucion(${p.id})" title="Agregar parámetro">
-                        <i class="bi bi-plus-circle"></i>
+        const filasIncluidos = (d.parametros || []).length > 0
+            ? [...(d.parametros || [])].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => `
+                <tr>
+                    <td>${esc(p.nombre)}</td>
+                    <td>
+                        <input type="text" class="unidad-inline-input" value="${esc(p.unidad || '')}"
+                               placeholder="sin unidad"
+                               onblur="actualizarUnidadParamDestino(${d.id}, ${p.id}, this.value)"
+                               onkeydown="if(event.key==='Enter'){this.blur();}">
+                    </td>
+                    <td>${formatearLimite(p)}</td>
+                    <td>
+                        <div class="tabla-acciones">
+                            <button class="btn-accion-info" onclick="abrirEditorLimite(${d.id}, ${p.id})" title="Editar límite">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <button class="btn-accion-danger" onclick="quitarParamDeDestino(${d.id}, ${p.id})" title="Quitar">
+                                <i class="bi bi-dash-circle"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`).join('')
+            : `<tr><td colspan="4" class="params-vacio">Sin parámetros configurados.</td></tr>`;
+
+        const filasExcluidos = excluded.length > 0
+            ? excluded.map(p => `
+                <tr data-nombre-excluido="${p.nombre.toLowerCase()}" data-destino-excluido="${d.id}">
+                    <td>${esc(p.nombre)}</td>
+                    <td><input type="text" id="unidadInput_${d.id}_${p.id}" class="unidad-inline-input" placeholder="ej: mg/L"></td>
+                    <td>
+                        <button class="btn-accion-info" onclick="agregarParamADestino(${d.id}, ${p.id})" title="Agregar">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                    </td>
+                </tr>`).join('')
+            : `<tr><td colspan="3" class="params-vacio">Todos los parámetros están incluidos.</td></tr>`;
+
+        return `
+            <div class="destino-section">
+                <div class="destino-section-header">
+                    <span class="destino-nombre">${esc(d.nombre)}</span>
+                    <button class="btn-accion-danger" onclick="eliminarDestino(${d.id})" title="Eliminar destino">
+                        <i class="bi bi-trash"></i>
                     </button>
-                </td>
-            </tr>`).join('')
-        : `<tr><td colspan="3" class="params-vacio">Todos los parámetros ya están incluidos.</td></tr>`;
+                </div>
+                <div class="params-section-label">Parámetros (${(d.parametros || []).length})</div>
+                <table class="tabla-config">
+                    <thead><tr><th>Parámetro</th><th>Unidad</th><th>Límite</th><th></th></tr></thead>
+                    <tbody>${filasIncluidos}</tbody>
+                </table>
+                <details class="destino-agregar-params">
+                    <summary>Agregar parámetros a este destino (${excluded.length} disponibles)</summary>
+                    <input type="text" class="tabla-filtro params-buscador" placeholder="Buscar..."
+                           oninput="filtrarParamsExcluidosDestino(this, ${d.id})">
+                    <table class="tabla-config">
+                        <thead><tr><th>Parámetro</th><th>Unidad</th><th></th></tr></thead>
+                        <tbody>${filasExcluidos}</tbody>
+                    </table>
+                </details>
+            </div>`;
+    }).join('');
 
-    cuerpo.innerHTML = `
-        <div class="params-section-label">Incluidos (${included.length})</div>
-        <table class="tabla-config">
-            <thead><tr><th>Parámetro</th><th>Unidad</th><th>Límite</th><th></th></tr></thead>
-            <tbody>${filasIncluidos}</tbody>
-        </table>
-
-        <div class="params-divider"></div>
-
-        <div class="params-section-label">Disponibles para agregar</div>
-        <input type="text" class="tabla-filtro params-buscador" placeholder="Buscar parámetro..."
-               oninput="filtrarParamsExcluidos(this.value)">
-        <table class="tabla-config">
-            <thead><tr><th>Parámetro</th><th>Unidad para esta resolución</th><th></th></tr></thead>
-            <tbody id="tbodyParamsExcluidos">${filasExcluidos}</tbody>
-        </table>`;
+    cuerpo.innerHTML = crearDestinoHtml + destinosSections;
 }
 
-function filtrarParamsExcluidos(valor) {
-    const q = valor.toLowerCase().trim();
-    document.querySelectorAll('#tbodyParamsExcluidos tr[data-nombre]').forEach(tr => {
-        tr.style.display = tr.dataset.nombre.includes(q) ? '' : 'none';
+function filtrarParamsExcluidosDestino(input, destinoId) {
+    const q = input.value.toLowerCase().trim();
+    document.querySelectorAll(`tr[data-destino-excluido="${destinoId}"]`).forEach(tr => {
+        tr.style.display = !q || tr.dataset.nombreExcluido.includes(q) ? '' : 'none';
     });
 }
 
-async function agregarParametroResolucion(parametroId) {
+async function crearDestino() {
+    const nombre = (document.getElementById('nuevoDestinoNombre')?.value || '').trim();
+    if (!nombre) { mostrarToast('Ingresá un nombre para el destino.', 'danger'); return; }
     const token = localStorage.getItem('token');
-    const unidad = (document.getElementById(`unidadInput_${parametroId}`)?.value || '').trim();
     try {
-        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}`, {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/destinos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ nombre }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await _cargarYRenderModalParams();
+    } catch {
+        mostrarToast('No se pudo crear el destino.', 'danger');
+    }
+}
+
+async function eliminarDestino(destinoId) {
+    const ok = await UI.confirmar({
+        titulo: '¿Eliminar este destino?',
+        subtexto: 'Se eliminarán también sus parámetros configurados.',
+        textoConfirmar: 'Eliminar',
+        tipo: 'danger',
+    });
+    if (!ok) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/destinos/${destinoId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error();
+        await _cargarYRenderModalParams();
+    } catch {
+        mostrarToast('No se pudo eliminar el destino.', 'danger');
+    }
+}
+
+async function agregarParamADestino(destinoId, parametroId) {
+    const unidad = (document.getElementById(`unidadInput_${destinoId}_${parametroId}`)?.value || '').trim();
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/destinos/${destinoId}/parametros/${parametroId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ unidad: unidad || null }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         await _cargarYRenderModalParams();
-    } catch (err) {
-        console.error('Error agregando parámetro:', err);
+    } catch {
         mostrarToast('No se pudo agregar el parámetro.', 'danger');
     }
 }
 
-async function actualizarUnidadParam(parametroId, unidad) {
+async function actualizarUnidadParamDestino(destinoId, parametroId, unidad) {
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}`, {
+        await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/destinos/${destinoId}/parametros/${parametroId}/unidad`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ unidad: unidad.trim() || null }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        mostrarToast('Unidad actualizada.', 'success');
-    } catch (err) {
-        console.error('Error actualizando unidad:', err);
+    } catch {
         mostrarToast('No se pudo actualizar la unidad.', 'danger');
     }
 }
 
-async function quitarParametroResolucion(parametroId) {
+async function quitarParamDeDestino(destinoId, parametroId) {
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}`, {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/destinos/${destinoId}/parametros/${parametroId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` },
         });
-        if (res.status === 409) {
-            mostrarToast('No se pudo desactivar: error de integridad inesperado.', 'danger');
-            return;
-        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        mostrarToast('Parámetro desactivado. El historial de análisis no se ve afectado.', 'success');
+        mostrarToast('Parámetro quitado del destino.', 'success');
         await _cargarYRenderModalParams();
-    } catch (err) {
-        console.error('Error quitando parámetro:', err);
-        mostrarToast('No se pudo desactivar el parámetro.', 'danger');
+    } catch {
+        mostrarToast('No se pudo quitar el parámetro.', 'danger');
     }
 }
 
@@ -553,20 +600,18 @@ function formatearLimite(p) {
 }
 
 // ── Editor de límite de parámetro ──
-function abrirEditorLimite(parametroId) {
-    let p = null;
-    for (const destino of (_currentDetalle?.destinos || [])) {
-        p = (destino.parametros || []).find(x => x.id === parametroId);
-        if (p) break;
-    }
+function abrirEditorLimite(destinoId, parametroId) {
+    const destino = (_currentDetalle?.destinos || []).find(d => d.id === destinoId);
+    const p = destino ? (destino.parametros || []).find(x => x.id === parametroId) : null;
     if (!p) return;
 
-    document.getElementById('limiteParamId').value          = parametroId;
-    document.getElementById('limiteModalTitulo').textContent = `Límite — ${p.nombre}`;
-    document.getElementById('limiteTipo').value             = p.tipoLimite || 'NE';
-    document.getElementById('limiteMin').value              = p.valorMinimo ?? '';
-    document.getElementById('limiteMax').value              = p.valorMaximo ?? '';
-    document.getElementById('limiteTextoInput').value       = p.limiteTexto || '';
+    document.getElementById('limiteDestinoId').value         = destinoId;
+    document.getElementById('limiteParamId').value           = parametroId;
+    document.getElementById('limiteModalTitulo').textContent = `Límite — ${p.nombre} (${esc(destino.nombre)})`;
+    document.getElementById('limiteTipo').value              = p.tipoLimite || 'NE';
+    document.getElementById('limiteMin').value               = p.valorMinimo ?? '';
+    document.getElementById('limiteMax').value               = p.valorMaximo ?? '';
+    document.getElementById('limiteTextoInput').value        = p.limiteTexto || '';
     onTipoLimiteCambio();
     document.getElementById('limiteOverlay').classList.add('visible');
 }
@@ -579,6 +624,7 @@ function onTipoLimiteCambio() {
 }
 
 async function guardarLimiteParam() {
+    const destinoId   = document.getElementById('limiteDestinoId').value;
     const parametroId = document.getElementById('limiteParamId').value;
     const tipoLimite  = document.getElementById('limiteTipo').value;
     const minVal      = document.getElementById('limiteMin').value;
@@ -589,7 +635,8 @@ async function guardarLimiteParam() {
 
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/parametros/${parametroId}/limite`, {
+        const res = await fetch(
+            `${API_URL}/resoluciones/${_currentResolucionId}/destinos/${destinoId}/parametros/${parametroId}/limite`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ tipoLimite, valorMinimo, valorMaximo, limiteTexto }),
