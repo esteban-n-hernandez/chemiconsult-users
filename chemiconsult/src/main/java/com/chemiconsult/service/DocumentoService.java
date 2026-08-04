@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -57,7 +58,8 @@ public class DocumentoService {
         entity.setUpdateDate(LocalDateTime.now());
         entity = documentoRepository.save(entity);
 
-        String path = PREFIX + "/" + entity.getId() + "/" + file.getOriginalFilename();
+        String safeName = sanitizeFilename(file.getOriginalFilename());
+        String path = PREFIX + "/" + entity.getId() + "/" + safeName;
         supabaseBucketService.subirArchivo(BUCKET, path, file);
         entity.setArchivoUrl(path);
         entity.setNombreArchivo(file.getOriginalFilename());
@@ -101,5 +103,17 @@ public class DocumentoService {
         return documentoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Documento no encontrado con ID: " + id));
+    }
+
+    /** Devuelve un nombre de archivo seguro para usar como clave de storage (sin tildes ni espacios). */
+    private static String sanitizeFilename(String original) {
+        if (original == null || original.isBlank()) return "archivo";
+        // NFD descompone tildes; luego quitamos los diacríticos (non-ASCII tras NFD)
+        String base = Normalizer.normalize(original, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "");
+        // Espacios → guion bajo; eliminar caracteres problemáticos para URLs/storage
+        base = base.replaceAll("\\s+", "_")
+                   .replaceAll("[^\\w.\\-]", "_");
+        return base.isEmpty() ? "archivo" : base;
     }
 }

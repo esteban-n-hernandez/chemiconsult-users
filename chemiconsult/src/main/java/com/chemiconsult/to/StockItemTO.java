@@ -15,5 +15,6 @@ public class StockItemTO {
     private String observaciones;
     private Integer cantidadFrascos;
     private String ubicacion;
+    private String identificacion;
 
 }

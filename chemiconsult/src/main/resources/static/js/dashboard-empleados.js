@@ -160,6 +160,8 @@ function cerrarModalMuestra() {
         parametrosPorDestinoCacheDash.clear();
         cerrarBuscadorDash();
         document.querySelectorAll("#formAltaMuestra .field-error").forEach(el => el.style.display = "none");
+        document.getElementById("grupoSucursal").style.display = "none";
+        document.getElementById("inputSucursal").innerHTML = '<option value="">— casa central —</option>';
     }, 250);
 }
 
@@ -185,6 +187,28 @@ async function cargarClientesDash() {
         clientesCargadosDash = true;
     } catch { sel.innerHTML = '<option value="">Sin clientes disponibles</option>'; }
 }
+
+document.getElementById("inputCliente").addEventListener("change", async function () {
+    const clienteId = this.value;
+    const grupoSucursal = document.getElementById("grupoSucursal");
+    const selSucursal   = document.getElementById("inputSucursal");
+    selSucursal.innerHTML = '<option value="">— casa central —</option>';
+    grupoSucursal.style.display = "none";
+    if (!clienteId) return;
+    try {
+        const r = await fetchDash(`${API_BASE}/api/clientes/${clienteId}/sucursales`);
+        if (!r.ok) return;
+        const sucursales = await r.json();
+        if (sucursales.length === 0) return;
+        sucursales.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s.id;
+            opt.textContent = s.nombre + (s.localidad ? ` — ${s.localidad}` : "");
+            selSucursal.appendChild(opt);
+        });
+        grupoSucursal.style.display = "block";
+    } catch { /* sin sucursales */ }
+});
 
 async function cargarMatricesDash() {
     const sel = document.getElementById("inputTipoMuestra");
@@ -415,6 +439,7 @@ formMuestra.addEventListener("submit", async function (e) {
         fechaIngreso:         fecha,
         fechaEntrega:         document.getElementById("inputFechaEntrega").value || null,
         clienteId:            parseInt(clienteId),
+        sucursalId:           document.getElementById("inputSucursal").value ? parseInt(document.getElementById("inputSucursal").value) : null,
         puntoMuestreo:        document.getElementById("inputPuntoMuestreo").value.trim() || null,
         tipoMuestraId:        document.getElementById("inputTipoMuestraEspecifica").value
                                   ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value)

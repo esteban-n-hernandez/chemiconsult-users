@@ -1,3 +1,6 @@
+-- CLIENTE_ID debe ser nullable para VENCIMIENTO y COMPRA_INSUMOS (no siempre hay cliente)
+ALTER TABLE "MUESTREO_AGENDADO" ALTER COLUMN "CLIENTE_ID" DROP NOT NULL;
+
 -- Recrear constraint de TASK para incluir EN_REVISION
 ALTER TABLE "TASK" DROP CONSTRAINT IF EXISTS "TASK_status_check";
 ALTER TABLE "TASK" ADD CONSTRAINT "TASK_status_check"

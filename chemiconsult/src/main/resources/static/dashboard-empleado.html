@@ -307,8 +307,8 @@
                         <input type="date" id="inputFechaEntrega" class="form-control-custom"/>
                     </div>
                 </div>
-                <!-- Fila 2: Cliente + ID Muestra + Punto -->
-                <div class="form-row form-row-3">
+                <!-- Fila 2: Cliente + Sucursal (condicional) -->
+                <div class="form-row">
                     <div class="form-group">
                         <label>Cliente <span class="required">*</span></label>
                         <select id="inputCliente" class="form-control-custom">
@@ -316,6 +316,15 @@
                         </select>
                         <span class="field-error" id="errCliente">Seleccioná un cliente</span>
                     </div>
+                    <div class="form-group" id="grupoSucursal" style="display:none;">
+                        <label>Sucursal</label>
+                        <select id="inputSucursal" class="form-control-custom">
+                            <option value="">— casa central —</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Fila 3: Punto de muestreo + Tipo de muestra -->
+                <div class="form-row">
                     <div class="form-group">
                         <label>Punto de muestreo</label>
                         <input type="text" id="inputPuntoMuestreo" class="form-control-custom" placeholder="Ej: Pozo norte..." autocomplete="off"/>

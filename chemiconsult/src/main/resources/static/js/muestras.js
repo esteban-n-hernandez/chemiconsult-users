@@ -467,6 +467,9 @@ function cerrarModal() {
     document.getElementById("formAltaMuestra").reset();
     tomSelectCliente?.clear();
     tomSelectMatriz?.clear();
+    const selSucursalReset = document.getElementById("inputSucursal");
+    selSucursalReset.innerHTML = '<option value="">— sin sucursales —</option>';
+    selSucursalReset.disabled = true;
     if (tomSelectTipoMuestra) {
         tomSelectTipoMuestra.destroy();
         tomSelectTipoMuestra = null;
@@ -620,7 +623,27 @@ async function cargarClientes() {
         allowEmptyOption: false,
         maxOptions: null,
         sortField: { field: 'text', direction: 'asc' },
-        dropdownParent: 'body'
+        dropdownParent: 'body',
+        onChange: async function(clienteId) {
+            const selSucursal = document.getElementById("inputSucursal");
+            selSucursal.innerHTML = '<option value="">— sin sucursales —</option>';
+            selSucursal.disabled = true;
+            if (!clienteId) return;
+            try {
+                const r = await fetchConAuth(`${API_URL}/clientes/${clienteId}/sucursales`);
+                if (!r.ok) return;
+                const sucursales = await r.json();
+                if (sucursales.length === 0) return;
+                selSucursal.innerHTML = '<option value="">— casa central —</option>';
+                sucursales.forEach(s => {
+                    const opt = document.createElement("option");
+                    opt.value = s.id;
+                    opt.textContent = s.nombre + (s.localidad ? ` — ${s.localidad}` : "");
+                    selSucursal.appendChild(opt);
+                });
+                selSucursal.disabled = false;
+            } catch { /* sin sucursales */ }
+        }
     });
 }
 
@@ -1091,6 +1114,7 @@ async function altaMuestra() {
         fechaIngreso:         document.getElementById("inputFecha").value,
         fechaEntrega:         document.getElementById("inputFechaEntrega").value || null,
         clienteId:            parseInt(document.getElementById("inputCliente").value),
+        sucursalId:           document.getElementById("inputSucursal").value ? parseInt(document.getElementById("inputSucursal").value) : null,
         puntoMuestreo:        document.getElementById("inputPuntoMuestreo").value.trim() || null,
         tipoMuestraId:        document.getElementById("inputTipoMuestraEspecifica").value
                                   ? parseInt(document.getElementById("inputTipoMuestraEspecifica").value) : null,

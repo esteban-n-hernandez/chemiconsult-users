@@ -26,12 +26,13 @@ const selectNivel    = document.getElementById('selectNivel');
 const modalStock     = document.getElementById('modalStock');
 const modalTitulo    = document.getElementById('modalTitulo');
 const formStock      = document.getElementById('formStock');
-const inputNombre        = document.getElementById('inputNombre');
-const inputCategoria     = document.getElementById('inputCategoria');
-const inputDescripcion   = document.getElementById('inputDescripcion');
-const inputCantidad      = document.getElementById('inputCantidad');
-const inputUbicacion     = document.getElementById('inputUbicacion');
-const inputObservaciones = document.getElementById('inputObservaciones');
+const inputNombre           = document.getElementById('inputNombre');
+const inputCategoria        = document.getElementById('inputCategoria');
+const inputDescripcion      = document.getElementById('inputDescripcion');
+const inputIdentificacion   = document.getElementById('inputIdentificacion');
+const inputCantidad         = document.getElementById('inputCantidad');
+const inputUbicacion        = document.getElementById('inputUbicacion');
+const inputObservaciones    = document.getElementById('inputObservaciones');
 const errNombre      = document.getElementById('errNombre');
 const errCategoria   = document.getElementById('errCategoria');
 const errNivel       = document.getElementById('errNivel');
@@ -80,7 +81,8 @@ function aplicarFiltros() {
         const coincideTexto = !texto ||
             item.nombre.toLowerCase().includes(texto) ||
             (item.descripcion || '').toLowerCase().includes(texto) ||
-            (item.ubicacion || '').toLowerCase().includes(texto);
+            (item.ubicacion || '').toLowerCase().includes(texto) ||
+            (item.identificacion || '').toLowerCase().includes(texto);
         const coincideCategoria = !categoria || item.categoria === categoria;
         const coincideNivel     = !nivel     || item.nivel === nivel;
         return coincideTexto && coincideCategoria && coincideNivel;
@@ -116,6 +118,7 @@ function renderTabla() {
     tbody.innerHTML = pagina.map(item => `
         <tr>
             <td class="item-nombre">${item.nombre}</td>
+            <td class="text-center item-id">${item.identificacion || '—'}</td>
             <td class="item-descripcion">${item.descripcion || '—'}</td>
             <td><span class="cat-badge">${CATEGORIA_LABEL[item.categoria] || item.categoria}</span></td>
             <td>${NIVEL_BADGE[item.nivel] || item.nivel}</td>
@@ -183,6 +186,7 @@ function abrirEdicion(id) {
     inputNombre.value = item.nombre;
     inputCategoria.value = item.categoria;
     inputDescripcion.value = item.descripcion || '';
+    inputIdentificacion.value = item.identificacion || '';
     inputCantidad.value = item.cantidadFrascos != null ? item.cantidadFrascos : '';
     inputUbicacion.value = item.ubicacion || '';
     inputObservaciones.value = item.observaciones || '';
@@ -208,6 +212,7 @@ formStock.addEventListener('submit', async (e) => {
         descripcion:     inputDescripcion.value.trim() || null,
         nivel:           nivelSeleccionado,
         observaciones:   inputObservaciones.value.trim() || null,
+        identificacion:  inputIdentificacion.value.trim() || null,
         cantidadFrascos: inputCantidad.value !== '' ? parseInt(inputCantidad.value) : null,
         ubicacion:       inputUbicacion.value.trim() || null,
     };

@@ -23,6 +23,7 @@ public class StockItemMapper {
                 .observaciones(item.getObservaciones())
                 .cantidadFrascos(item.getCantidadFrascos())
                 .ubicacion(item.getUbicacion())
+                .identificacion(item.getIdentificacion())
                 .build();
     }
 
@@ -35,6 +36,7 @@ public class StockItemMapper {
         entity.setObservaciones(to.getObservaciones());
         entity.setCantidadFrascos(to.getCantidadFrascos());
         entity.setUbicacion(to.getUbicacion());
+        entity.setIdentificacion(to.getIdentificacion());
         return entity;
     }
 
@@ -46,6 +48,7 @@ public class StockItemMapper {
         entity.setObservaciones(to.getObservaciones());
         entity.setCantidadFrascos(to.getCantidadFrascos());
         entity.setUbicacion(to.getUbicacion());
+        entity.setIdentificacion(to.getIdentificacion());
         return entity;
     }
 }

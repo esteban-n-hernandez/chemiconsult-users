@@ -37,4 +37,7 @@ public class StockItemDE {
     @Column(name = "UBICACION", length = 200)
     private String ubicacion;
 
+    @Column(name = "IDENTIFICACION", length = 100)
+    private String identificacion;
+
 }
