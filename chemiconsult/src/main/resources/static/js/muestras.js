@@ -644,7 +644,7 @@ async function cargarClientes() {
                 if (!r.ok) return;
                 const sucursales = await r.json();
                 if (sucursales.length === 0) return;
-                selSucursal.innerHTML = '<option value="">— casa central —</option>';
+                selSucursal.innerHTML = '';
                 sucursales.forEach(s => {
                     const opt = document.createElement("option");
                     opt.value = s.id;

@@ -161,7 +161,7 @@ function cerrarModalMuestra() {
         cerrarBuscadorDash();
         document.querySelectorAll("#formAltaMuestra .field-error").forEach(el => el.style.display = "none");
         document.getElementById("grupoSucursal").style.display = "none";
-        document.getElementById("inputSucursal").innerHTML = '<option value="">— casa central —</option>';
+        document.getElementById("inputSucursal").innerHTML = '';
     }, 250);
 }
 
@@ -1835,27 +1835,32 @@ function renderTareasRevision(el) {
             : lista.map(t => _tareaItemHTML(t, "violeta", "pend", "En revisión")).join(""));
 }
 
-// ── Toggle genérico: accordion por card ──
+// ── Panel de KPI: se abre al hacer hover sobre el número ──
 document.querySelectorAll(".mod-kpi-clickable").forEach(kpiEl => {
-    kpiEl.addEventListener("click", function () {
-        const cardKey  = this.dataset.card;
-        const kpiKey   = this.dataset.kpi;
-        const panelEl  = document.getElementById(`panel-${cardKey}`);
+    kpiEl.addEventListener("mouseenter", function () {
+        const cardKey   = this.dataset.card;
+        const kpiKey    = this.dataset.kpi;
+        const panelEl   = document.getElementById(`panel-${cardKey}`);
         const contentEl = document.getElementById(`panel-${cardKey}-content`);
         if (!panelEl || !contentEl) return;
 
-        const isActive = this.classList.contains("is-active");
-
         document.querySelectorAll(`.mod-kpi-clickable[data-card="${cardKey}"]`)
             .forEach(k => k.classList.remove("is-active"));
+        this.classList.add("is-active");
+        renderKpiPanel(cardKey, kpiKey, contentEl);
+        panelEl.classList.add("is-open");
+    });
+});
 
-        if (isActive) {
-            panelEl.classList.remove("is-open");
-        } else {
-            this.classList.add("is-active");
-            renderKpiPanel(cardKey, kpiKey, contentEl);
-            panelEl.classList.add("is-open");
-        }
+// Cierra el panel cuando el mouse sale de la tarjeta completa
+document.querySelectorAll(".mod-card").forEach(cardEl => {
+    cardEl.addEventListener("mouseleave", function () {
+        const kpis = this.querySelectorAll(".mod-kpi-clickable");
+        if (kpis.length === 0) return;
+        const cardKey = kpis[0].dataset.card;
+        const panelEl = document.getElementById(`panel-${cardKey}`);
+        if (panelEl) panelEl.classList.remove("is-open");
+        kpis.forEach(k => k.classList.remove("is-active"));
     });
 });
 
