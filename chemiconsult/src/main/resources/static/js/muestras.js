@@ -408,6 +408,16 @@ function vincularEventos() {
     contParam.addEventListener("input", onResultadoChange);
     contParam.addEventListener("change", onResultadoChange);
     contParam.addEventListener("click", e => {
+        const btnAus = e.target.closest(".btn-ausente");
+        if (btnAus) {
+            const id = btnAus.dataset.parametroId;
+            const input = contParam.querySelector(`.param-resultado-input[data-parametro-id="${id}"]`);
+            if (input) {
+                input.value = "Ausente";
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            return;
+        }
         const toggle = e.target.closest(".param-toggle");
         if (!toggle) return;
         const colapsable = toggle.nextElementSibling;
@@ -1635,14 +1645,16 @@ function renderizarDetalleMuestra(d) {
         const val = p.valorResultado || "";
         const bloqueado = esCancelado || esCompleto;
         const inputResultado = soloAusencia
-            ? `<select class="param-resultado-input param-resultado-select" data-parametro-id="${p.id}" ${bloqueado ? 'disabled style="opacity:.6;"' : ''}>
-                   <option value="">— Seleccionar —</option>
-                   <option value="Ausente"  ${val === "Ausente"  ? "selected" : ""}>Ausente</option>
-                   <option value="Presente" ${val === "Presente" ? "selected" : ""}>Presente</option>
-               </select>`
+            ? `<input class="param-resultado-input" type="text" data-parametro-id="${p.id}" data-ausencia="true"
+                   value="${val}" placeholder="Valor o Ausente..."
+                   ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`
             : `<input class="param-resultado-input" type="text" data-parametro-id="${p.id}"
                    value="${val}" placeholder="Resultado..."
                    ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`;
+
+        const btnAusente = soloAusencia && !bloqueado
+            ? `<button type="button" class="btn-ausente" data-parametro-id="${p.id}">Ausente</button>`
+            : "";
 
         const hayLimites = p.limites && p.limites.length > 0;
         const nLimites   = hayLimites ? p.limites.length : 0;
@@ -1655,6 +1667,7 @@ function renderizarDetalleMuestra(d) {
                 </div>
                 <div class="param-resultado-wrap">
                     ${inputResultado}
+                    ${btnAusente}
                     <span class="param-resultado-unidad">${p.unidad || ""}</span>
                     ${hayLimites ? `<span class="param-norma-count">${nLimites} norma${nLimites !== 1 ? 's' : ''}</span>` : ''}
                 </div>

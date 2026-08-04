@@ -719,6 +719,30 @@ button.btn-nueva-muestra-btn {
     font-size: 12px;
 }
 
+.btn-ausente {
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    border: none;
+    background: #d1e7dd;
+    color: #146c43;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-ausente:hover {
+    background: #b7dac6;
+    color: #0d4f30;
+}
+@media (prefers-color-scheme: dark) {
+    .btn-ausente { background: #1a3a2a; color: #75c99a; }
+    .btn-ausente:hover { background: #22503a; color: #9ddbb8; }
+}
+:root[data-theme="dark"] .btn-ausente { background: #1a3a2a; color: #75c99a; }
+:root[data-theme="dark"] .btn-ausente:hover { background: #22503a; color: #9ddbb8; }
+
 .param-resultado-select {
     width: 130px;
     text-align: left;
