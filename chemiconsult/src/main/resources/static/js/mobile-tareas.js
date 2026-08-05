@@ -3,8 +3,9 @@
 // ── Estado ───────────────────────────────────────────────────
 let tasks      = [];
 let usuarios   = [];
-let filtroActivo  = '';
-let editandoId    = null;
+let filtroActivo      = '';
+let editandoId        = null;
+let pickerEstadoAbierto = null;
 
 const STATUS_SEQ = ['TODO', 'IN_PROGRESS', 'EN_REVISION', 'DONE'];
 
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupFilters();
     setupForm();
     document.getElementById('fab-nueva')?.addEventListener('click', abrirNueva);
+    document.addEventListener('click', cerrarPickerEstado);
     await Promise.all([cargarUsuarios(), cargarTareas()]);
 });
 
@@ -110,6 +112,14 @@ function crearCard(task) {
     const initials  = task.userName ? getInitials(task.userName) : '—';
     const asignado  = task.userName || 'Sin asignar';
 
+    const pickerOpts = STATUS_SEQ.map(s => {
+        const c = STATUS_CFG[s];
+        return `<button class="ep-opt${s === task.status ? ' ep-active' : ''}"
+                        onclick="seleccionarEstadoTarea(event,${task.id},'${s}')">
+                  ${c.emoji} ${c.lbl}
+                </button>`;
+    }).join('');
+
     card.innerHTML = `
       <div class="tarea-card-inner" onclick="abrirEditar(${task.id})">
         <div class="tarea-bar ${barClass(task)}"></div>
@@ -126,8 +136,9 @@ function crearCard(task) {
         </div>
       </div>
       <div class="tarea-footer">
+        <div class="estado-picker" id="picker-${task.id}">${pickerOpts}</div>
         <button class="status-pill ${cfg.cls}"
-                onclick="avanzarEstado(event, ${task.id})">
+                onclick="abrirPickerEstado(event,${task.id})">
           ${cfg.emoji} ${cfg.lbl}
         </button>
       </div>
@@ -184,16 +195,33 @@ function setupFilters() {
     });
 }
 
-// ── Cambio de estado con tap ──────────────────────────────────
-async function avanzarEstado(e, id) {
+// ── Picker de estado ──────────────────────────────────────────
+function abrirPickerEstado(e, id) {
     e.stopPropagation();
+    const mismoPicker = pickerEstadoAbierto === id;
+    cerrarPickerEstado();
+    if (!mismoPicker) {
+        const picker = document.getElementById(`picker-${id}`);
+        if (picker) picker.classList.add('open');
+        pickerEstadoAbierto = id;
+    }
+}
+
+function cerrarPickerEstado() {
+    if (pickerEstadoAbierto === null) return;
+    const picker = document.getElementById(`picker-${pickerEstadoAbierto}`);
+    if (picker) picker.classList.remove('open');
+    pickerEstadoAbierto = null;
+}
+
+async function seleccionarEstadoTarea(e, id, nuevoEstado) {
+    e.stopPropagation();
+    cerrarPickerEstado();
     const task = tasks.find(t => t.id === id);
-    if (!task) return;
-    const idx = STATUS_SEQ.indexOf(task.status);
-    const siguiente = STATUS_SEQ[(idx + 1) % STATUS_SEQ.length];
+    if (!task || task.status === nuevoEstado) return;
     try {
-        await apiFetch(`${MOB_API}/task/${id}/status?status=${encodeURIComponent(siguiente)}`, { method: 'PUT' });
-        task.status = siguiente;
+        await apiFetch(`${MOB_API}/task/${id}/status?status=${encodeURIComponent(nuevoEstado)}`, { method: 'PUT' });
+        task.status = nuevoEstado;
         renderTareas();
         mobToast('Estado actualizado');
     } catch {

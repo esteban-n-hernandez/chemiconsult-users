@@ -299,6 +299,7 @@ body {
   padding: 8px 12px 10px;
   border-top: 1px solid var(--border);
   gap: 8px;
+  position: relative;
 }
 
 /* Status pills */
@@ -317,6 +318,62 @@ body {
 .status-pill.inprog   { background: var(--azul-lt); color: #1D4ED8; }
 .status-pill.revision { background: var(--vio-lt);  color: #6D28D9; }
 .status-pill.done     { background: var(--verde-lt); color: var(--verde-dk); }
+
+/* ── Estado picker ───────────────────────────────────────────── */
+.estado-picker {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 10px;
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.05);
+  padding: 5px;
+  width: 188px;
+  z-index: 50;
+  transform-origin: bottom right;
+  transform: scale(.85) translateY(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .14s ease;
+}
+.estado-picker.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+.estado-picker::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  right: 18px;
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 5px rgba(0,0,0,.05);
+  border-radius: 2px;
+}
+.ep-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: background .1s;
+}
+.ep-opt:active { opacity: .75; }
+.ep-opt.ep-active {
+  background: var(--verde);
+  color: #fff;
+}
 
 .edit-hint {
   font-size: 11px;
