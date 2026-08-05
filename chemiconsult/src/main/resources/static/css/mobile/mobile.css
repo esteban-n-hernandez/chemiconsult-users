@@ -321,15 +321,13 @@ body {
 
 /* ── Estado picker ───────────────────────────────────────────── */
 .estado-picker {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  right: 10px;
+  position: fixed;
   background: var(--surface);
   border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.05);
+  box-shadow: 0 4px 24px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.06);
   padding: 5px;
   width: 188px;
-  z-index: 50;
+  z-index: 300;
   transform-origin: bottom right;
   transform: scale(.85) translateY(4px);
   opacity: 0;
@@ -345,7 +343,7 @@ body {
   content: '';
   position: absolute;
   bottom: -5px;
-  right: 18px;
+  right: 16px;
   width: 10px;
   height: 10px;
   background: var(--surface);
