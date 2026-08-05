@@ -28,14 +28,24 @@
   --safe-b:   env(safe-area-inset-bottom, 0px);
 }
 
-html, body {
+html {
+  /* verde en el fondo de html → la barra de estado Android se ve continua con el header */
+  background: var(--verde);
   height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
+  /* blanco abajo → la zona de navegación Android se ve continua con el tab bar */
+  background: #fff;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  overflow: hidden;
 }
 
 /* ── App shell ──────────────────────────────────────────────── */
@@ -43,8 +53,7 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
+  width: 100%;
   position: relative;
   background: var(--bg);
 }
