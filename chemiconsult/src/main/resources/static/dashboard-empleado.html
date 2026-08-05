@@ -183,6 +183,32 @@
 
     </div>
 
+    <!-- Mi cola de análisis (solo ROLE_EMPLEADO) -->
+    <div class="cola-dash-panel" id="colaDashPanel" style="display:none">
+        <div class="cola-dash-head">
+            <div class="cola-dash-title">
+                <div class="mod-icon mod-icon-verde"><i class="bi bi-flask"></i></div>
+                Mi cola de análisis
+                <span class="cola-dash-badge" id="colaDashBadge">0 pendientes</span>
+            </div>
+            <div class="cola-dash-actions">
+                <button class="cola-dash-btn" id="colaDashRefresh">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+                <button class="cola-dash-btn" id="colaDashToggle">
+                    <i class="bi bi-chevron-up" id="colaDashChevron"></i>
+                    <span id="colaDashToggleLabel">Ocultar</span>
+                </button>
+            </div>
+        </div>
+        <div class="cola-dash-body" id="colaDashBody">
+            <div class="cola-dash-grid" id="colaDashGrid"></div>
+            <div class="cola-dash-empty" id="colaDashEmpty" style="display:none">
+                <i class="bi bi-check2-circle"></i> Sin análisis pendientes en tu cola
+            </div>
+        </div>
+    </div>
+
     <!-- Fila central -->
     <div class="main-row">
         <!-- Tabla de muestras -->
@@ -222,7 +248,7 @@
                     <tr>
                         <th>Código</th>
                         <th>Cliente</th>
-                        <th>Tipo de análisis</th>
+                        <th>Tipo de muestra</th>
                         <th>Estado</th>
                         <th>Fecha alta</th>
                         <th>Fecha límite</th>

@@ -1,5 +1,6 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -21,6 +22,12 @@ public class ParametroDE {
 
     @Column(name = "ACTIVO")
     private Boolean activo = true;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "RESPONSABLE_ID")
+    @JsonIgnoreProperties({"password", "estudios", "modulos", "createdDate", "updateDate",
+                            "hibernateLazyInitializer", "handler"})
+    private UserDE responsable;
 
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;

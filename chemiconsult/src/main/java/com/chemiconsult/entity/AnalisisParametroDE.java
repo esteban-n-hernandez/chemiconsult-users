@@ -48,4 +48,7 @@ public class AnalisisParametroDE {
 
     @Column(name = "OBSERVACION")
     private String observacion;
+
+    @Column(name = "ANALIZADO")
+    private boolean analizado = false;
 }

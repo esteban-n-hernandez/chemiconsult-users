@@ -10,5 +10,7 @@ public enum ModuloEnum {
     DOCUMENTOS,
     PANEL_TECNICO,
     FACTURACION,
-    USUARIOS
+    USUARIOS,
+    COLA_ANALISIS,
+    PRESUPUESTO
 }

@@ -14,6 +14,12 @@ ALTER TABLE "STOCK_ITEM" ADD CONSTRAINT "STOCK_ITEM_nivel_check"
 ALTER TABLE "STOCK_ITEM" ADD CONSTRAINT "STOCK_ITEM_categoria_check"
     CHECK (categoria IN ('REACTIVOS', 'SOLVENTES', 'MATERIAL_MUESTREO', 'MATERIAL_VIDRIO', 'OTROS'));
 
+-- Cola de análisis: analista responsable por parámetro
+ALTER TABLE "PARAMETRO" ADD COLUMN IF NOT EXISTS "RESPONSABLE_ID" BIGINT;
+
+-- Cola de análisis: estado analizado por ítem (PENDIENTE=false, ANALIZADO=true)
+ALTER TABLE "ANALISIS_PARAMETRO" ADD COLUMN IF NOT EXISTS "ANALIZADO" BOOLEAN NOT NULL DEFAULT FALSE;
+
 INSERT INTO resolucion (nombre, descripcion) VALUES
                                                  ('Res 336/06',          'Resolución 336/06 - Vuelco de efluentes'),
                                                  ('Res 283/19',          'Resolución 283/19 - Vuelco de efluentes'),

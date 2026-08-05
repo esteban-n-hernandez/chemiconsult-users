@@ -151,6 +151,33 @@
 
   </div>
 
+  <!-- ══════════════════════════════════════
+       VIEW: MI COLA DE ANÁLISIS
+  ══════════════════════════════════════ -->
+  <div class="view" id="view-cola">
+
+    <div class="app-header">
+      <div>
+        <div class="header-sub" id="cola-sub">—</div>
+        <div class="header-name">Mi cola</div>
+      </div>
+      <div class="header-avatar" id="cola-avatar">—</div>
+    </div>
+
+    <div class="scroll-content" id="cola-list">
+      <div class="loading-state" id="cola-loading">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <span>Cargando análisis…</span>
+      </div>
+      <div class="empty-state" id="cola-empty" style="display:none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        <p>Sin análisis pendientes</p>
+      </div>
+      <div class="scroll-end"></div>
+    </div>
+
+  </div>
+
   <!-- Tab bar -->
   <nav class="tab-bar">
     <div class="tab-pill">
@@ -171,6 +198,12 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
         </span>
         <span class="tab-lbl">Stock</span>
+      </button>
+      <button class="tab-item" data-tab="cola" id="tab-cola" style="display:none">
+        <span class="tab-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        </span>
+        <span class="tab-lbl">Mi cola</span>
       </button>
     </div>
   </nav>
@@ -397,5 +430,6 @@
 <script src="js/mobile-tareas.js"></script>
 <script src="js/mobile-agenda.js"></script>
 <script src="js/mobile-stock.js"></script>
+<script src="js/mobile-cola.js"></script>
 </body>
 </html>

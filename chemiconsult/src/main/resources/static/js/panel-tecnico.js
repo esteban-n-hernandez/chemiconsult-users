@@ -1,6 +1,8 @@
 const API_URL = `${API_BASE}/api`;
 const POR_PAGINA = 10;
 
+let empleadosCache = [];
+
 function esc(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -29,15 +31,36 @@ const tablas = {
         tbodyId: 'tablaParametrosBody',
         filtroId: 'filtroParametros',
         pagId:    'paginadorParametros',
-        colSpan:  2,
+        colSpan:  3,
         data: [], filtro: '', pagina: 1,
-        renderFila: r => `<td>${r.nombre}</td>`,
+        renderFila: r => {
+            const analista = r.responsable
+                ? `<span class="badge-analista">${esc(r.responsable.username)}</span>`
+                : '<span class="text-muted-pt">Sin asignar</span>';
+            return `<td>${r.nombre}</td><td>${analista}</td>`;
+        },
         textoVacio: 'No hay parámetros cargados.',
-        textoBuscar: r => r.nombre,
+        textoBuscar: r => `${r.nombre} ${r.responsable?.username || ''}`,
         editUrl: id => `${API_URL}/parametros/${id}`,
-        renderFilaEdit: r => `
-            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>`,
-        buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim() }),
+        renderFilaEdit: r => {
+            const opts = empleadosCache.map(u =>
+                `<option value="${u.id}" ${r.responsable?.id === u.id ? 'selected' : ''}>${esc(u.username)}</option>`
+            ).join('');
+            return `
+                <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
+                <td>
+                    <select id="ef-responsable" class="unidad-inline-input" style="width:100%">
+                        <option value="">Sin asignar</option>
+                        ${opts}
+                    </select>
+                </td>`;
+        },
+        buildPutBody: () => ({
+            nombre:        document.getElementById('ef-nombre').value.trim(),
+            responsableId: document.getElementById('ef-responsable').value
+                           ? Number(document.getElementById('ef-responsable').value)
+                           : null,
+        }),
     },
     metodologias: {
         url: `${API_URL}/metodologias`,
@@ -236,14 +259,36 @@ function cambiarPagina(nombre, nuevaPagina) {
 }
 
 // ── Formularios ──
+async function cargarEmpleados() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const todos = await res.json();
+        empleadosCache = todos.filter(u => u.rol === 'ROLE_EMPLEADO' || u.rol === 'ROLE_IT');
+        const sel = document.getElementById('paramAnalista');
+        if (sel) {
+            sel.innerHTML = '<option value="">Sin asignar</option>' +
+                empleadosCache.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
+        }
+    } catch (err) {
+        console.error('Error cargando empleados:', err);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     cargarMatrices();
+    cargarEmpleados();
 
     document.getElementById('formParametro').addEventListener('submit', async e => {
         e.preventDefault();
         const token = localStorage.getItem('token');
+        const respVal = document.getElementById('paramAnalista').value;
         const body = {
-            nombre: document.getElementById('paramNombre').value.trim(),
+            nombre:        document.getElementById('paramNombre').value.trim(),
+            responsableId: respVal ? Number(respVal) : null,
         };
         try {
             const res = await fetch(`${API_URL}/parametros`, {

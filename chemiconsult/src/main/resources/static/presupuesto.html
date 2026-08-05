@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Presupuestos - CHEMICONSULT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="css/sidebar.css"/>
+    <link rel="stylesheet" href="css/ui.css"/>
+    <link rel="stylesheet" href="css/modal.css"/>
+    <link rel="stylesheet" href="css/presupuesto.css"/>
+    <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="PRESUPUESTO"></script>
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+
+<div class="content">
+
+    <div class="page-header">
+        <div>
+            <h1>Presupuestos</h1>
+            <p id="fecha-hoy"></p>
+        </div>
+        <div class="header-user">
+            <div class="header-user-info">
+                <p class="header-user-name" id="header-nombre">—</p>
+                <p class="header-user-role" id="header-rol">—</p>
+            </div>
+            <div class="avatar-circle" id="header-avatar">--</div>
+        </div>
+    </div>
+
+    <!-- Panel principal -->
+    <div class="panel pres-panel">
+        <div class="panel-header">
+            <h5><i class="bi bi-file-earmark-text me-2 panel-title-icon-green"></i>Nuevo presupuesto</h5>
+            <div class="pres-header-actions">
+                <button class="btn-pres-secondary" id="btnLimpiar">
+                    <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                </button>
+                <button class="btn-pres-primary" id="btnGenerar">
+                    <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="panel-body">
+
+            <!-- Fila 1: N° presupuesto + Fecha + Cliente -->
+            <div class="pres-form-row pres-row-top">
+                <div class="pres-field">
+                    <label class="pres-label">N° Presupuesto</label>
+                    <div class="pres-num-wrap">
+                        <span class="pres-num-prefix">N°</span>
+                        <input type="number" id="inputNumero" class="pres-input pres-input-num"
+                               placeholder="2387" min="1"/>
+                    </div>
+                </div>
+                <div class="pres-field">
+                    <label class="pres-label">Fecha</label>
+                    <input type="date" id="inputFecha" class="pres-input"/>
+                </div>
+                <div class="pres-field pres-field-wide">
+                    <label class="pres-label">Cliente <span class="pres-required">*</span></label>
+                    <select id="inputCliente" class="pres-input">
+                        <option value="">Cargando clientes...</option>
+                    </select>
+                </div>
+                <div class="pres-field pres-field-wide">
+                    <label class="pres-label">Solicitado por</label>
+                    <input type="text" id="inputSolicitado" class="pres-input"
+                           placeholder="Nombre del contacto" autocomplete="off"/>
+                </div>
+            </div>
+
+            <!-- Separador -->
+            <div class="pres-separator"></div>
+
+            <!-- Tabla de ítems -->
+            <div class="pres-items-head">
+                <span class="pres-items-title">Ítems del presupuesto</span>
+                <button class="btn-pres-add" id="btnAgregarItem">
+                    <i class="bi bi-plus-lg"></i> Agregar ítem
+                </button>
+            </div>
+
+            <div class="pres-tabla-wrap">
+                <table class="pres-tabla" id="tablaItems">
+                    <thead>
+                        <tr>
+                            <th class="col-matriz">Matriz</th>
+                            <th class="col-det">Determinación</th>
+                            <th class="col-precio">Precio unitario</th>
+                            <th class="col-cant">Cantidad</th>
+                            <th class="col-total">Total</th>
+                            <th class="col-del"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <!-- filas dinámicas -->
+                    </tbody>
+                </table>
+                <div class="pres-empty" id="presEmpty">
+                    <i class="bi bi-inbox"></i>
+                    <span>Sin ítems. Hacé clic en "Agregar ítem" para empezar.</span>
+                </div>
+            </div>
+
+            <!-- Total general -->
+            <div class="pres-total-row">
+                <span class="pres-total-lbl">Total general</span>
+                <span class="pres-total-val" id="totalGeneral">$0</span>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-confirm" id="toastPres">
+    <i class="bi bi-check-circle-fill"></i>
+    <span id="toastPresMsg">OK</span>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/presupuesto.js"></script>
+<script src="js/sidebar.js"></script>
+</body>
+</html>

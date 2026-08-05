@@ -1,0 +1,187 @@
+/* ── Presupuesto page ── */
+
+.pres-panel { border: 1px solid var(--color-border-tertiary); }
+
+.pres-header-actions { display: flex; gap: 8px; }
+
+.btn-pres-primary {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--verde); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+}
+.btn-pres-primary:hover   { background: var(--verde-hover, #4a8303); }
+.btn-pres-primary:disabled{ opacity: .65; cursor: default; }
+
+.btn-pres-secondary {
+    display: flex; align-items: center; gap: 6px;
+    background: none; color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-tertiary); border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background .15s;
+}
+.btn-pres-secondary:hover { background: var(--bg-subtle); }
+
+/* ── Formulario superior ── */
+.pres-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.pres-field { display: flex; flex-direction: column; gap: 5px; min-width: 140px; }
+.pres-field-wide { flex: 1; min-width: 200px; }
+
+.pres-label {
+    font-size: 12px; font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase; letter-spacing: .4px;
+}
+.pres-required { color: var(--rojo, #ef4444); }
+
+.pres-input {
+    padding: 8px 11px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-main);
+    background: var(--bg-surface);
+    outline: none;
+    transition: border-color .15s;
+    font-family: inherit;
+    width: 100%;
+}
+.pres-input:focus { border-color: var(--verde); box-shadow: 0 0 0 3px rgba(94,165,4,.12); }
+
+.pres-num-wrap { display: flex; align-items: center; }
+.pres-num-prefix {
+    padding: 8px 10px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--color-border-tertiary);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    font-size: 13px; font-weight: 600;
+    color: var(--color-text-secondary);
+}
+.pres-input-num { border-radius: 0 8px 8px 0 !important; }
+
+.pres-separator {
+    height: 1px;
+    background: var(--color-border-tertiary);
+    margin: 20px 0 16px;
+}
+
+/* ── Cabecera de ítems ── */
+.pres-items-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+}
+.pres-items-title {
+    font-size: 13px; font-weight: 700; color: var(--text-main);
+}
+
+.btn-pres-add {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--verde-light, #eef7e0); color: var(--verde);
+    border: 1px solid var(--verde); border-radius: 7px;
+    padding: 6px 13px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+}
+.btn-pres-add:hover { background: #dff0c8; }
+
+/* ── Tabla de ítems ── */
+.pres-tabla-wrap { overflow-x: auto; }
+
+.pres-tabla {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+}
+
+.pres-tabla thead th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 11px; font-weight: 700;
+    color: var(--color-text-secondary);
+    text-transform: uppercase; letter-spacing: .4px;
+    border-bottom: 2px solid var(--color-border-tertiary);
+    background: var(--bg-surface);
+    white-space: nowrap;
+}
+
+.col-matriz  { width: 12%; }
+.col-det     { width: 46%; }
+.col-precio  { width: 14%; }
+.col-cant    { width: 10%; }
+.col-total   { width: 14%; }
+.col-del     { width: 4%; }
+
+.pres-tabla tbody tr { border-bottom: 1px solid var(--color-border-tertiary); }
+.pres-tabla tbody tr:hover { background: var(--bg-subtle); }
+
+.pres-cell-input,
+.pres-cell-textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-main);
+    background: transparent;
+    resize: vertical;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s, background .15s;
+}
+.pres-cell-input:focus,
+.pres-cell-textarea:focus {
+    border-color: var(--verde);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 2px rgba(94,165,4,.1);
+}
+.pres-cell-money   { text-align: right; font-variant-numeric: tabular-nums; }
+.pres-cell-cant    { text-align: center; }
+.pres-cell-total   { font-weight: 700; color: var(--verde); cursor: default; }
+
+.btn-del-item {
+    background: none; border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer; padding: 4px 6px;
+    border-radius: 5px; font-size: 14px;
+    transition: color .15s, background .15s;
+}
+.btn-del-item:hover { color: var(--rojo, #ef4444); background: #fff0f0; }
+
+.pres-tabla td { padding: 6px 8px; vertical-align: top; }
+
+/* Empty state */
+.pres-empty {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 32px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    border: 2px dashed var(--color-border-tertiary);
+    border-radius: 10px;
+    margin-top: 8px;
+}
+.pres-empty i { font-size: 20px; }
+
+/* Total general */
+.pres-total-row {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 16px; margin-top: 14px;
+    padding-top: 12px;
+    border-top: 2px solid var(--color-border-tertiary);
+}
+.pres-total-lbl {
+    font-size: 13px; font-weight: 700;
+    color: var(--color-text-secondary);
+    text-transform: uppercase; letter-spacing: .4px;
+}
+.pres-total-val {
+    font-size: 20px; font-weight: 800;
+    color: var(--verde);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-display, inherit);
+}

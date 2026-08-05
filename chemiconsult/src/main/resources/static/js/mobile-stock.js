@@ -283,8 +283,37 @@ function setupStockForm() {
     });
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+// ── Skeleton loading ──────────────────────────────────────────
 function mostrarLoadingStock(show) {
-    const el = document.getElementById('stock-loading');
-    if (el) el.style.display = show ? 'flex' : 'none';
+    const list = document.getElementById('stock-list');
+    if (!list) return;
+    list.querySelectorAll('.skel-card').forEach(c => c.remove());
+    if (show) {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < 3; i++) frag.appendChild(crearSkelStock());
+        list.prepend(frag);
+    }
+    const old = document.getElementById('stock-loading');
+    if (old) old.style.display = 'none';
+}
+
+function crearSkelStock() {
+    const widths = [[68,5],[76,6],[82,4]];
+    const [w1, b2] = widths[Math.floor(Math.random() * 3)];
+    const d = document.createElement('div');
+    d.className = 'skel-card';
+    d.innerHTML = `
+      <div style="display:flex;padding:12px 12px 12px 0;align-items:stretch">
+        <div class="sh" style="width:4px;flex-shrink:0;margin-right:10px;border-radius:0"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="sh" style="height:13px;border-radius:4px;width:${w1}%"></div>
+          <div style="display:flex;gap:5px">
+            <div class="sh" style="height:18px;border-radius:10px;width:44px"></div>
+            <div class="sh" style="height:18px;border-radius:10px;width:6${b2}px"></div>
+          </div>
+          <div class="sh" style="height:9px;border-radius:4px;width:44%"></div>
+        </div>
+        <div class="sh" style="width:14px;height:14px;border-radius:3px;flex-shrink:0;margin-left:10px;align-self:center"></div>
+      </div>`;
+    return d;
 }

@@ -1864,6 +1864,136 @@ document.querySelectorAll(".mod-card").forEach(cardEl => {
     });
 });
 
+// ════════════════════════════════
+//  MI COLA DE ANÁLISIS
+// ════════════════════════════════
+(function initColaDash() {
+    if (rol !== 'ROLE_EMPLEADO') return;
+
+    const panel  = document.getElementById('colaDashPanel');
+    const body   = document.getElementById('colaDashBody');
+    const grid   = document.getElementById('colaDashGrid');
+    const empty  = document.getElementById('colaDashEmpty');
+    const badge  = document.getElementById('colaDashBadge');
+    const toggle = document.getElementById('colaDashToggle');
+    const refresh = document.getElementById('colaDashRefresh');
+
+    if (!panel) return;
+    panel.style.display = '';
+
+    let collapsed = false;
+
+    toggle.addEventListener('click', () => {
+        collapsed = !collapsed;
+        body.classList.toggle('collapsed', collapsed);
+        toggle.classList.toggle('collapsed', collapsed);
+        document.getElementById('colaDashToggleLabel').textContent = collapsed ? 'Mostrar' : 'Ocultar';
+    });
+
+    refresh.addEventListener('click', () => cargarMiCola());
+
+    window.cargarMiCola = async function cargarMiCola() {
+        mostrarSkelCola();
+        try {
+            const r = await fetchDash(`${API_BASE}/api/mi-cola`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const grupos = await r.json();
+            renderColaDash(grupos);
+        } catch (err) {
+            console.error('Error cargando mi cola:', err);
+            grid.innerHTML = '';
+            empty.style.display = 'flex';
+            empty.innerHTML = '<i class="bi bi-exclamation-circle"></i> Error al cargar la cola de análisis';
+        }
+    };
+
+    function mostrarSkelCola() {
+        grid.innerHTML = '';
+        empty.style.display = 'none';
+        const wrap = document.createElement('div');
+        wrap.className = 'cola-skel-wrap';
+        for (let i = 0; i < 4; i++) {
+            const item = document.createElement('div');
+            item.className = 'cola-skel-item';
+            item.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="sh" style="height:13px;border-radius:4px;width:70px"></div>
+                    <div class="sh" style="height:22px;width:22px;border-radius:50%"></div>
+                </div>
+                <div class="sh" style="height:34px;border-radius:7px;width:100%"></div>
+                <div class="sh" style="height:34px;border-radius:7px;width:100%"></div>`;
+            wrap.appendChild(item);
+        }
+        grid.appendChild(wrap);
+    }
+
+    function renderColaDash(grupos) {
+        grid.innerHTML = '';
+        const total = grupos.reduce((s, g) => s + g.totalPendientes, 0);
+        badge.textContent = `${total} pendiente${total !== 1 ? 's' : ''}`;
+
+        if (!grupos.length) {
+            empty.style.display = 'flex';
+            empty.innerHTML = '<i class="bi bi-check2-circle"></i> Sin análisis pendientes en tu cola';
+            return;
+        }
+        empty.style.display = 'none';
+
+        const ESTADO_CFG = {
+            PENDIENTE:   { lbl: 'Pendiente',   cls: 'ce-pendiente' },
+            EN_PROCESO:  { lbl: 'En proceso',  cls: 'ce-proceso'   },
+            DEMORADA:    { lbl: 'Demorada',     cls: 'ce-demorada'  },
+            EN_REVISION: { lbl: 'En revisión',  cls: 'ce-revision'  },
+        };
+
+        grupos.forEach(grupo => {
+            const card = document.createElement('div');
+            card.className = 'cola-param-card';
+
+            const unidadHtml = grupo.unidad
+                ? `<div class="cola-param-unit">${esc(grupo.unidad)}</div>` : '';
+
+            const MAX_VISIBLE = 3;
+            const visibles = grupo.muestras.slice(0, MAX_VISIBLE);
+            const resto    = grupo.muestras.length - MAX_VISIBLE;
+
+            const filas = visibles.map(m => {
+                const cfg = ESTADO_CFG[m.estado] || { lbl: m.estado, cls: '' };
+                return `<div class="cola-sample-row">
+                    <div>
+                        <div class="cola-sample-proto">#${esc(m.nroProtocolo)}</div>
+                        <div class="cola-sample-client">${esc(m.clienteNombre || '')}</div>
+                    </div>
+                    <span class="cola-muestra-chip ${cfg.cls}">${cfg.lbl}</span>
+                </div>`;
+            }).join('');
+
+            const masHtml = resto > 0
+                ? `<div class="cola-dash-mas">+${resto} más</div>` : '';
+
+            card.innerHTML = `
+                <div class="cola-param-head">
+                    <div>
+                        <div class="cola-param-name">${esc(grupo.parametroNombre)}</div>
+                        ${unidadHtml}
+                    </div>
+                    <div class="cola-count-circle">${grupo.totalPendientes}</div>
+                </div>
+                <div class="cola-sample-list">${filas}</div>
+                ${masHtml}`;
+
+            grid.appendChild(card);
+        });
+    }
+
+    function esc(str) {
+        return String(str || '').replace(/[&<>"']/g, c =>
+            ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    cargarMiCola();
+})();
+
 // Cargar al iniciar
 cargarEstudios();
 cargarTareasKPI();

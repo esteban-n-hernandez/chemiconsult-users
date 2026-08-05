@@ -377,6 +377,36 @@ function fechaISO(d) {
 }
 
 function mostrarLoadingAgenda(show) {
-    const el = document.getElementById('agenda-loading');
-    if (el) el.style.display = show ? 'flex' : 'none';
+    const list = document.getElementById('agenda-list');
+    if (!list) return;
+    list.querySelectorAll('.skel-card').forEach(c => c.remove());
+    if (show) {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < 3; i++) frag.appendChild(crearSkelAgenda());
+        list.prepend(frag);
+    }
+    const old = document.getElementById('agenda-loading');
+    if (old) old.style.display = 'none';
+}
+
+function crearSkelAgenda() {
+    const widths = [[70,38],[78,50],[84,42]];
+    const [w1, w2] = widths[Math.floor(Math.random() * 3)];
+    const d = document.createElement('div');
+    d.className = 'skel-card';
+    d.style.margin = '0 14px 10px';
+    d.innerHTML = `
+      <div style="display:flex;align-items:stretch;padding:12px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;width:36px;flex-shrink:0;margin-right:8px">
+          <div class="sh" style="height:11px;width:28px;border-radius:3px"></div>
+          <div class="sh" style="height:9px;width:20px;border-radius:3px;margin-top:2px"></div>
+        </div>
+        <div class="sh" style="width:3px;border-radius:0;flex-shrink:0;margin-right:10px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+          <div class="sh" style="height:12px;border-radius:4px;width:${w1}%"></div>
+          <div class="sh" style="height:9px;border-radius:4px;width:${w2}%"></div>
+        </div>
+        <div class="sh" style="height:22px;border-radius:11px;width:68px;flex-shrink:0;margin-left:8px;align-self:center"></div>
+      </div>`;
+    return d;
 }

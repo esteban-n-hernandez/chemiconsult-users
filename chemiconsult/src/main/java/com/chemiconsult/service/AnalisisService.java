@@ -1,5 +1,6 @@
 package com.chemiconsult.service;
 
+import com.chemiconsult.brevo.service.BrevoEmailService;
 import com.chemiconsult.entity.*;
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.mapper.EstudiosMapper;
@@ -13,10 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +30,8 @@ public class AnalisisService {
     private final ParametroRepository parametroRepository;
     private final ResolucionDestinoParametroRepository resolucionDestinoParametroRepository;
     private final TipoMuestraRepository tipoMuestraRepository;
-    private final NumeradorService numeradorService;
+    private final NumeradorService    numeradorService;
+    private final BrevoEmailService   brevoEmailService;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -179,7 +179,56 @@ public class AnalisisService {
         }
         analisis.setParametros(parametros);
 
-        return analisisRepository.save(analisis);
+        AnalisisDE guardado = analisisRepository.save(analisis);
+        notificarAnalistas(guardado);
+        return guardado;
+    }
+
+    private void notificarAnalistas(AnalisisDE analisis) {
+        Map<Long, List<AnalisisParametroDE>> porAnalista = analisis.getParametros().stream()
+                .filter(ap -> ap.getParametro().getResponsable() != null)
+                .collect(Collectors.groupingBy(ap -> ap.getParametro().getResponsable().getId()));
+
+        porAnalista.forEach((uid, params) -> {
+            UserDE analista = params.get(0).getParametro().getResponsable();
+            String listaParams = params.stream()
+                    .map(ap -> ap.getParametro().getNombre())
+                    .collect(Collectors.joining(", "));
+            String html = buildEmailCola(
+                    analista.getUsername(),
+                    analisis.getNumeroProtocolo(),
+                    listaParams,
+                    analisis.getFechaEntrega());
+            brevoEmailService.enviarMail(
+                    analista.getEmail(),
+                    analista.getUsername(),
+                    "Nueva muestra asignada — #" + analisis.getNumeroProtocolo(),
+                    html);
+        });
+    }
+
+    private String buildEmailCola(String nombre, String protocolo, String params, LocalDate fechaEntrega) {
+        String fecha = fechaEntrega != null
+                ? fechaEntrega.format(DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", new Locale("es", "AR")))
+                : "Sin fecha definida";
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f8f9fa;padding:24px;border-radius:12px;">
+              <div style="background:#2a8c5e;border-radius:8px 8px 0 0;padding:20px 24px;">
+                <p style="color:#fff;margin:0;font-size:18px;font-weight:bold;">Chemiconsult · Nueva muestra asignada</p>
+              </div>
+              <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;border-top:none;">
+                <p style="color:#333;margin:0 0 16px;">Hola <strong>%s</strong>,</p>
+                <p style="color:#333;margin:0 0 16px;">Se ingresó la muestra <strong>#%s</strong> con parámetros que tenés asignados:</p>
+                <div style="background:#f0f9f4;border-left:4px solid #2a8c5e;border-radius:4px;padding:14px 16px;margin:0 0 16px;">
+                  <p style="margin:0 0 6px;color:#555;font-size:13px;">Parámetros a analizar</p>
+                  <p style="margin:0;color:#1a5c3e;font-weight:bold;font-size:15px;">%s</p>
+                </div>
+                <div style="background:#f8f9fa;border-radius:6px;padding:12px 16px;margin:0 0 16px;">
+                  <p style="margin:0;color:#555;font-size:13px;">📅 Fecha de entrega: <strong>%s</strong></p>
+                </div>
+                <p style="color:#888;font-size:12px;margin:0;">Ingresá a la app para ver el detalle completo y cargar tus resultados.</p>
+              </div>
+            </div>""".formatted(nombre, protocolo, params, fecha);
     }
 
     public AnalisisDE updateEstudio(Long id, AnalisisDE estudio) {
@@ -384,7 +433,8 @@ public class AnalisisService {
                            ParametroRepository parametroRepository,
                            ResolucionDestinoParametroRepository resolucionDestinoParametroRepository,
                            TipoMuestraRepository tipoMuestraRepository,
-                           NumeradorService numeradorService) {
+                           NumeradorService numeradorService,
+                           BrevoEmailService brevoEmailService) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -394,5 +444,6 @@ public class AnalisisService {
         this.resolucionDestinoParametroRepository = resolucionDestinoParametroRepository;
         this.tipoMuestraRepository = tipoMuestraRepository;
         this.numeradorService = numeradorService;
+        this.brevoEmailService = brevoEmailService;
     }
 }

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import com.chemiconsult.entity.ParametroDE;
 import com.chemiconsult.mapper.ParametroMapper;
 import com.chemiconsult.repository.ParametroRepository;
+import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.ParametroTO;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -16,6 +17,9 @@ public class ParametroService {
 
     @Autowired
     private ParametroRepository parametroRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public List<ParametroDE> getParametros() {
         return parametroRepository.findByActivoTrue();
@@ -33,18 +37,23 @@ public class ParametroService {
         if (parametroRepository.existsByNombreIgnoreCase(to.getNombre())) {
             throw new RuntimeException("Ya existe un parámetro con el nombre: " + to.getNombre());
         }
-
         ParametroDE parametro = ParametroMapper.createParametro(to);
+        if (to.getResponsableId() != null) {
+            userRepository.findById(to.getResponsableId()).ifPresent(parametro::setResponsable);
+        }
         return parametroRepository.save(parametro);
     }
 
     public ParametroDE updateParametro(Long id, ParametroTO to) {
-        Optional<ParametroDE> optional = parametroRepository.findById(id);
-        if (optional.isPresent()) {
-            ParametroDE actualizado = ParametroMapper.updateParametro(optional.get(), to);
-            return parametroRepository.save(actualizado);
+        ParametroDE existing = parametroRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parámetro no encontrado con ID: " + id));
+        ParametroMapper.updateParametro(existing, to);
+        if (to.getResponsableId() != null) {
+            userRepository.findById(to.getResponsableId()).ifPresent(existing::setResponsable);
+        } else {
+            existing.setResponsable(null);
         }
-        throw new RuntimeException("Parámetro no encontrado con ID: " + id);
+        return parametroRepository.save(existing);
     }
 
     public void desactivarParametro(Long id) {

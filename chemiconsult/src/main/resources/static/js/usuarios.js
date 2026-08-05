@@ -437,6 +437,8 @@ const MODULOS_LABELS = {
     CLIENTES:     { label: 'Clientes',       icon: 'bi-people' },
     STOCK:        { label: 'Stock',          icon: 'bi-box-seam' },
     PANEL_TECNICO:{ label: 'Panel Técnico',  icon: 'bi-gear-fill' },
+    PRESUPUESTO:  { label: 'Presupuestos',   icon: 'bi-file-earmark-text' },
+    COLA_ANALISIS:{ label: 'Cola de análisis', icon: 'bi-flask' },
     FACTURACION:  { label: 'Facturación',    icon: 'bi-receipt' },
     USUARIOS:     { label: 'Usuarios',       icon: 'bi-shield-lock' }
 };

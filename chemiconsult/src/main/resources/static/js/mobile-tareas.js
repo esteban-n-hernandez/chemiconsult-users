@@ -441,8 +441,39 @@ function setupForm() {
         closeSheet('task-sheet'));
 }
 
-// ── Loading helper ────────────────────────────────────────────
+// ── Skeleton loading ──────────────────────────────────────────
 function mostrarLoading(show) {
-    const el = document.getElementById('task-loading');
-    if (el) el.style.display = show ? 'flex' : 'none';
+    const list = document.getElementById('task-list');
+    if (!list) return;
+    list.querySelectorAll('.skel-card').forEach(c => c.remove());
+    if (show) {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < 3; i++) frag.appendChild(crearSkelTarea());
+        list.prepend(frag);
+    }
+    const old = document.getElementById('task-loading');
+    if (old) old.style.display = 'none';
+}
+
+function crearSkelTarea() {
+    const widths = [[75,50],[82,57],[88,44]];
+    const [w1, w2] = widths[Math.floor(Math.random() * 3)];
+    const d = document.createElement('div');
+    d.className = 'skel-card';
+    d.innerHTML = `
+      <div style="display:flex;padding:12px 12px 12px 0">
+        <div class="sh" style="width:4px;flex-shrink:0;margin-right:10px;border-radius:0"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="sh" style="height:12px;border-radius:4px;width:${w1}%"></div>
+          <div class="sh" style="height:9px;border-radius:4px;width:${w2}%"></div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:2px">
+            <div class="sh" style="width:18px;height:18px;border-radius:50%;flex-shrink:0"></div>
+            <div class="sh" style="height:9px;border-radius:4px;width:52px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:8px 12px 10px;border-top:1px solid #f3f4f6">
+        <div class="sh" style="height:24px;border-radius:20px;width:88px"></div>
+      </div>`;
+    return d;
 }

@@ -134,6 +134,12 @@
                             <input type="text" id="paramNombre" class="form-control-custom"
                                    placeholder="Ej: pH, Turbidez, Arsénico" required>
                         </div>
+                        <div class="form-group-custom">
+                            <label>Analista responsable</label>
+                            <select id="paramAnalista" class="form-control-custom">
+                                <option value="">Sin asignar</option>
+                            </select>
+                        </div>
                         <p class="params-hint">La unidad se define al asignar el parámetro a cada resolución, ya que varía según la matriz analítica.</p>
                         <button type="submit" class="btn-guardar-custom"><i class="bi bi-check-lg"></i> Guardar
                             Parámetro
@@ -153,6 +159,7 @@
                         <thead>
                         <tr>
                             <th>Parámetro</th>
+                            <th>Analista</th>
                             <th>Acción</th>
                         </tr>
                         </thead>
