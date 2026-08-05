@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>Chemiconsult</title>
   <link rel="stylesheet" href="css/mobile/mobile.css"/>
-  <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="TAREAS,AGENDA"></script>
+  <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="TAREAS,AGENDA,STOCK"></script>
 </head>
 <body>
 
@@ -106,43 +106,73 @@
   </div>
 
   <!-- ══════════════════════════════════════
-       VIEW: STOCK (placeholder)
+       VIEW: STOCK
   ══════════════════════════════════════ -->
   <div class="view" id="view-stock">
+
     <div class="app-header">
       <div>
-        <div class="header-sub">—</div>
+        <div class="header-sub" id="stock-sub">—</div>
         <div class="header-name">Stock</div>
       </div>
-      <div class="header-avatar">—</div>
+      <div class="header-avatar" id="stock-avatar">—</div>
     </div>
-    <div class="coming-soon">
-      <div class="coming-soon-icon">📦</div>
-      <div class="coming-soon-title">Próximamente</div>
-      <div class="coming-soon-sub">El módulo de stock mobile está en desarrollo.</div>
+
+    <!-- Búsqueda -->
+    <div class="stock-search-bar">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" class="stock-search" id="stock-search" placeholder="Buscar por nombre, código, ubicación…" autocomplete="off"/>
     </div>
+
+    <!-- Filtros de nivel -->
+    <div class="filter-bar" id="stock-filter-chips">
+      <button class="chip active" data-nivel="">Todos</button>
+      <button class="chip chip-bajo"  data-nivel="BAJO">⚠ Bajo</button>
+      <button class="chip chip-medio" data-nivel="MEDIO">~ Medio</button>
+      <button class="chip chip-alto"  data-nivel="ALTO">✓ Alto</button>
+    </div>
+
+    <!-- Lista -->
+    <div class="scroll-content" id="stock-list">
+      <div class="loading-state" id="stock-loading">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <span>Cargando stock…</span>
+      </div>
+      <div class="empty-state" id="stock-empty" style="display:none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        <p>Sin ítems en stock</p>
+      </div>
+      <div class="scroll-end"></div>
+    </div>
+
+    <button class="fab" id="fab-stock" title="Nuevo ítem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+
   </div>
 
   <!-- Tab bar -->
   <nav class="tab-bar">
-    <button class="tab-item" data-tab="agenda" data-modulo="AGENDA">
-      <span class="tab-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      </span>
-      <span class="tab-lbl">Agenda</span>
-    </button>
-    <button class="tab-item active" data-tab="tareas" data-modulo="TAREAS">
-      <span class="tab-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      </span>
-      <span class="tab-lbl">Tareas</span>
-    </button>
-    <button class="tab-item" data-tab="stock">
-      <span class="tab-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-      </span>
-      <span class="tab-lbl">Stock</span>
-    </button>
+    <div class="tab-pill">
+      <button class="tab-item" data-tab="agenda" data-modulo="AGENDA">
+        <span class="tab-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        <span class="tab-lbl">Agenda</span>
+      </button>
+      <button class="tab-item active" data-tab="tareas" data-modulo="TAREAS">
+        <span class="tab-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </span>
+        <span class="tab-lbl">Tareas</span>
+      </button>
+      <button class="tab-item" data-tab="stock" data-modulo="STOCK">
+        <span class="tab-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </span>
+        <span class="tab-lbl">Stock</span>
+      </button>
+    </div>
   </nav>
 
 </div><!-- /app -->
@@ -279,6 +309,83 @@
   </div>
 </div>
 
+<!-- Bottom sheet: crear / editar ítem de stock -->
+<div class="bottom-sheet" id="stock-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <span class="sheet-title" id="stock-sheet-title">Nuevo ítem</span>
+    <button class="sheet-close" id="stock-sheet-cancel" type="button">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg>
+    </button>
+  </div>
+
+  <div class="sheet-scroll">
+    <form class="sheet-body" id="stock-form" novalidate>
+
+      <div class="sheet-field">
+        <label class="sheet-label" for="sstock-nombre">Nombre <span class="req">*</span></label>
+        <input type="text" class="sheet-input" id="sstock-nombre" placeholder="Nombre del ítem…" autocomplete="off"/>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-field">
+          <label class="sheet-label" for="sstock-categoria">Categoría <span class="req">*</span></label>
+          <select class="sheet-input sheet-select" id="sstock-categoria">
+            <option value="">Seleccionar…</option>
+            <option value="REACTIVOS">Reactivos</option>
+            <option value="SOLVENTES">Solventes</option>
+            <option value="MATERIAL_MUESTREO">Material Muestreo</option>
+            <option value="MATERIAL_VIDRIO">Material Vidrio</option>
+            <option value="OTROS">Otros</option>
+          </select>
+        </div>
+        <div class="sheet-field">
+          <label class="sheet-label" for="sstock-id">Código <span class="opt">opcional</span></label>
+          <input type="text" class="sheet-input" id="sstock-id" placeholder="Ej: REA-001" autocomplete="off"/>
+        </div>
+      </div>
+
+      <div class="sheet-field">
+        <label class="sheet-label">Nivel de stock <span class="req">*</span></label>
+        <div class="nivel-pills">
+          <button type="button" class="nivel-pill np-bajo"  id="snivel-BAJO"  onclick="seleccionarNivelStock('BAJO')">⚠ Bajo</button>
+          <button type="button" class="nivel-pill np-medio active" id="snivel-MEDIO" onclick="seleccionarNivelStock('MEDIO')">~ Medio</button>
+          <button type="button" class="nivel-pill np-alto"  id="snivel-ALTO"  onclick="seleccionarNivelStock('ALTO')">✓ Alto</button>
+        </div>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-field">
+          <label class="sheet-label" for="sstock-cantidad">Cantidad (frascos) <span class="opt">opcional</span></label>
+          <input type="number" class="sheet-input" id="sstock-cantidad" min="0" placeholder="0"/>
+        </div>
+        <div class="sheet-field">
+          <label class="sheet-label" for="sstock-ubicacion">Ubicación <span class="opt">opcional</span></label>
+          <input type="text" class="sheet-input" id="sstock-ubicacion" placeholder="Ej: Heladera 2" autocomplete="off"/>
+        </div>
+      </div>
+
+      <div class="sheet-field">
+        <label class="sheet-label" for="sstock-descripcion">Descripción <span class="opt">opcional</span></label>
+        <textarea class="sheet-input sheet-textarea" id="sstock-descripcion" rows="2" placeholder="Detalles del ítem…"></textarea>
+      </div>
+
+      <div class="sheet-field">
+        <label class="sheet-label" for="sstock-obs">Observaciones <span class="opt">opcional</span></label>
+        <textarea class="sheet-input sheet-textarea" id="sstock-obs" rows="2" placeholder="Notas adicionales…"></textarea>
+      </div>
+
+      <button type="submit" class="sheet-submit" id="stock-submit-btn">Agregar ítem</button>
+
+      <button type="button" class="sheet-delete" id="stock-delete-btn" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Eliminar ítem
+      </button>
+
+    </form>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="mob-toast" id="mob-toast"></div>
 
@@ -286,5 +393,6 @@
 <script src="js/mobile.js"></script>
 <script src="js/mobile-tareas.js"></script>
 <script src="js/mobile-agenda.js"></script>
+<script src="js/mobile-stock.js"></script>
 </body>
 </html>
