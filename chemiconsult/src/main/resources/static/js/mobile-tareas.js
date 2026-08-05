@@ -112,14 +112,6 @@ function crearCard(task) {
     const initials  = task.userName ? getInitials(task.userName) : '—';
     const asignado  = task.userName || 'Sin asignar';
 
-    const pickerOpts = STATUS_SEQ.map(s => {
-        const c = STATUS_CFG[s];
-        return `<button class="ep-opt${s === task.status ? ' ep-active' : ''}"
-                        onclick="seleccionarEstadoTarea(event,${task.id},'${s}')">
-                  ${c.emoji} ${c.lbl}
-                </button>`;
-    }).join('');
-
     card.innerHTML = `
       <div class="tarea-card-inner" onclick="abrirEditar(${task.id})">
         <div class="tarea-bar ${barClass(task)}"></div>
@@ -136,7 +128,6 @@ function crearCard(task) {
         </div>
       </div>
       <div class="tarea-footer">
-        <div class="estado-picker" id="picker-${task.id}">${pickerOpts}</div>
         <button class="status-pill ${cfg.cls}"
                 onclick="abrirPickerEstado(event,${task.id})">
           ${cfg.emoji} ${cfg.lbl}
@@ -200,17 +191,31 @@ function abrirPickerEstado(e, id) {
     e.stopPropagation();
     const mismoPicker = pickerEstadoAbierto === id;
     cerrarPickerEstado();
-    if (!mismoPicker) {
-        const picker = document.getElementById(`picker-${id}`);
-        if (picker) picker.classList.add('open');
-        pickerEstadoAbierto = id;
-    }
+    if (mismoPicker) return;
+
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    const picker = document.getElementById('estado-picker');
+    picker.innerHTML = STATUS_SEQ.map(s => {
+        const c = STATUS_CFG[s];
+        return `<button class="ep-opt${s === task.status ? ' ep-active' : ''}"
+                        onclick="seleccionarEstadoTarea(event,${id},'${s}')">
+                  ${c.emoji} ${c.lbl}
+                </button>`;
+    }).join('');
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    picker.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+    picker.style.right  = `${window.innerWidth - rect.right}px`;
+
+    picker.classList.add('open');
+    pickerEstadoAbierto = id;
 }
 
 function cerrarPickerEstado() {
     if (pickerEstadoAbierto === null) return;
-    const picker = document.getElementById(`picker-${pickerEstadoAbierto}`);
-    if (picker) picker.classList.remove('open');
+    document.getElementById('estado-picker')?.classList.remove('open');
     pickerEstadoAbierto = null;
 }
 
