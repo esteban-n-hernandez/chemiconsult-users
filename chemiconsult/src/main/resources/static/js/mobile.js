@@ -80,6 +80,65 @@ function escHtml(str) {
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ── Badge en tabs ────────────────────────────────────────────
+function actualizarBadgeTab(tab, count) {
+    const btn = document.querySelector(`.tab-item[data-tab="${tab}"]`);
+    if (!btn) return;
+    btn.querySelector('.tab-badge')?.remove();
+    if (count > 0) {
+        const b = document.createElement('span');
+        b.className = 'tab-badge';
+        b.textContent = count > 99 ? '99+' : count;
+        btn.appendChild(b);
+    }
+}
+
+// ── Pull-to-refresh ──────────────────────────────────────────
+function setupPullToRefresh(scrollEl, onRefresh) {
+    if (!scrollEl) return;
+    const THRESHOLD = 68;
+    let startY = 0, startScroll = 0, ptrEl = null, refreshing = false;
+
+    scrollEl.addEventListener('touchstart', e => {
+        startY = e.touches[0].clientY;
+        startScroll = scrollEl.scrollTop;
+    }, { passive: true });
+
+    scrollEl.addEventListener('touchmove', e => {
+        if (refreshing || startScroll > 4) return;
+        const dy = e.touches[0].clientY - startY;
+        if (dy <= 0) { ptrEl?.remove(); ptrEl = null; return; }
+        if (!ptrEl) {
+            ptrEl = document.createElement('div');
+            ptrEl.className = 'ptr-bar';
+            scrollEl.prepend(ptrEl);
+        }
+        const pull  = Math.min(dy, THRESHOLD);
+        const ready = pull >= THRESHOLD * 0.85;
+        ptrEl.style.height  = (pull * 0.55) + 'px';
+        ptrEl.style.opacity = (pull / THRESHOLD).toFixed(2);
+        ptrEl.innerHTML = ready
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><line x1="12" y1="18" x2="12" y2="6"/></svg> Soltar para actualizar'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"/><line x1="12" y1="6" x2="12" y2="18"/></svg> Actualizar';
+    }, { passive: true });
+
+    scrollEl.addEventListener('touchend', async e => {
+        if (!ptrEl || refreshing) return;
+        const dy = e.changedTouches[0].clientY - startY;
+        if (dy >= THRESHOLD * 0.85 && startScroll <= 4) {
+            refreshing = true;
+            ptrEl.className = 'ptr-bar ptr-active';
+            ptrEl.innerHTML = '<div class="ptr-spinner"></div>';
+            await onRefresh().catch(() => {});
+            ptrEl?.remove();
+            refreshing = false;
+        } else {
+            ptrEl.remove();
+        }
+        ptrEl = null;
+    });
+}
+
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     // Ocultar tabs a los que el usuario no tiene acceso por módulo
