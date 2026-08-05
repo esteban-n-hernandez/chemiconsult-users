@@ -595,3 +595,224 @@ body {
 }
 .mob-toast.error { background: var(--rojo); }
 .mob-toast.ok    { background: var(--verde-dk); }
+
+/* ══════════════════════════════════════════════════════════════
+   AGENDA
+══════════════════════════════════════════════════════════════ */
+
+/* ── Barra de fecha ──────────────────────────────────────────── */
+.agenda-date-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 8px 8px 8px 4px;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.ag-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: none;
+  border: none;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ag-nav-btn:active { background: var(--bg); }
+
+.ag-date-center {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.ag-date-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.ag-date-full {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ag-date-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ag-hoy-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--verde-lt);
+  color: var(--verde-dk);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ag-hoy-chip:active { background: #d4edaa; }
+
+/* ── Tarjeta de evento ───────────────────────────────────────── */
+.agenda-card {
+  margin: 0 14px 10px;
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.ag-main {
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+  transition: background .12s;
+  min-height: 64px;
+}
+.ag-main:active { background: #f9fafb; }
+
+.ag-timecol {
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 12px 0;
+}
+
+.ag-hora {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ag-stripe {
+  width: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin: 10px 10px 10px 0;
+}
+
+/* stripe colors by estado */
+.ag-pendiente  { background: var(--naranja); }
+.ag-confirmado { background: var(--verde);   }
+.ag-realizado  { background: #94a3b8;        }
+.ag-cancelado  { background: var(--rojo);    }
+
+.ag-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px 12px 0;
+}
+
+.ag-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ag-tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+/* tipo badge colors */
+.ag-tipo-azul    { background: var(--azul-lt); color: #1D4ED8; }
+.ag-tipo-naranja { background: var(--narj-lt); color: #92400e; }
+.ag-tipo-rojo    { background: var(--rojo-lt); color: #b91c1c; }
+.ag-tipo-violeta { background: var(--vio-lt);  color: #5B21B6; }
+
+.ag-sub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ag-estado-btn {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  align-self: center;
+  white-space: nowrap;
+  margin-right: 10px;
+  flex-shrink: 0;
+  transition: opacity .12s, transform .1s;
+}
+.ag-estado-btn:active { opacity: .75; transform: scale(.93); }
+
+/* estado button colors */
+.ag-estado-btn.ag-pendiente  { background: var(--narj-lt); color: #92400e; }
+.ag-estado-btn.ag-confirmado { background: var(--verde-lt); color: var(--verde-dk); }
+.ag-estado-btn.ag-realizado  { background: #f1f5f9; color: #475569; }
+.ag-estado-btn.ag-cancelado  { background: var(--rojo-lt); color: #b91c1c; }
+
+/* ── Sheet agenda: selector de tipo ─────────────────────────── */
+.tipo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tipo-pill {
+  padding: 9px 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: background .14s, border-color .14s, color .14s;
+}
+.tipo-pill:active { opacity: .8; }
+.tipo-pill.active {
+  background: var(--verde-lt);
+  border-color: var(--verde);
+  color: var(--verde-dk);
+}
+
+/* Section flex-column inside sheet-body (gap inherited from sheet-body) */
+.ag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

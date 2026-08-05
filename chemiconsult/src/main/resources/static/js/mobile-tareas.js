@@ -17,6 +17,10 @@ const STATUS_CFG = {
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+    const role = (localStorage.getItem('userRole') || '').toUpperCase();
+    const mods = JSON.parse(localStorage.getItem('userModulos') || '[]');
+    if (role !== 'ROLE_IT' && !mods.includes('TAREAS')) return;
+
     initHeader('mob-sub', 'mob-avatar');
     setupFilters();
     setupForm();

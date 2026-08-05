@@ -19,11 +19,12 @@
         }
     }
 
-    // Chequeo de módulo (IT siempre pasa)
+    // Chequeo de módulo (IT siempre pasa; múltiples módulos separados por coma = OR)
     const moduloAttr = script && script.getAttribute('data-modulo');
     if (moduloAttr && role !== 'ROLE_IT') {
-        const userModulos = JSON.parse(localStorage.getItem('userModulos') || '[]');
-        if (!userModulos.includes(moduloAttr.toUpperCase())) {
+        const userModulos  = JSON.parse(localStorage.getItem('userModulos') || '[]');
+        const requeridos   = moduloAttr.split(',').map(m => m.trim().toUpperCase());
+        if (!requeridos.some(m => userModulos.includes(m))) {
             window.location.replace('unauthorized.html');
         }
     }

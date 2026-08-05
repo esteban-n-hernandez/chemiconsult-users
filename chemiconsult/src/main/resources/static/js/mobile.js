@@ -82,6 +82,26 @@ function escHtml(str) {
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    // Ocultar tabs a los que el usuario no tiene acceso por módulo
+    const role       = (localStorage.getItem('userRole') || '').toUpperCase();
+    const userModulos = JSON.parse(localStorage.getItem('userModulos') || '[]');
+
+    if (role !== 'ROLE_IT') {
+        document.querySelectorAll('.tab-item[data-modulo]').forEach(btn => {
+            if (!userModulos.includes(btn.dataset.modulo.toUpperCase())) {
+                btn.style.display = 'none';
+            }
+        });
+    }
+
+    // Si la tab activa por defecto quedó oculta, activar la primera visible
+    const activeBtn = document.querySelector('.tab-item.active');
+    if (activeBtn && activeBtn.style.display === 'none') {
+        const firstVisible = [...document.querySelectorAll('.tab-item')]
+            .find(b => b.style.display !== 'none');
+        if (firstVisible) switchTab(firstVisible.dataset.tab);
+    }
+
     document.querySelectorAll('.tab-item').forEach(btn =>
         btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
