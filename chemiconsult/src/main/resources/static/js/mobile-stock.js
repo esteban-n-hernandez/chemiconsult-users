@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupStockFilters();
     setupStockForm();
     document.getElementById('fab-stock')?.addEventListener('click', abrirNuevoStock);
+    setupPullToRefresh(document.getElementById('stock-list'), cargarStock);
 
     await cargarStock();
 });
@@ -86,6 +87,8 @@ function aplicarFiltrosStock() {
         (NIVEL_ORDER[a.nivel] ?? 3) - (NIVEL_ORDER[b.nivel] ?? 3));
 
     actualizarSubStock();
+    actualizarContadoresChipsStock();
+    actualizarBadgeTab('stock', stockItems.filter(i => i.nivel === 'BAJO').length);
     renderStock();
 }
 
@@ -105,6 +108,22 @@ function actualizarSubStock() {
     if (total) partes.push(`${total} ítem${total !== 1 ? 's' : ''}`);
     if (bajo)  partes.push(`⚠ ${bajo} bajo stock`);
     el.textContent = partes.length ? `${base} · ${partes.join(' · ')}` : base;
+}
+
+function actualizarContadoresChipsStock() {
+    const counts = { BAJO: 0, MEDIO: 0, ALTO: 0 };
+    stockItems.forEach(i => { if (i.nivel in counts) counts[i.nivel]++; });
+    const total = stockItems.length;
+    const labels = {
+        '':     total          ? `Todos (${total})`          : 'Todos',
+        'BAJO':  counts.BAJO   ? `⚠ Bajo ${counts.BAJO}`    : '⚠ Bajo',
+        'MEDIO': counts.MEDIO  ? `~ Medio ${counts.MEDIO}`  : '~ Medio',
+        'ALTO':  counts.ALTO   ? `✓ Alto ${counts.ALTO}`    : '✓ Alto',
+    };
+    document.querySelectorAll('#stock-filter-chips .chip').forEach(chip => {
+        const n = chip.dataset.nivel;
+        if (n in labels) chip.textContent = labels[n];
+    });
 }
 
 // ── Render ────────────────────────────────────────────────────

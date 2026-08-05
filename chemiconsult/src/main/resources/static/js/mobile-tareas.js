@@ -3,9 +3,10 @@
 // ── Estado ───────────────────────────────────────────────────
 let tasks      = [];
 let usuarios   = [];
-let filtroActivo      = '';
-let editandoId        = null;
+let filtroActivo        = '';
+let editandoId          = null;
 let pickerEstadoAbierto = null;
+let cardSwipeAbierta    = null;
 
 const STATUS_SEQ = ['TODO', 'IN_PROGRESS', 'EN_REVISION', 'DONE'];
 
@@ -26,7 +27,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupFilters();
     setupForm();
     document.getElementById('fab-nueva')?.addEventListener('click', abrirNueva);
-    document.addEventListener('click', cerrarPickerEstado);
+    document.addEventListener('click', () => {
+        cerrarPickerEstado();
+        if (cardSwipeAbierta) resetSwipeCard(cardSwipeAbierta);
+    });
+    setupPullToRefresh(document.getElementById('task-list'), cargarTareas);
     await Promise.all([cargarUsuarios(), cargarTareas()]);
 });
 
@@ -67,6 +72,8 @@ function renderTareas() {
         : tasks;
 
     actualizarSubtitulo();
+    actualizarContadoresChips();
+    actualizarBadgeTab('tareas', tasks.filter(t => t.status !== 'DONE' && urgencia(t) <= 1).length);
 
     if (filtradas.length === 0) {
         empty.style.display = 'flex';
@@ -102,6 +109,17 @@ function actualizarSubtitulo() {
     el.textContent = partes.length ? `${base} · ${partes.join(' · ')}` : base;
 }
 
+function actualizarContadoresChips() {
+    document.querySelectorAll('#filter-chips .chip').forEach(chip => {
+        const s = chip.dataset.status;
+        const count = s === ''
+            ? tasks.length
+            : tasks.filter(t => t.status === s).length;
+        const lbl = s === '' ? 'Todas' : (STATUS_CFG[s]?.lbl ?? s);
+        chip.textContent = count ? `${lbl} ${count}` : lbl;
+    });
+}
+
 function crearCard(task) {
     const card = document.createElement('div');
     card.className = 'tarea-card';
@@ -113,27 +131,40 @@ function crearCard(task) {
     const asignado  = task.userName || 'Sin asignar';
 
     card.innerHTML = `
-      <div class="tarea-card-inner" onclick="abrirEditar(${task.id})">
-        <div class="tarea-bar ${barClass(task)}"></div>
-        <div class="tarea-body">
-          <div class="tarea-title">${escHtml(task.title)}</div>
-          ${task.description ? `<div class="tarea-desc">${escHtml(task.description)}</div>` : ''}
-          <div class="tarea-meta">
-            <div class="tarea-assign">
-              <span class="assign-avatar">${escHtml(initials)}</span>
-              ${escHtml(asignado)}
+      <div class="swipe-content">
+        <div class="tarea-card-inner">
+          <div class="tarea-bar ${barClass(task)}"></div>
+          <div class="tarea-body">
+            <div class="tarea-title">${escHtml(task.title)}</div>
+            ${task.description ? `<div class="tarea-desc">${escHtml(task.description)}</div>` : ''}
+            <div class="tarea-meta">
+              <div class="tarea-assign">
+                <span class="assign-avatar">${escHtml(initials)}</span>
+                ${escHtml(asignado)}
+              </div>
+              ${badgeFecha(task)}
             </div>
-            ${badgeFecha(task)}
           </div>
         </div>
+        <div class="tarea-footer">
+          <button class="status-pill ${cfg.cls}"
+                  onclick="abrirPickerEstado(event,${task.id})">
+            ${cfg.emoji} ${cfg.lbl}
+          </button>
+        </div>
       </div>
-      <div class="tarea-footer">
-        <button class="status-pill ${cfg.cls}"
-                onclick="abrirPickerEstado(event,${task.id})">
-          ${cfg.emoji} ${cfg.lbl}
-        </button>
+      <div class="swipe-del" onclick="eliminarCardTarea(event,${task.id})">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Eliminar
       </div>
     `;
+
+    card.querySelector('.tarea-card-inner').addEventListener('click', () => {
+        if (cardSwipeAbierta === card) { resetSwipeCard(card); return; }
+        if (cardSwipeAbierta)          { resetSwipeCard(cardSwipeAbierta); return; }
+        abrirEditar(task.id);
+    });
+    addSwipeToDelete(card, task.id);
     return card;
 }
 
@@ -172,6 +203,90 @@ function badgeFecha(task) {
     if (diff <= 7)  return `<span class="dl-badge dl-soon">En ${diff} días</span>`;
     const d = venc.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
     return `<span class="dl-badge dl-ok">${d}</span>`;
+}
+
+// ── Swipe to delete ───────────────────────────────────────────
+function resetSwipeCard(card) {
+    if (!card) return;
+    const content = card.querySelector('.swipe-content');
+    const delBtn  = card.querySelector('.swipe-del');
+    if (!content) return;
+    content.style.transition = 'transform .2s ease';
+    content.style.transform  = '';
+    if (delBtn) {
+        delBtn.style.transition = 'transform .2s ease';
+        delBtn.style.transform  = 'translateX(100%)';
+    }
+    if (cardSwipeAbierta === card) cardSwipeAbierta = null;
+    setTimeout(() => {
+        content.style.transition = '';
+        if (delBtn) delBtn.style.transition = '';
+    }, 210);
+}
+
+function addSwipeToDelete(card) {
+    const DIST = 82;
+    const content = card.querySelector('.swipe-content');
+    const delBtn  = card.querySelector('.swipe-del');
+    let sx = 0, sy = 0, isHoriz = false, dx = 0;
+
+    card.addEventListener('touchstart', e => {
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+        isHoriz = false; dx = 0;
+        content.style.transition = 'none';
+        if (delBtn) delBtn.style.transition = 'none';
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+        dx = e.touches[0].clientX - sx;
+        const dy = e.touches[0].clientY - sy;
+        if (!isHoriz && Math.abs(dy) > Math.abs(dx) + 4) return;
+        if (!isHoriz && Math.abs(dx) > 4) isHoriz = true;
+        if (!isHoriz) return;
+        if (dx < 0) {
+            const t = Math.max(dx, -DIST);
+            content.style.transform = `translateX(${t}px)`;
+            if (delBtn) delBtn.style.transform = `translateX(${(1 + t / DIST) * 100}%)`;
+        } else if (cardSwipeAbierta === card && dx > 0) {
+            content.style.transform = `translateX(${Math.min(dx - DIST, 0)}px)`;
+            if (delBtn) delBtn.style.transform = `translateX(${Math.min((dx / DIST) * 100, 100)}%)`;
+        }
+    }, { passive: true });
+
+    card.addEventListener('touchend', () => {
+        if (!isHoriz) return;
+        if (-dx >= DIST * 0.45) {
+            if (cardSwipeAbierta && cardSwipeAbierta !== card) resetSwipeCard(cardSwipeAbierta);
+            content.style.transition = 'transform .2s ease';
+            content.style.transform  = `translateX(-${DIST}px)`;
+            if (delBtn) {
+                delBtn.style.transition = 'transform .2s ease';
+                delBtn.style.transform  = 'translateX(0)';
+            }
+            cardSwipeAbierta = card;
+            setTimeout(() => {
+                content.style.transition = '';
+                if (delBtn) delBtn.style.transition = '';
+            }, 210);
+        } else {
+            resetSwipeCard(card);
+        }
+        isHoriz = false;
+    });
+}
+
+async function eliminarCardTarea(e, id) {
+    e.stopPropagation();
+    try {
+        await apiFetch(`${MOB_API}/task/${id}`, { method: 'DELETE' });
+        tasks = tasks.filter(t => t.id !== id);
+        cardSwipeAbierta = null;
+        renderTareas();
+        mobToast('Tarea eliminada');
+    } catch {
+        mobToast('Error al eliminar', 'error');
+    }
 }
 
 // ── Filtros ───────────────────────────────────────────────────

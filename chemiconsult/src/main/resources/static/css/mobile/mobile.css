@@ -200,6 +200,7 @@ body {
   border-radius: 14px;
   box-shadow: var(--shadow);
   overflow: hidden;
+  position: relative;
 }
 
 .tarea-card-inner {
@@ -373,6 +374,55 @@ body {
   color: #fff;
 }
 
+/* ── Pull-to-refresh ─────────────────────────────────────────── */
+.ptr-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  height: 0;
+  opacity: 0;
+}
+.ptr-bar.ptr-active {
+  height: 44px !important;
+  opacity: 1 !important;
+}
+.ptr-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--verde);
+  border-radius: 50%;
+  animation: ptr-spin .7s linear infinite;
+}
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+
+/* ── Swipe to delete ─────────────────────────────────────────── */
+.swipe-del {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 82px;
+  background: var(--rojo);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 0 14px 14px 0;
+  transform: translateX(100%);
+  user-select: none;
+}
+
 .edit-hint {
   font-size: 11px;
   color: var(--border);
@@ -433,8 +483,31 @@ body {
   color: var(--muted);
   border-radius: 18px;
   transition: color .18s, background .18s;
+  position: relative;
 }
 .tab-item:active { opacity: .75; }
+
+/* ── Tab badge ───────────────────────────────────────────────── */
+.tab-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--rojo);
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  pointer-events: none;
+}
+.tab-item.active .tab-badge { border-color: var(--verde); }
 .tab-item .tab-icon {
   display: flex;
   align-items: center;
