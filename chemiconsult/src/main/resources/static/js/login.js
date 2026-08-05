@@ -1,5 +1,10 @@
 const API_URL = API_BASE;
 
+function esMobile() {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        || (navigator.maxTouchPoints > 1 && window.innerWidth < 900);
+}
+
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -38,6 +43,8 @@ document.getElementById("loginForm").addEventListener("submit", async function (
 
             if (rol === "ROLE_CLIENTE") {
                 window.location.href = "dashboard-cliente.html";
+            } else if (esMobile()) {
+                window.location.href = "mobile.html";
             } else {
                 window.location.href = "dashboard-empleado.html";
             }
