@@ -7,4 +7,5 @@ public class ResultadoParametroTO {
     private Long parametroId;
     private String valorResultado;
     private String observacion;
+    private Long metodologiaId;
 }

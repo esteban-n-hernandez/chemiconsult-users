@@ -32,6 +32,8 @@ public class AnalisisService {
     private final TipoMuestraRepository tipoMuestraRepository;
     private final NumeradorService    numeradorService;
     private final BrevoEmailService   brevoEmailService;
+    private final MetodologiaRepository metodologiaRepository;
+    private final ParametroMetodologiaRepository parametroMetodologiaRepository;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -359,6 +361,10 @@ public class AnalisisService {
             if (r == null) continue;
             ap.setValorResultado(r.getValorResultado());
             ap.setObservacion(r.getObservacion());
+            if (r.getMetodologiaId() != null) {
+                metodologiaRepository.findById(r.getMetodologiaId())
+                        .ifPresent(ap::setMetodologiaUsada);
+            }
             for (AnalisisParametroLimiteDE limite : ap.getLimites()) {
                 limite.setCumple(evaluarCumple(r.getValorResultado(), limite));
             }
@@ -434,7 +440,9 @@ public class AnalisisService {
                            ResolucionDestinoParametroRepository resolucionDestinoParametroRepository,
                            TipoMuestraRepository tipoMuestraRepository,
                            NumeradorService numeradorService,
-                           BrevoEmailService brevoEmailService) {
+                           BrevoEmailService brevoEmailService,
+                           MetodologiaRepository metodologiaRepository,
+                           ParametroMetodologiaRepository parametroMetodologiaRepository) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -445,5 +453,7 @@ public class AnalisisService {
         this.tipoMuestraRepository = tipoMuestraRepository;
         this.numeradorService = numeradorService;
         this.brevoEmailService = brevoEmailService;
+        this.metodologiaRepository = metodologiaRepository;
+        this.parametroMetodologiaRepository = parametroMetodologiaRepository;
     }
 }

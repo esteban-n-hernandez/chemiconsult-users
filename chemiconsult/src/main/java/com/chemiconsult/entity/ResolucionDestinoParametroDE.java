@@ -1,5 +1,7 @@
 package com.chemiconsult.entity;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -39,9 +41,11 @@ public class ResolucionDestinoParametroDE {
     private String tipoLimite; // "MAX", "MIN", "RANGO", "TEXTO", "AUSENCIA", "NE" (no exigido)
 
     @Column(name = "VALOR_MIN")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Double valorMinimo;
 
     @Column(name = "VALOR_MAX")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Double valorMaximo;
 
     @Column(name = "LIMITE_TEXTO")

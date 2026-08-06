@@ -42,16 +42,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const linksEmpleado = `
         ${puedeVer('DASHBOARD') ? link('dashboard-empleado.html', 'bi-speedometer2', 'Dashboard') : ''}
-        ${puedeVer('TAREAS') ? link('task.html', 'bi-list-task', 'Tareas') : ''}
-        ${puedeVer('MUESTRAS') ? link('muestras.html', 'bi-file-earmark-medical', 'Muestras') : ''}
         ${puedeVer('AGENDA') ? link('agenda.html', 'bi-calendar-check', 'Agenda') : ''}
         ${puedeVer('CLIENTES') ? link('clientes.html', 'bi-people', 'Clientes') : ''}
-        ${puedeVer('STOCK') ? link('stock.html', 'bi-box-seam', 'Stock') : ''}
         ${puedeVer('DOCUMENTOS') ? link('documentos.html', 'bi-folder2-open', 'Documentación') : ''}
-        ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html', 'bi-gear-fill', 'Panel Técnico') : ''}
-        ${puedeVer('PRESUPUESTO') ? link('presupuesto.html', 'bi-file-earmark-text', 'Presupuestos') : ''}
-        ${puedeVer('COLA_ANALISIS') ? link('cola-analisis.html', 'bi-collection', 'Parametros a Analizar') : ''}
         ${puedeVer('FACTURACION') ? link('facturacion.html', 'bi-receipt', 'Facturación') : ''}
+        ${puedeVer('MUESTRAS') ? link('muestras.html', 'bi-file-earmark-medical', 'Muestras') : ''}
+        ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html', 'bi-gear-fill', 'Panel Técnico') : ''}
+        ${puedeVer('COLA_ANALISIS') ? link('cola-analisis.html', 'bi-collection', 'Parámetros a Analizar') : ''}
+        ${puedeVer('PRESUPUESTO') ? link('presupuesto.html', 'bi-file-earmark-text', 'Presupuestos') : ''}
+        ${puedeVer('STOCK') ? link('stock.html', 'bi-box-seam', 'Stock') : ''}
+        ${puedeVer('TAREAS') ? link('task.html', 'bi-list-task', 'Tareas') : ''}
         ${puedeVer('USUARIOS') ? link('usuarios.html', 'bi-shield-lock', 'Usuarios') : ''}
     `;
 

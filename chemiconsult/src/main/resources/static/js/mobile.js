@@ -169,4 +169,25 @@ document.addEventListener('DOMContentLoaded', () => {
             .forEach(s => s.classList.remove('open'));
         document.getElementById('sheet-backdrop').classList.remove('open');
     });
+
+    // Avatar → perfil / cerrar sesión
+    document.querySelectorAll('.header-avatar').forEach(el => {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', () => {
+            const rawName = localStorage.getItem('username') || localStorage.getItem('userEmail') || '';
+            const email   = localStorage.getItem('userEmail') || '';
+            document.getElementById('profile-avatar-big').textContent = getInitials(rawName);
+            document.getElementById('profile-name').textContent  = rawName || '—';
+            document.getElementById('profile-email').textContent = email || '—';
+            openSheet('profile-sheet');
+        });
+    });
+
+    document.getElementById('profile-sheet-close')?.addEventListener('click', () => closeSheet('profile-sheet'));
+
+    document.getElementById('profile-logout-btn')?.addEventListener('click', () => {
+        ['token', 'userEmail', 'userRole', 'userName', 'userId', 'userModulos', 'username'].forEach(k =>
+            localStorage.removeItem(k));
+        window.location.href = 'login.html';
+    });
 });

@@ -92,9 +92,12 @@ public class ParametroService {
 
     // ── Metodologías asociadas al parámetro ──────────────────────────────────
 
-    public List<ParametroMetodologiaDE> getMetodologias(Long parametroId) {
+    public List<ParametroMetodologiaDE> getMetodologias(Long parametroId, Long matrizId) {
         if (!parametroRepository.existsById(parametroId)) {
             throw new RuntimeException("Parámetro no encontrado con ID: " + parametroId);
+        }
+        if (matrizId != null) {
+            return pmRepository.findByParametroIdAndMatriz(parametroId, matrizId);
         }
         return pmRepository.findByParametroId(parametroId);
     }

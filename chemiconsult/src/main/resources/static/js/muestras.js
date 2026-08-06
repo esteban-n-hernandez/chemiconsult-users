@@ -1464,6 +1464,25 @@ async function obtenerDetalleMuestra(id) {
     return await response.json();
 }
 
+async function cargarCatalogoMetodologias(d) {
+    if (!d.parametros || d.parametros.length === 0) return new Map();
+    const matrizId = d.matrizId;
+    const entries = await Promise.all(
+        d.parametros.map(async p => {
+            try {
+                const url = matrizId
+                    ? `${API_URL}/parametros/${p.id}/metodologias?matrizId=${matrizId}`
+                    : `${API_URL}/parametros/${p.id}/metodologias`;
+                const res = await fetchConAuth(url);
+                if (!res.ok) return [p.id, []];
+                const list = await res.json();
+                return [p.id, list.map(pm => ({ id: pm.metodologia.id, nombre: pm.metodologia.nombre }))];
+            } catch { return [p.id, []]; }
+        })
+    );
+    return new Map(entries);
+}
+
 window.verDetalleMuestra = async function(id) {
     detalleAnalisisId = id;
     const modal = document.getElementById("modalDetalleMuestra");
@@ -1479,7 +1498,8 @@ window.verDetalleMuestra = async function(id) {
 
     try {
         const detalle = await obtenerDetalleMuestra(id);
-        renderizarDetalleMuestra(detalle);
+        const metodCatalog = await cargarCatalogoMetodologias(detalle);
+        renderizarDetalleMuestra(detalle, metodCatalog);
         loading.classList.add("d-none");
         contenido.classList.remove("d-none");
     } catch (error) {
@@ -1528,7 +1548,7 @@ function labelEstadoDetalle(estado) {
     return map[(estado || "").toUpperCase()] || (estado || "—");
 }
 
-function renderizarDetalleMuestra(d) {
+function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || `#${d.id}`;
 
     const btnGenerar  = document.getElementById("btnGenerarInforme");
@@ -1660,11 +1680,19 @@ function renderizarDetalleMuestra(d) {
         const hayLimites = p.limites && p.limites.length > 0;
         const nLimites   = hayLimites ? p.limites.length : 0;
 
+        const opcMetod = metodCatalog.get(p.id) || [];
+        const metodoHtml = opcMetod.length > 0 && !bloqueado
+            ? `<select class="param-metodologia-select" data-parametro-id="${p.id}">
+                   <option value="">Sin metodología</option>
+                   ${opcMetod.map(m => `<option value="${m.id}"${p.metodologiaId === m.id ? " selected" : ""}>${m.nombre}</option>`).join("")}
+               </select>`
+            : `<div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>`;
+
         card.innerHTML = `
             <div class="param-card-header">
                 <div>
                     <div class="param-card-nombre">${p.nombre} <span class="param-card-unidad">(${p.unidad || "—"})</span></div>
-                    <div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>
+                    ${metodoHtml}
                 </div>
                 <div class="param-resultado-wrap">
                     ${inputResultado}
@@ -1834,11 +1862,13 @@ async function autoGuardar() {
         inputs.forEach(input => {
             const parametroId = parseInt(input.dataset.parametroId);
             const obsInput = document.getElementById(`obs-param-${parametroId}`);
+            const metodoSelect = document.querySelector(`.param-metodologia-select[data-parametro-id="${parametroId}"]`);
             const rawVal = input.value.trim();
             resultados.push({
                 parametroId,
                 valorResultado: rawVal !== "" ? rawVal : null,
                 observacion: obsInput ? (obsInput.value.trim() || null) : null,
+                metodologiaId: metodoSelect && metodoSelect.value ? parseInt(metodoSelect.value) : null,
             });
         });
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/resultados`, {

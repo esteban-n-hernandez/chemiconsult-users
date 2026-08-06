@@ -1,5 +1,7 @@
 package com.chemiconsult.to;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 @Data
@@ -10,9 +12,10 @@ public class ParametroNormaTO {
     private String unidad;
     private MetodologiaSimpleTO metodologia;
 
-    // Límites opcionales por si querés mostrarlos en el frontend en el futuro
     private String tipoLimite;
+    @JsonSerialize(using = ToStringSerializer.class)
     private Double valorMinimo;
+    @JsonSerialize(using = ToStringSerializer.class)
     private Double valorMaximo;
     private String limiteTexto;
 }

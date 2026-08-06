@@ -108,6 +108,7 @@ public class EstudiosMapper {
                 .id(ap.getParametro().getId())
                 .nombre(ap.getParametro().getNombre())
                 .unidad(resolverUnidad(ap))
+                .metodologiaId(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getId() : null)
                 .metodologiaNombre(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getNombre() : null)
                 .valorResultado(ap.getValorResultado())
                 .observacion(ap.getObservacion())

@@ -71,10 +71,12 @@ public class ParametroController {
 
     // ── Metodologías ──────────────────────────────────────────────────────────
 
-    // GET /api/parametros/{id}/metodologias
+    // GET /api/parametros/{id}/metodologias?matrizId={matrizId}
     @GetMapping("/{id}/metodologias")
-    public ResponseEntity<List<ParametroMetodologiaDE>> getMetodologias(@PathVariable Long id) {
-        return ResponseEntity.ok(parametroService.getMetodologias(id));
+    public ResponseEntity<List<ParametroMetodologiaDE>> getMetodologias(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long matrizId) {
+        return ResponseEntity.ok(parametroService.getMetodologias(id, matrizId));
     }
 
     // POST /api/parametros/{id}/metodologias  body: { metodologiaId, matrizId? }
