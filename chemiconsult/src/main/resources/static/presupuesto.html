@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
     <link rel="stylesheet" href="css/modal.css"/>
+    <link rel="stylesheet" href="css/tabla-muestras.css"/>
     <link rel="stylesheet" href="css/presupuesto.css"/>
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="PRESUPUESTO"></script>
 </head>
@@ -30,63 +31,114 @@
             <div class="avatar-circle" id="header-avatar">--</div>
         </div>
     </div>
+    <div class="page-actions">
+        <button class="btn-nuevo-pres" id="btnNuevoPres">
+            <i class="bi bi-plus-lg"></i> Nuevo presupuesto
+        </button>
+    </div>
 
-    <!-- Panel principal -->
-    <div class="panel pres-panel">
+    <!-- Historial -->
+    <div class="panel hist-panel">
         <div class="panel-header">
-            <h5><i class="bi bi-file-earmark-text me-2 panel-title-icon-green"></i>Nuevo presupuesto</h5>
-            <div class="pres-header-actions">
-                <button class="btn-pres-secondary" id="btnLimpiar">
-                    <i class="bi bi-arrow-counterclockwise"></i> Limpiar
-                </button>
-                <button class="btn-pres-primary" id="btnGenerar">
-                    <i class="bi bi-file-earmark-pdf"></i> Generar PDF
-                </button>
-            </div>
+            <h5><i class="bi bi-clock-history me-2 panel-title-icon-green"></i>Historial de presupuestos</h5>
+            <button class="btn-pres-secondary" id="btnRefreshHistorial" title="Actualizar">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
         </div>
 
         <div class="panel-body">
-
-            <!-- Fila 1: N° presupuesto + Fecha + Cliente -->
-            <div class="pres-form-row pres-row-top">
-                <div class="pres-field">
-                    <label class="pres-label">N° Presupuesto</label>
-                    <div class="pres-num-wrap">
-                        <span class="pres-num-prefix">N°</span>
-                        <input type="number" id="inputNumero" class="pres-input pres-input-num"
-                               placeholder="2387" min="1"/>
-                    </div>
-                </div>
-                <div class="pres-field">
-                    <label class="pres-label">Fecha</label>
-                    <input type="date" id="inputFecha" class="pres-input"/>
-                </div>
-                <div class="pres-field pres-field-wide">
-                    <label class="pres-label">Cliente <span class="pres-required">*</span></label>
-                    <select id="inputCliente" class="pres-input">
-                        <option value="">Cargando clientes...</option>
-                    </select>
-                </div>
-                <div class="pres-field pres-field-wide">
-                    <label class="pres-label">Solicitado por</label>
-                    <input type="text" id="inputSolicitado" class="pres-input"
-                           placeholder="Nombre del contacto" autocomplete="off"/>
-                </div>
-            </div>
-
-            <!-- Separador -->
-            <div class="pres-separator"></div>
-
-            <!-- Tabla de ítems -->
-            <div class="pres-items-head">
-                <span class="pres-items-title">Ítems del presupuesto</span>
-                <button class="btn-pres-add" id="btnAgregarItem">
-                    <i class="bi bi-plus-lg"></i> Agregar ítem
-                </button>
+            <div class="hist-filters">
+                <button class="hist-filter-btn active" data-estado="">Todos</button>
+                <button class="hist-filter-btn" data-estado="PENDIENTE">Pendientes</button>
+                <button class="hist-filter-btn" data-estado="ACEPTADO">Aceptados</button>
+                <button class="hist-filter-btn" data-estado="RECHAZADO">Rechazados</button>
             </div>
 
             <div class="pres-tabla-wrap">
-                <table class="pres-tabla" id="tablaItems">
+                <table class="tabla-muestras">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Solicitado por</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="histBody">
+                        <tr><td colspan="7" class="hist-loading">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ Modal: Nuevo presupuesto (2 pasos) ══ -->
+<div id="modalNuevoPres" class="modal-overlay">
+    <div class="modal-box modal-nuevo-pres">
+
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="mh-info">
+                <p class="mh-eyebrow">Nuevo</p>
+                <h5>Presupuesto</h5>
+            </div>
+            <!-- Step indicator -->
+            <div class="np-steps">
+                <span class="np-step-item np-step-active" id="npStep1Ind">
+                    <span class="np-step-num">1</span> Datos
+                </span>
+                <i class="bi bi-chevron-right np-step-arrow"></i>
+                <span class="np-step-item" id="npStep2Ind">
+                    <span class="np-step-num">2</span> Ítems
+                </span>
+            </div>
+            <button class="modal-close" id="btnCerrarNuevoPres"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <!-- Paso 1: Datos del presupuesto -->
+        <div class="modal-body np-step-body" id="npStep1Body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>N° Presupuesto <span class="task-opt">(opcional, se auto-asigna)</span></label>
+                    <div class="pres-num-wrap">
+                        <span class="pres-num-prefix">N°</span>
+                        <input type="number" id="npInputNumero" class="form-control-custom pres-input-num"
+                               placeholder="auto" min="1"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Fecha <span class="required">*</span></label>
+                    <input type="date" id="npInputFecha" class="form-control-custom"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Cliente <span class="required">*</span></label>
+                <select id="npInputCliente" class="form-control-custom">
+                    <option value="">— Seleccioná un cliente —</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Solicitado por</label>
+                <input type="text" id="npInputSolicitado" class="form-control-custom"
+                       placeholder="Nombre del contacto" autocomplete="off"/>
+            </div>
+        </div>
+
+        <!-- Paso 2: Ítems -->
+        <div class="modal-body np-step-body" id="npStep2Body" style="display:none;">
+            <div class="pres-items-head">
+                <span class="pres-items-title">Ítems del presupuesto</span>
+                <button class="btn-pres-add" id="npBtnAgregarItem">
+                    <i class="bi bi-plus-lg"></i> Agregar ítem
+                </button>
+            </div>
+            <div class="pres-tabla-wrap np-tabla-scroll">
+                <table class="pres-tabla">
                     <thead>
                         <tr>
                             <th class="col-matriz">Matriz</th>
@@ -97,25 +149,46 @@
                             <th class="col-del"></th>
                         </tr>
                     </thead>
-                    <tbody id="itemsBody">
-                        <!-- filas dinámicas -->
-                    </tbody>
+                    <tbody id="npItemsBody"></tbody>
                 </table>
-                <div class="pres-empty" id="presEmpty">
+                <div class="pres-empty" id="npPresEmpty">
                     <i class="bi bi-inbox"></i>
                     <span>Sin ítems. Hacé clic en "Agregar ítem" para empezar.</span>
                 </div>
             </div>
-
-            <!-- Total general -->
             <div class="pres-total-row">
                 <span class="pres-total-lbl">Total general</span>
-                <span class="pres-total-val" id="totalGeneral">$0</span>
+                <span class="pres-total-val" id="npTotalGeneral">$0</span>
             </div>
-
         </div>
-    </div>
 
+        <div class="modal-footer">
+            <button class="btn-cancelar" id="npBtnCancelar">Cancelar</button>
+            <button class="btn-cancelar" id="npBtnVolver" style="display:none;">
+                <i class="bi bi-arrow-left"></i> Volver
+            </button>
+            <button class="btn-guardar" id="npBtnSiguiente">
+                Siguiente <i class="bi bi-arrow-right"></i>
+            </button>
+            <button class="btn-guardar" id="npBtnGenerar" style="display:none;">
+                <i class="bi bi-file-earmark-pdf"></i> Guardar y generar PDF
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Dropdown inline: cambiar estado -->
+<div id="estadoDrop" class="estado-drop" style="display:none;">
+    <button class="estado-drop-opt pendiente" data-estado="PENDIENTE">
+        <span class="estado-drop-dot"></span> Pendiente
+    </button>
+    <button class="estado-drop-opt aceptado" data-estado="ACEPTADO">
+        <span class="estado-drop-dot"></span> Aceptado
+    </button>
+    <button class="estado-drop-opt rechazado" data-estado="RECHAZADO">
+        <span class="estado-drop-dot"></span> Rechazado
+    </button>
 </div>
 
 <!-- Toast -->

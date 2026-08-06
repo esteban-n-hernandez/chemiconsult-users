@@ -31,6 +31,14 @@
         </div>
     </div>
 
+    <!-- Filtro por empleado -->
+    <div class="mc-user-filter-bar" id="mcUserFilterBar">
+        <span class="mc-user-filter-label">Ver</span>
+        <div class="mc-user-pills" id="mcUserPills">
+            <!-- pills generadas por JS -->
+        </div>
+    </div>
+
     <!-- Stats -->
     <div class="mc-stats-row" id="mcStats" style="display:none">
         <div class="mc-stat-chip mc-stat-pendiente">
@@ -41,9 +49,13 @@
             <i class="bi bi-check2-circle"></i>
             <span id="statAnalizado">0</span> analizado<span id="statAnalizadoPlural">s</span>
         </div>
-        <div class="mc-stat-chip mc-stat-total">
-            <i class="bi bi-flask"></i>
-            <span id="statTotal">0</span> total
+        <div class="mc-stat-chip mc-stat-confirmado">
+            <i class="bi bi-patch-check"></i>
+            <span id="statConfirmado">0</span> confirmado<span id="statConfirmadoPlural">s</span>
+        </div>
+        <div class="mc-stat-chip mc-stat-observado">
+            <i class="bi bi-exclamation-circle"></i>
+            <span id="statObservado">0</span> observado<span id="statObservadoPlural">s</span>
         </div>
     </div>
 
@@ -55,8 +67,10 @@
         </div>
         <div class="mc-filter-btns">
             <button class="mc-filter-btn active" data-filtro="todos">Todos</button>
-            <button class="mc-filter-btn" data-filtro="pendiente">Pendiente</button>
-            <button class="mc-filter-btn" data-filtro="analizado">Analizado</button>
+            <button class="mc-filter-btn" data-filtro="PENDIENTE">Pendiente</button>
+            <button class="mc-filter-btn" data-filtro="ANALIZADO">Analizado</button>
+            <button class="mc-filter-btn" data-filtro="CONFIRMADO">Confirmado</button>
+            <button class="mc-filter-btn" data-filtro="OBSERVADO">Observado</button>
         </div>
         <button class="mc-btn-refresh" id="mcRefresh" title="Actualizar">
             <i class="bi bi-arrow-clockwise"></i>
@@ -72,6 +86,22 @@
         <p>Sin parámetros asignados</p>
     </div>
 
+</div>
+
+<!-- Dropdown estado análisis -->
+<div id="mcEstadoDrop" class="mc-estado-drop" style="display:none;">
+    <button class="mc-estado-opt pendiente" data-estado="PENDIENTE">
+        <span class="mc-estado-dot"></span> Pendiente
+    </button>
+    <button class="mc-estado-opt analizado" data-estado="ANALIZADO">
+        <span class="mc-estado-dot"></span> Analizado
+    </button>
+    <button class="mc-estado-opt confirmado" data-estado="CONFIRMADO">
+        <span class="mc-estado-dot"></span> Confirmado
+    </button>
+    <button class="mc-estado-opt observado" data-estado="OBSERVADO">
+        <span class="mc-estado-dot"></span> Observado
+    </button>
 </div>
 
 <script src="js/sidebar.js"></script>

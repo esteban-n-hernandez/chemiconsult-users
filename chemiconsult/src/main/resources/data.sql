@@ -20,6 +20,16 @@ ALTER TABLE "PARAMETRO" ADD COLUMN IF NOT EXISTS "RESPONSABLE_ID" BIGINT;
 -- Cola de análisis: estado analizado por ítem (PENDIENTE=false, ANALIZADO=true)
 ALTER TABLE "ANALISIS_PARAMETRO" ADD COLUMN IF NOT EXISTS "ANALIZADO" BOOLEAN NOT NULL DEFAULT FALSE;
 
+-- Cola de análisis: migrar boolean ANALIZADO → enum ESTADO_ANALISIS
+ALTER TABLE "ANALISIS_PARAMETRO" ADD COLUMN IF NOT EXISTS "ESTADO_ANALISIS" VARCHAR(50);
+UPDATE "ANALISIS_PARAMETRO"
+SET "ESTADO_ANALISIS" = CASE WHEN "ANALIZADO" = true THEN 'ANALIZADO' ELSE 'PENDIENTE' END
+WHERE "ESTADO_ANALISIS" IS NULL;
+
+INSERT INTO "NUMERADORES" (nombre, valor)
+VALUES ('NUMERO_PRESUPUESTO', 0)
+ON CONFLICT (nombre) DO NOTHING;
+
 INSERT INTO resolucion (nombre, descripcion) VALUES
                                                  ('Res 336/06',          'Resolución 336/06 - Vuelco de efluentes'),
                                                  ('Res 283/19',          'Resolución 283/19 - Vuelco de efluentes'),

@@ -27,10 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const paginaActual = pathname.substring(pathname.lastIndexOf("/") + 1) || "dashboard-empleado.html";
     const rol = (localStorage.getItem("userRole") || "").toUpperCase();
     const esCliente = rol === "ROLE_CLIENTE";
-    const esIT      = rol === "ROLE_IT";
+    const esIT = rol === "ROLE_IT";
 
     const userModulos = esIT
-        ? null  // IT ve todo — no filtra
+        ? null  // IT ve todo — no filtraT
         : JSON.parse(localStorage.getItem("userModulos") || "[]");
 
     const puedeVer = (modulo) => esIT || (userModulos && userModulos.includes(modulo));
@@ -41,18 +41,18 @@ document.addEventListener("DOMContentLoaded", () => {
         </a>`;
 
     const linksEmpleado = `
-        ${puedeVer('DASHBOARD')     ? link('dashboard-empleado.html', 'bi-speedometer2',         'Dashboard')     : ''}
-        ${puedeVer('TAREAS')        ? link('task.html',               'bi-list-task',             'Tareas')        : ''}
-        ${puedeVer('MUESTRAS')      ? link('muestras.html',           'bi-file-earmark-medical',  'Muestras')      : ''}
-        ${puedeVer('AGENDA')        ? link('agenda.html',             'bi-calendar-check',        'Agenda')        : ''}
-        ${puedeVer('CLIENTES')      ? link('clientes.html',           'bi-people',                'Clientes')      : ''}
-        ${puedeVer('STOCK')         ? link('stock.html',              'bi-box-seam',              'Stock')         : ''}
-        ${puedeVer('DOCUMENTOS')   ? link('documentos.html',         'bi-folder2-open',          'Documentación') : ''}
-        ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html',      'bi-gear-fill',             'Panel Técnico') : ''}
-        ${puedeVer('PRESUPUESTO')   ? link('presupuesto.html',        'bi-file-earmark-text',     'Presupuestos')  : ''}
-        ${puedeVer('COLA_ANALISIS') ? link('mi-cola.html',            'bi-flask',                 'Mi Cola')       : ''}
-        ${puedeVer('FACTURACION')   ? link('facturacion.html',        'bi-receipt',               'Facturación')   : ''}
-        ${puedeVer('USUARIOS')      ? link('usuarios.html',           'bi-shield-lock',           'Usuarios')      : ''}
+        ${puedeVer('DASHBOARD') ? link('dashboard-empleado.html', 'bi-speedometer2', 'Dashboard') : ''}
+        ${puedeVer('TAREAS') ? link('task.html', 'bi-list-task', 'Tareas') : ''}
+        ${puedeVer('MUESTRAS') ? link('muestras.html', 'bi-file-earmark-medical', 'Muestras') : ''}
+        ${puedeVer('AGENDA') ? link('agenda.html', 'bi-calendar-check', 'Agenda') : ''}
+        ${puedeVer('CLIENTES') ? link('clientes.html', 'bi-people', 'Clientes') : ''}
+        ${puedeVer('STOCK') ? link('stock.html', 'bi-box-seam', 'Stock') : ''}
+        ${puedeVer('DOCUMENTOS') ? link('documentos.html', 'bi-folder2-open', 'Documentación') : ''}
+        ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html', 'bi-gear-fill', 'Panel Técnico') : ''}
+        ${puedeVer('PRESUPUESTO') ? link('presupuesto.html', 'bi-file-earmark-text', 'Presupuestos') : ''}
+        ${puedeVer('COLA_ANALISIS') ? link('mi-cola.html', 'bi-collection', 'Parametros a Analizar') : ''}
+        ${puedeVer('FACTURACION') ? link('facturacion.html', 'bi-receipt', 'Facturación') : ''}
+        ${puedeVer('USUARIOS') ? link('usuarios.html', 'bi-shield-lock', 'Usuarios') : ''}
     `;
 
     const linksCliente = `
@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "login.html";
     });
 
-    const THEME_KEY   = "chemiconsult_theme";
+    const THEME_KEY = "chemiconsult_theme";
     const SIDEBAR_KEY = "chemiconsult_sidebar_collapsed";
 
     function getEffectiveTheme() {
@@ -106,12 +106,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem(THEME_KEY, theme);
-        const btn   = document.getElementById('themeToggle');
+        const btn = document.getElementById('themeToggle');
         if (!btn) return;
-        const icon  = btn.querySelector('i');
+        const icon = btn.querySelector('i');
         const label = btn.querySelector('.sidebar-label');
         const isDark = theme === 'dark';
-        if (icon)  icon.className   = `bi ${isDark ? 'bi-sun' : 'bi-moon'}`;
+        if (icon) icon.className = `bi ${isDark ? 'bi-sun' : 'bi-moon'}`;
         if (label) label.textContent = isDark ? ' Modo claro' : ' Modo oscuro';
         btn.title = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
     }
@@ -149,12 +149,17 @@ function inicializarHeader() {
     const nombre = localStorage.getItem('userName') || localStorage.getItem('userEmail') || 'Usuario';
     const rol = (localStorage.getItem('userRole') || '').toUpperCase();
     const iniciales = nombre.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
-    const hoy = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const hoy = new Date().toLocaleDateString('es-AR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
     const el = id => document.getElementById(id);
     if (el('header-nombre')) el('header-nombre').textContent = nombre;
-    if (el('header-rol'))    el('header-rol').textContent    = rol === 'ROLE_IT' ? 'IT' : 'Empleado';
+    if (el('header-rol')) el('header-rol').textContent = rol === 'ROLE_IT' ? 'IT' : 'Empleado';
     if (el('header-avatar')) el('header-avatar').textContent = iniciales;
-    if (el('fecha-hoy'))     el('fecha-hoy').textContent     = hoy.charAt(0).toUpperCase() + hoy.slice(1);
+    if (el('fecha-hoy')) el('fecha-hoy').textContent = hoy.charAt(0).toUpperCase() + hoy.slice(1);
 
 }
 

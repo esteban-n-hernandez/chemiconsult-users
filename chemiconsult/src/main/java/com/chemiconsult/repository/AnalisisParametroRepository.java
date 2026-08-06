@@ -1,6 +1,7 @@
 package com.chemiconsult.repository;
 
 import com.chemiconsult.entity.AnalisisParametroDE;
+import com.chemiconsult.enums.EstadoAnalisisParametroEnum;
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,16 +15,22 @@ public interface AnalisisParametroRepository extends JpaRepository<AnalisisParam
 
     @Query("SELECT ap FROM AnalisisParametroDE ap " +
            "WHERE ap.parametro.responsable.id = :userId " +
-           "AND ap.analizado = false " +
+           "AND ap.estadoAnalisis = :estado " +
            "AND ap.analisis.estado NOT IN :excluidos")
     List<AnalisisParametroDE> findPendientesByResponsableId(
             @Param("userId")    Long userId,
-            @Param("excluidos") List<EstadoMuestraEnum> excluidos);
+            @Param("excluidos") List<EstadoMuestraEnum> excluidos,
+            @Param("estado")    EstadoAnalisisParametroEnum estado);
 
     @Query("SELECT ap FROM AnalisisParametroDE ap " +
            "WHERE ap.parametro.responsable.id = :userId " +
            "AND ap.analisis.estado NOT IN :excluidos")
     List<AnalisisParametroDE> findTodosByResponsableId(
             @Param("userId")    Long userId,
+            @Param("excluidos") List<EstadoMuestraEnum> excluidos);
+
+    @Query("SELECT ap FROM AnalisisParametroDE ap " +
+           "WHERE ap.analisis.estado NOT IN :excluidos")
+    List<AnalisisParametroDE> findAllExcluidos(
             @Param("excluidos") List<EstadoMuestraEnum> excluidos);
 }

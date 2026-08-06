@@ -1,5 +1,6 @@
 package com.chemiconsult.entity;
 
+import com.chemiconsult.enums.EstadoAnalisisParametroEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -49,6 +50,7 @@ public class AnalisisParametroDE {
     @Column(name = "OBSERVACION")
     private String observacion;
 
-    @Column(name = "ANALIZADO")
-    private boolean analizado = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ESTADO_ANALISIS")
+    private EstadoAnalisisParametroEnum estadoAnalisis = EstadoAnalisisParametroEnum.PENDIENTE;
 }

@@ -239,6 +239,7 @@ let sortDir = "desc";
 // ID del análisis abierto actualmente en el modal de detalle
 let detalleAnalisisId = null;
 let _autoGuardarTimer = null;
+let _autoGuardarController = null; // AbortController para cancelar requests en vuelo
 let modoEdicionCompleto = false;
 let detalleEstadoActual = null;
 
@@ -1816,6 +1817,16 @@ function dispararAutoGuardar() {
 async function autoGuardar() {
     _autoGuardarTimer = null;
     if (!detalleAnalisisId) return;
+
+    // Si hay una request en vuelo, cancelarla y enviar una nueva con los valores actuales
+    if (_autoGuardarController) {
+        _autoGuardarController.abort();
+        _autoGuardarController = null;
+    }
+
+    const controller = new AbortController();
+    _autoGuardarController = controller;
+
     mostrarAutoGuardadoStatus("saving");
     try {
         const inputs = document.querySelectorAll(".param-resultado-input");
@@ -1823,9 +1834,10 @@ async function autoGuardar() {
         inputs.forEach(input => {
             const parametroId = parseInt(input.dataset.parametroId);
             const obsInput = document.getElementById(`obs-param-${parametroId}`);
+            const rawVal = input.value.trim();
             resultados.push({
                 parametroId,
-                valorResultado: input.value.trim() || null,
+                valorResultado: rawVal !== "" ? rawVal : null,
                 observacion: obsInput ? (obsInput.value.trim() || null) : null,
             });
         });
@@ -1833,12 +1845,16 @@ async function autoGuardar() {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(resultados),
+            signal: controller.signal,
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         mostrarAutoGuardadoStatus("saved");
     } catch (err) {
+        if (err.name === "AbortError") return;
         console.error("Error auto-guardando:", err);
         mostrarAutoGuardadoStatus("error");
+    } finally {
+        if (_autoGuardarController === controller) _autoGuardarController = null;
     }
 }
 

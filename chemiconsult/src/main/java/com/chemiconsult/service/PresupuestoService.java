@@ -1,13 +1,16 @@
 package com.chemiconsult.service;
 
-import com.chemiconsult.to.ClienteTO;
-import com.chemiconsult.to.ItemPresupuestoTO;
-import com.chemiconsult.to.PresupuestoTO;
+import com.chemiconsult.entity.PresupuestoDE;
+import com.chemiconsult.entity.PresupuestoItemDE;
+import com.chemiconsult.enums.PresupuestoEstadoEnum;
+import com.chemiconsult.repository.PresupuestoRepository;
+import com.chemiconsult.to.*;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.awt.Color;
@@ -23,6 +26,7 @@ import java.util.Locale;
 @Service
 public class PresupuestoService {
 
+    private static final String NOMBRE_NUMERADOR = "NUMERO_PRESUPUESTO";
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final String LAB_NOMBRE    = "Laboratorio Chemiconsult";
@@ -46,14 +50,146 @@ public class PresupuestoService {
             "Los precios indicados NO incluyen el muestreo."
     );
 
-    public byte[] generatePresupuesto(PresupuestoTO to) {
-        try {
-            return buildPdf(to);
-        } catch (Exception e) {
-            log.error("Error generando presupuesto {}", to.getNumeroPresupuesto(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error al generar el presupuesto: " + e.getMessage());
+    private final NumeradorService numeradorService;
+    private final PresupuestoRepository presupuestoRepository;
+
+    public PresupuestoService(NumeradorService numeradorService, PresupuestoRepository presupuestoRepository) {
+        this.numeradorService = numeradorService;
+        this.presupuestoRepository = presupuestoRepository;
+    }
+
+    public record PdfPresupuesto(byte[] pdf, long numero) {}
+    public record CrearResult(long id, long numero) {}
+
+    // ── Generar y persistir ──
+
+    @Transactional
+    public CrearResult generatePresupuesto(PresupuestoTO to) {
+        if (to.getNumeroPresupuesto() == null) {
+            to.setNumeroPresupuesto(numeradorService.generarSiguiente(NOMBRE_NUMERADOR));
+        } else {
+            numeradorService.sincronizarSiMayor(NOMBRE_NUMERADOR, to.getNumeroPresupuesto());
         }
+
+        PresupuestoDE saved = presupuestoRepository.save(toEntity(to));
+        return new CrearResult(saved.getId(), to.getNumeroPresupuesto());
+    }
+
+    // ── Historial ──
+
+    @Transactional(readOnly = true)
+    public List<PresupuestoResumenTO> listar() {
+        return presupuestoRepository.findAllByOrderByNumeroDesc()
+                .stream()
+                .map(this::toResumen)
+                .toList();
+    }
+
+    // ── Regenerar PDF ──
+
+    @Transactional(readOnly = true)
+    public PdfPresupuesto getPdf(Long id) {
+        PresupuestoDE entity = presupuestoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Presupuesto no encontrado"));
+        try {
+            return new PdfPresupuesto(buildPdf(toTO(entity)), entity.getNumero());
+        } catch (Exception e) {
+            log.error("Error regenerando presupuesto {}", entity.getNumero(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error al generar el PDF: " + e.getMessage());
+        }
+    }
+
+    // ── Cambiar estado ──
+
+    @Transactional
+    public void cambiarEstado(Long id, CambiarEstadoTO req) {
+        PresupuestoDE entity = presupuestoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Presupuesto no encontrado"));
+        entity.setEstado(req.getEstado());
+        entity.setFechaRespuesta(req.getFechaRespuesta());
+        entity.setObservaciones(req.getObservaciones());
+    }
+
+    // ── Eliminar ──
+
+    @Transactional
+    public void eliminar(Long id) {
+        if (!presupuestoRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Presupuesto no encontrado");
+        }
+        presupuestoRepository.deleteById(id);
+    }
+
+    // ── Mappers ──
+
+    private PresupuestoDE toEntity(PresupuestoTO to) {
+        PresupuestoDE entity = new PresupuestoDE();
+        entity.setNumero(to.getNumeroPresupuesto());
+        entity.setFecha(to.getFecha() != null ? to.getFecha() : LocalDate.now());
+        entity.setSolicitadoPor(to.getSolicitadoPor());
+        entity.setEstado(PresupuestoEstadoEnum.PENDIENTE);
+
+        if (to.getCliente() != null) {
+            entity.setClienteNombre(resolverNombreCliente(to.getCliente()));
+        }
+
+        if (to.getItems() != null) {
+            int orden = 0;
+            for (ItemPresupuestoTO itemTO : to.getItems()) {
+                PresupuestoItemDE item = new PresupuestoItemDE();
+                item.setPresupuesto(entity);
+                item.setOrden(orden++);
+                item.setMatriz(itemTO.getMatriz());
+                item.setDeterminacion(itemTO.getDeterminacion());
+                item.setPrecioUnitario(itemTO.getPrecioUnitario());
+                item.setCantidadMuestras(itemTO.getCantidadMuestras());
+                item.setTotal(itemTO.getTotal());
+                entity.getItems().add(item);
+            }
+        }
+
+        return entity;
+    }
+
+    private PresupuestoTO toTO(PresupuestoDE entity) {
+        PresupuestoTO to = new PresupuestoTO();
+        to.setNumeroPresupuesto(entity.getNumero());
+        to.setFecha(entity.getFecha());
+        to.setSolicitadoPor(entity.getSolicitadoPor());
+
+        ClienteTO cliente = new ClienteTO();
+        cliente.setRazonSocial(entity.getClienteNombre());
+        to.setCliente(cliente);
+
+        to.setItems(entity.getItems().stream().map(item -> {
+            ItemPresupuestoTO itemTO = new ItemPresupuestoTO();
+            itemTO.setMatriz(item.getMatriz());
+            itemTO.setDeterminacion(item.getDeterminacion());
+            itemTO.setPrecioUnitario(item.getPrecioUnitario());
+            itemTO.setCantidadMuestras(item.getCantidadMuestras());
+            itemTO.setTotal(item.getTotal());
+            return itemTO;
+        }).toList());
+
+        return to;
+    }
+
+    private PresupuestoResumenTO toResumen(PresupuestoDE entity) {
+        PresupuestoResumenTO r = new PresupuestoResumenTO();
+        r.setId(entity.getId());
+        r.setNumero(entity.getNumero());
+        r.setFecha(entity.getFecha());
+        r.setClienteNombre(entity.getClienteNombre());
+        r.setSolicitadoPor(entity.getSolicitadoPor());
+        r.setEstado(entity.getEstado());
+        r.setFechaRespuesta(entity.getFechaRespuesta());
+        r.setObservaciones(entity.getObservaciones());
+        r.setCreatedAt(entity.getCreatedAt());
+        r.setTotalGeneral(entity.getItems().stream()
+                .mapToDouble(i -> i.getTotal() != null ? i.getTotal() : 0)
+                .sum());
+        return r;
     }
 
     // ----------------------------------------------------------------
@@ -168,7 +304,6 @@ public class PresupuestoService {
     // ----------------------------------------------------------------
 
     private void addTabla(Document doc, java.util.List<ItemPresupuestoTO> items) throws DocumentException {
-        // Columnas: Matriz | Determinación | Precio unitario | Cantidad muestras | Precio total
         PdfPTable tabla = new PdfPTable(new float[]{12, 46, 14, 14, 14});
         tabla.setWidthPercentage(100);
         tabla.setSpacingBefore(2);
@@ -289,7 +424,7 @@ public class PresupuestoService {
     }
 
     // ================================================================
-    // Page event: header y footer (mismo que InformeService)
+    // Page event: header y footer
     // ================================================================
 
     private static class HeaderFooterEvento extends PdfPageEventHelper {

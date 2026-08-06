@@ -8,17 +8,22 @@
     const esc = s => (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
     let datosOriginales = [];
-    let filtroActual    = 'todos';
+    let filtroEstado    = 'todos';
+    let filtroUserId    = null;   // null = "yo"; '*' = todos
     let busqueda        = '';
+
+    const miUserId       = localStorage.getItem('userId');
+    const miUserNombre   = localStorage.getItem('userName') || localStorage.getItem('userEmail') || 'Yo';
 
     // ── Carga ──────────────────────────────────────────────────────────────
 
     async function cargar() {
         mostrarSkeleton();
         try {
-            const res = await fetch('/api/mi-cola/todos', { headers: FETCH_HDR() });
+            const res = await fetch('/api/mi-cola/global', { headers: FETCH_HDR() });
             if (!res.ok) throw new Error(res.status);
             datosOriginales = await res.json();
+            construirUserPills();
             renderTodo();
         } catch (e) {
             $('mcLista').innerHTML = `<p style="color:var(--rojo,#ef4444);padding:20px">Error al cargar la cola: ${e.message}</p>`;
@@ -36,6 +41,72 @@
             </div>`).join('');
     }
 
+    // ── Filtro de usuario ──────────────────────────────────────────────────
+
+    function construirUserPills() {
+        const contenedor = $('mcUserPills');
+        if (!contenedor) return;
+
+        // Recopilar responsables únicos
+        const mapa = new Map(); // id → nombre
+        datosOriginales.forEach(p => {
+            if (p.responsableId != null) {
+                mapa.set(String(p.responsableId), p.responsableNombre || String(p.responsableId));
+            }
+        });
+
+        const pills = [];
+
+        // Pill "Todos" (solo si hay más de un responsable)
+        if (mapa.size > 1) {
+            pills.push(crearPill('*', 'Todos', filtroUserId === '*'));
+        }
+
+        // Pill del usuario actual primero
+        const miIdStr = String(miUserId);
+        if (mapa.has(miIdStr)) {
+            const activo = filtroUserId === null || filtroUserId === miIdStr;
+            pills.push(crearPill(miIdStr, 'Yo', activo));
+            mapa.delete(miIdStr);
+        }
+
+        // Resto de responsables
+        mapa.forEach((nombre, id) => {
+            pills.push(crearPill(id, nombre, filtroUserId === id));
+        });
+
+        contenedor.innerHTML = '';
+        pills.forEach(p => contenedor.appendChild(p));
+
+        // Si no hay filtro aún y el usuario existe, lo activamos
+        if (filtroUserId === null) {
+            const yo = contenedor.querySelector(`[data-uid="${miIdStr}"]`);
+            if (yo) yo.classList.add('active');
+        }
+    }
+
+    function crearPill(uid, label, activo) {
+        const btn = document.createElement('button');
+        btn.className = 'mc-user-pill' + (activo ? ' active' : '');
+        btn.dataset.uid = uid;
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mc-user-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            filtroUserId = uid === miIdStr() ? null : uid;
+            renderTodo();
+        });
+        return btn;
+    }
+
+    function miIdStr() { return String(miUserId); }
+
+    function datosFiltradosPorUsuario() {
+        if (filtroUserId === '*') return datosOriginales;
+        const uid = filtroUserId ?? miIdStr();
+        return datosOriginales.filter(p => String(p.responsableId) === uid);
+    }
+
     // ── Render principal ───────────────────────────────────────────────────
 
     function renderTodo() {
@@ -44,26 +115,36 @@
     }
 
     function actualizarStats() {
-        let totalPend = 0, totalAnal = 0;
-        datosOriginales.forEach(p => {
-            totalPend += p.totalPendientes;
-            totalAnal += p.totalAnalizado;
+        const datos = datosFiltradosPorUsuario();
+        let pend = 0, anal = 0, conf = 0, obs = 0;
+        datos.forEach(p => {
+            pend += p.totalPendientes;
+            anal += p.totalAnalizado;
+            conf += p.totalConfirmado;
+            obs  += p.totalObservado;
         });
-        $('statPendientes').textContent     = totalPend;
-        $('statPendientesPlural').textContent = totalPend === 1 ? '' : 's';
-        $('statAnalizado').textContent      = totalAnal;
-        $('statAnalizadoPlural').textContent  = totalAnal === 1 ? '' : 's';
-        $('statTotal').textContent          = totalPend + totalAnal;
-        $('mcStats').style.display          = 'flex';
+        setText('statPendientes', pend);
+        setText('statPendientesPlural', pend === 1 ? '' : 's');
+        setText('statAnalizado', anal);
+        setText('statAnalizadoPlural', anal === 1 ? '' : 's');
+        setText('statConfirmado', conf);
+        setText('statConfirmadoPlural', conf === 1 ? '' : 's');
+        setText('statObservado', obs);
+        setText('statObservadoPlural', obs === 1 ? '' : 's');
+        $('mcStats').style.display = 'flex';
+    }
+
+    function setText(id, val) {
+        const el = $(id);
+        if (el) el.textContent = val;
     }
 
     function renderLista() {
-        const lista   = $('mcLista');
-        const busq    = busqueda.toLowerCase();
-        const filtro  = filtroActual;
+        const lista  = $('mcLista');
+        const busq   = busqueda.toLowerCase();
+        const filtro = filtroEstado;
 
-        // Filtrar por búsqueda de texto
-        const filtrados = datosOriginales.filter(p => {
+        const datos = datosFiltradosPorUsuario().filter(p => {
             const hayText = !busq ||
                 p.parametroNombre.toLowerCase().includes(busq) ||
                 p.muestras.some(m =>
@@ -73,22 +154,19 @@
                 );
             if (!hayText) return false;
 
-            // Filtrar por estado
-            if (filtro === 'pendiente') return p.totalPendientes > 0;
-            if (filtro === 'analizado') return p.totalAnalizado  > 0;
-            return true;
+            if (filtro === 'todos') return true;
+            return p.muestras.some(m => m.estadoAnalisis === filtro);
         });
 
-        if (filtrados.length === 0) {
+        if (datos.length === 0) {
             lista.innerHTML = '';
             $('mcEmpty').style.display = 'block';
             return;
         }
         $('mcEmpty').style.display = 'none';
 
-        lista.innerHTML = filtrados.map(p => renderParametroBloque(p)).join('');
+        lista.innerHTML = datos.map(p => renderParametroBloque(p)).join('');
 
-        // Eventos de acordeón
         lista.querySelectorAll('.mc-param-head').forEach(head => {
             head.addEventListener('click', () => {
                 const body    = head.nextElementSibling;
@@ -98,26 +176,28 @@
             });
         });
 
-        // Eventos de toggle analizado
-        lista.querySelectorAll('.mc-toggle').forEach(btn => {
-            btn.addEventListener('click', async e => {
+        lista.querySelectorAll('.mc-estado-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
                 e.stopPropagation();
-                await toggleAnalizado(btn);
+                abrirEstadoDrop(btn);
             });
         });
     }
 
     function renderParametroBloque(p) {
-        const muestrasParaFiltrar = filtroActual === 'pendiente'
-            ? p.muestras.filter(m => !m.analizado)
-            : filtroActual === 'analizado'
-                ? p.muestras.filter(m => m.analizado)
-                : p.muestras;
+        const muestrasParaRender = filtroEstado === 'todos'
+            ? p.muestras
+            : p.muestras.filter(m => m.estadoAnalisis === filtroEstado);
 
-        const badgePend  = p.totalPendientes > 0
-            ? `<span class="mc-badge mc-badge-pend"><i class="bi bi-hourglass-split"></i> ${p.totalPendientes} pendiente${p.totalPendientes !== 1 ? 's' : ''}</span>` : '';
-        const badgeAnal  = p.totalAnalizado > 0
-            ? `<span class="mc-badge mc-badge-anal"><i class="bi bi-check2-circle"></i> ${p.totalAnalizado} analizado${p.totalAnalizado !== 1 ? 's' : ''}</span>` : '';
+        const badges = [
+            p.totalPendientes > 0 ? `<span class="mc-badge mc-badge-pend"><i class="bi bi-hourglass-split"></i> ${p.totalPendientes}</span>` : '',
+            p.totalAnalizado  > 0 ? `<span class="mc-badge mc-badge-anal"><i class="bi bi-check2-circle"></i> ${p.totalAnalizado}</span>`    : '',
+            p.totalConfirmado > 0 ? `<span class="mc-badge mc-badge-conf"><i class="bi bi-patch-check"></i> ${p.totalConfirmado}</span>`      : '',
+            p.totalObservado  > 0 ? `<span class="mc-badge mc-badge-obs"><i class="bi bi-exclamation-circle"></i> ${p.totalObservado}</span>` : '',
+        ].join('');
+
+        const responsableLabel = (filtroUserId === '*' && p.responsableNombre)
+            ? `<span class="mc-param-resp">${esc(p.responsableNombre)}</span>` : '';
 
         return `
         <div class="mc-param-block">
@@ -125,14 +205,11 @@
                 <div class="mc-param-info">
                     <div class="mc-param-icon"><i class="bi bi-flask"></i></div>
                     <div>
-                        <div class="mc-param-nombre">${esc(p.parametroNombre)}</div>
+                        <div class="mc-param-nombre">${esc(p.parametroNombre)} ${responsableLabel}</div>
                         ${p.unidad ? `<div class="mc-param-unidad">${esc(p.unidad)}</div>` : ''}
                     </div>
                 </div>
-                <div class="mc-param-badges">
-                    ${badgePend}
-                    ${badgeAnal}
-                </div>
+                <div class="mc-param-badges">${badges}</div>
                 <i class="bi bi-chevron-down mc-chevron"></i>
             </div>
             <div class="mc-param-body">
@@ -143,12 +220,12 @@
                             <th>Cliente</th>
                             <th>Punto de muestreo</th>
                             <th>Fecha entrega</th>
-                            <th>Estado</th>
-                            <th style="text-align:center">Analizado</th>
+                            <th>Estado muestra</th>
+                            <th style="text-align:center">Estado análisis</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${muestrasParaFiltrar.map(m => renderMuestraRow(m)).join('')}
+                        ${muestrasParaRender.map(m => renderMuestraRow(m)).join('')}
                     </tbody>
                 </table>
             </div>
@@ -158,13 +235,14 @@
     function renderMuestraRow(m) {
         const estadoClass = `mc-estado-${m.estado || 'INGRESADO'}`;
         const estadoLabel = (m.estado || 'INGRESADO').replace(/_/g, ' ');
-        const fecha       = m.fechaEntrega
+        const fecha = m.fechaEntrega
             ? new Date(m.fechaEntrega + 'T00:00:00').toLocaleDateString('es-AR')
             : '—';
 
-        const toggleClass = m.analizado ? 'analizado' : 'pendiente';
-        const toggleIcon  = m.analizado ? 'bi-check2-circle' : 'bi-hourglass-split';
-        const toggleLabel = m.analizado ? 'Analizado' : 'Pendiente';
+        const ea = m.estadoAnalisis || 'PENDIENTE';
+        const eaClass = `mc-ea-${ea.toLowerCase()}`;
+        const eaLabel = labelEstadoAnalisis(ea);
+        const eaIcon  = iconEstadoAnalisis(ea);
 
         return `
         <tr>
@@ -175,31 +253,78 @@
             <td><span class="mc-estado-badge ${estadoClass}">${estadoLabel}</span></td>
             <td>
                 <div class="mc-toggle-wrap">
-                    <button class="mc-toggle ${toggleClass}"
+                    <button class="mc-estado-btn ${eaClass}"
                             data-id="${m.analisisParametroId}"
-                            data-analizado="${m.analizado}">
-                        <i class="bi ${toggleIcon}"></i>
-                        ${toggleLabel}
+                            data-estado="${ea}">
+                        <i class="bi ${eaIcon}"></i> ${eaLabel}
+                        <i class="bi bi-chevron-down" style="font-size:9px;margin-left:2px;opacity:.7"></i>
                     </button>
                 </div>
             </td>
         </tr>`;
     }
 
-    // ── Toggle analizado ───────────────────────────────────────────────────
+    function labelEstadoAnalisis(estado) {
+        return { PENDIENTE: 'Pendiente', ANALIZADO: 'Analizado', CONFIRMADO: 'Confirmado', OBSERVADO: 'Observado' }[estado] || estado;
+    }
 
-    async function toggleAnalizado(btn) {
-        const id       = btn.dataset.id;
-        const anterior = btn.dataset.analizado === 'true';
-        const nuevo    = !anterior;
+    function iconEstadoAnalisis(estado) {
+        return {
+            PENDIENTE:  'bi-hourglass-split',
+            ANALIZADO:  'bi-check2-circle',
+            CONFIRMADO: 'bi-patch-check-fill',
+            OBSERVADO:  'bi-exclamation-circle',
+        }[estado] || 'bi-hourglass-split';
+    }
 
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
+    // ── Dropdown de estado análisis ────────────────────────────────────────
 
+    let dropActivoBtn = null;
+
+    function abrirEstadoDrop(btn) {
+        const drop = $('mcEstadoDrop');
+        if (dropActivoBtn === btn && drop.style.display === 'flex') {
+            cerrarEstadoDrop();
+            return;
+        }
+        dropActivoBtn = btn;
+
+        const rect = btn.getBoundingClientRect();
+        drop.style.display  = 'flex';
+        drop.style.position = 'fixed';
+        drop.style.top      = (rect.bottom + 4) + 'px';
+        drop.style.left     = rect.left + 'px';
+    }
+
+    function cerrarEstadoDrop() {
+        $('mcEstadoDrop').style.display = 'none';
+        dropActivoBtn = null;
+    }
+
+    $('mcEstadoDrop').querySelectorAll('.mc-estado-opt').forEach(opt => {
+        opt.addEventListener('click', async () => {
+            if (!dropActivoBtn) return;
+            const id         = dropActivoBtn.dataset.id;
+            const nuevoEstado = opt.dataset.estado;
+            cerrarEstadoDrop();
+            await cambiarEstado(id, nuevoEstado);
+        });
+    });
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.mc-estado-btn') && !e.target.closest('#mcEstadoDrop')) {
+            cerrarEstadoDrop();
+        }
+    });
+
+    // ── Cambiar estado ─────────────────────────────────────────────────────
+
+    async function cambiarEstado(id, nuevoEstado) {
         try {
-            const res = await fetch(`/api/mi-cola/${id}/analizado`, {
+            const res = await fetch(`/api/mi-cola/${id}/estado`, {
                 method: 'PATCH',
-                headers: FETCH_HDR()
+                headers: FETCH_HDR(),
+                body: JSON.stringify({ estado: nuevoEstado }),
             });
             if (!res.ok) throw new Error(res.status);
 
@@ -207,17 +332,18 @@
             for (const p of datosOriginales) {
                 const muestra = p.muestras.find(m => String(m.analisisParametroId) === String(id));
                 if (muestra) {
-                    muestra.analizado = nuevo;
-                    p.totalPendientes = p.muestras.filter(m => !m.analizado).length;
-                    p.totalAnalizado  = p.muestras.filter(m =>  m.analizado).length;
+                    muestra.estadoAnalisis = nuevoEstado;
+                    // Recalcular conteos del bloque
+                    p.totalPendientes = p.muestras.filter(m => m.estadoAnalisis === 'PENDIENTE').length;
+                    p.totalAnalizado  = p.muestras.filter(m => m.estadoAnalisis === 'ANALIZADO').length;
+                    p.totalConfirmado = p.muestras.filter(m => m.estadoAnalisis === 'CONFIRMADO').length;
+                    p.totalObservado  = p.muestras.filter(m => m.estadoAnalisis === 'OBSERVADO').length;
                     break;
                 }
             }
 
             renderTodo();
         } catch (e) {
-            btn.disabled = false;
-            btn.style.opacity = '';
             alert('Error al actualizar el estado. Intentá de nuevo.');
         }
     }
@@ -228,7 +354,7 @@
         btn.addEventListener('click', () => {
             document.querySelectorAll('.mc-filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            filtroActual = btn.dataset.filtro;
+            filtroEstado = btn.dataset.filtro;
             renderLista();
         });
     });
