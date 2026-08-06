@@ -41,6 +41,7 @@ const tablas = {
         },
         textoVacio: 'No hay parámetros cargados.',
         textoBuscar: r => `${r.nombre} ${r.responsable?.username || ''}`,
+        renderAccionesExtra: r => `<button class="btn-accion-info" onclick="verMetodologias(${r.id}, '${esc(r.nombre)}')" title="Metodologías asociadas"><i class="bi bi-journal-bookmark"></i></button>`,
         editUrl: id => `${API_URL}/parametros/${id}`,
         renderFilaEdit: r => {
             const opts = empleadosCache.map(u =>
@@ -411,6 +412,17 @@ async function cargarMatrices() {
                 select.appendChild(opt);
             });
         });
+
+        // También poblar el select del modal de metodologías
+        const selMetodo = document.getElementById('metodoSelectMatriz');
+        if (selMetodo) {
+            matrices.filter(m => m.activo).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.nombre;
+                selMetodo.appendChild(opt);
+            });
+        }
     } catch (err) {
         console.error('Error cargando matrices:', err);
     }
@@ -798,5 +810,131 @@ async function eliminar(nombre, id) {
     } catch (err) {
         console.error(`Error eliminando ${nombre}:`, err);
         mostrarToast('No se pudo eliminar el elemento.', 'danger');
+    }
+}
+
+// ── Metodologías de un parámetro ─────────────────────────────────────────────
+
+let _metodoParamId   = null;
+let _metodologiasList = [];  // cache para el select
+
+async function verMetodologias(parametroId, parametroNombre) {
+    _metodoParamId = parametroId;
+    document.getElementById('metodoModalTitulo').textContent = `Metodologías — ${parametroNombre}`;
+    document.getElementById('metodoTbody').innerHTML = '<tr><td colspan="3" style="padding:12px;color:#888">Cargando…</td></tr>';
+    document.getElementById('metodoOverlay').classList.add('visible');
+
+    await Promise.all([
+        _cargarMetodologiasDelParam(),
+        _poblarSelectMetodologias(),
+    ]);
+}
+
+async function _cargarMetodologiasDelParam() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/parametros/${_metodoParamId}/metodologias`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error();
+        const lista = await res.json();
+        _renderMetodoTabla(lista);
+    } catch {
+        document.getElementById('metodoTbody').innerHTML =
+            '<tr><td colspan="3" style="color:var(--rojo,red);padding:12px">Error al cargar.</td></tr>';
+    }
+}
+
+function _renderMetodoTabla(lista) {
+    const tbody = document.getElementById('metodoTbody');
+    if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="padding:12px;color:#888;text-align:center">Sin metodologías asociadas.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = lista.map(pm => `
+        <tr>
+            <td>${esc(pm.metodologia?.nombre || '—')}</td>
+            <td>${pm.matriz ? esc(pm.matriz.nombre) : '<span style="color:#aaa;font-style:italic">Cualquier matriz</span>'}</td>
+            <td>
+                <div class="tabla-acciones">
+                    <button class="btn-accion-danger" onclick="quitarMetodologia(${pm.id})" title="Quitar">
+                        <i class="bi bi-dash-circle"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+async function _poblarSelectMetodologias() {
+    if (_metodologiasList.length > 0) return;  // ya cargadas
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/metodologias`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) return;
+        _metodologiasList = await res.json();
+        const sel = document.getElementById('metodoSelectMetod');
+        sel.innerHTML = '<option value="">Seleccionar metodología…</option>' +
+            _metodologiasList.map(m => `<option value="${m.id}">${esc(m.nombre)}</option>`).join('');
+    } catch {
+        // silencioso — el select queda vacío
+    }
+}
+
+async function agregarMetodologia() {
+    const metodologiaId = document.getElementById('metodoSelectMetod').value;
+    if (!metodologiaId) { mostrarToast('Seleccioná una metodología.', 'danger'); return; }
+
+    const matrizVal = document.getElementById('metodoSelectMatriz').value;
+    const body = {
+        metodologiaId: Number(metodologiaId),
+        matrizId:      matrizVal ? Number(matrizVal) : null,
+    };
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/parametros/${_metodoParamId}/metodologias`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const err = await res.text();
+            mostrarToast(err || 'No se pudo agregar la metodología.', 'danger');
+            return;
+        }
+        mostrarToast('Metodología agregada.', 'success');
+        document.getElementById('metodoSelectMetod').value = '';
+        document.getElementById('metodoSelectMatriz').value = '';
+        await _cargarMetodologiasDelParam();
+    } catch {
+        mostrarToast('Error de conexión.', 'danger');
+    }
+}
+
+async function quitarMetodologia(pmId) {
+    const ok = await UI.confirmar({
+        titulo: '¿Quitar esta metodología?',
+        subtexto: 'Se eliminará la asociación, no la metodología en sí.',
+        textoConfirmar: 'Quitar',
+        tipo: 'danger',
+    });
+    if (!ok) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/parametros/${_metodoParamId}/metodologias/${pmId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error();
+        mostrarToast('Metodología quitada.', 'success');
+        await _cargarMetodologiasDelParam();
+    } catch {
+        mostrarToast('No se pudo quitar la metodología.', 'danger');
+    }
+}
+
+function cerrarMetodoOverlay(event) {
+    if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove('visible');
     }
 }

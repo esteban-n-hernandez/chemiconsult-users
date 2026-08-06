@@ -375,6 +375,42 @@
     </div>
 </div>
 
+<!-- Modal: metodologías de un parámetro -->
+<div class="params-overlay" id="metodoOverlay" onclick="cerrarMetodoOverlay(event)">
+    <div class="params-modal" style="max-width:560px;">
+        <div class="params-modal-header">
+            <h5 id="metodoModalTitulo">Metodologías</h5>
+            <button class="params-modal-close" onclick="document.getElementById('metodoOverlay').classList.remove('visible')" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="params-modal-body">
+            <table class="tabla-config" id="metodoTabla">
+                <thead>
+                    <tr>
+                        <th>Metodología</th>
+                        <th>Matriz</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="metodoTbody"></tbody>
+            </table>
+
+            <div class="destino-crear-form" style="margin-top:18px;gap:8px;flex-wrap:wrap;">
+                <select id="metodoSelectMetod" class="form-control-custom" style="flex:2;min-width:160px;">
+                    <option value="">Seleccionar metodología…</option>
+                </select>
+                <select id="metodoSelectMatriz" class="form-control-custom" style="flex:1;min-width:130px;">
+                    <option value="">Cualquier matriz</option>
+                </select>
+                <button type="button" class="btn-guardar-custom" onclick="agregarMetodologia()" style="white-space:nowrap;">
+                    <i class="bi bi-plus-circle"></i> Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: editor de límite de parámetro -->
 <div class="params-overlay limite-overlay" id="limiteOverlay" onclick="cerrarLimiteOverlay(event)">
     <div class="params-modal" style="max-width:420px;">

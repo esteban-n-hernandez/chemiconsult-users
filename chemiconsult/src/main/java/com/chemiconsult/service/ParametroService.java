@@ -1,8 +1,14 @@
 package com.chemiconsult.service;
 
 import org.springframework.stereotype.Service;
+import com.chemiconsult.entity.MetodologiaDE;
+import com.chemiconsult.entity.MatrizDE;
 import com.chemiconsult.entity.ParametroDE;
+import com.chemiconsult.entity.ParametroMetodologiaDE;
 import com.chemiconsult.mapper.ParametroMapper;
+import com.chemiconsult.repository.MatrizRepository;
+import com.chemiconsult.repository.MetodologiaRepository;
+import com.chemiconsult.repository.ParametroMetodologiaRepository;
 import com.chemiconsult.repository.ParametroRepository;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.ParametroTO;
@@ -20,6 +26,15 @@ public class ParametroService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ParametroMetodologiaRepository pmRepository;
+
+    @Autowired
+    private MetodologiaRepository metodologiaRepository;
+
+    @Autowired
+    private MatrizRepository matrizRepository;
 
     public List<ParametroDE> getParametros() {
         return parametroRepository.findByActivoTrue();
@@ -73,5 +88,48 @@ public class ParametroService {
             throw new RuntimeException("Parámetro no encontrado con ID: " + id);
         }
         parametroRepository.deleteById(id);
+    }
+
+    // ── Metodologías asociadas al parámetro ──────────────────────────────────
+
+    public List<ParametroMetodologiaDE> getMetodologias(Long parametroId) {
+        if (!parametroRepository.existsById(parametroId)) {
+            throw new RuntimeException("Parámetro no encontrado con ID: " + parametroId);
+        }
+        return pmRepository.findByParametroId(parametroId);
+    }
+
+    public ParametroMetodologiaDE addMetodologia(Long parametroId, Long metodologiaId, Long matrizId) {
+        ParametroDE parametro = parametroRepository.findById(parametroId)
+                .orElseThrow(() -> new RuntimeException("Parámetro no encontrado: " + parametroId));
+        MetodologiaDE metodologia = metodologiaRepository.findById(metodologiaId)
+                .orElseThrow(() -> new RuntimeException("Metodología no encontrada: " + metodologiaId));
+
+        boolean duplicado = (matrizId != null)
+                ? pmRepository.existsByParametroIdAndMetodologiaIdAndMatrizId(parametroId, metodologiaId, matrizId)
+                : pmRepository.existsByParametroIdAndMetodologiaIdAndMatrizIsNull(parametroId, metodologiaId);
+        if (duplicado) {
+            throw new RuntimeException("Ya existe esta metodología para la combinación indicada.");
+        }
+
+        ParametroMetodologiaDE pm = new ParametroMetodologiaDE();
+        pm.setParametro(parametro);
+        pm.setMetodologia(metodologia);
+        if (matrizId != null) {
+            MatrizDE matriz = matrizRepository.findById(matrizId)
+                    .orElseThrow(() -> new RuntimeException("Matriz no encontrada: " + matrizId));
+            pm.setMatriz(matriz);
+        }
+        return pmRepository.save(pm);
+    }
+
+    public void removeMetodologia(Long parametroId, Long pmId) {
+        if (!pmRepository.existsById(pmId)) {
+            throw new RuntimeException("Asociación no encontrada: " + pmId);
+        }
+        if (!pmRepository.existsByIdAndParametroId(pmId, parametroId)) {
+            throw new RuntimeException("La asociación no pertenece al parámetro indicado.");
+        }
+        pmRepository.deleteById(pmId);
     }
 }

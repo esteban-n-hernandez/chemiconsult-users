@@ -1,6 +1,7 @@
 package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.ParametroDE;
+import com.chemiconsult.entity.ParametroMetodologiaDE;
 import com.chemiconsult.service.ParametroService;
 import com.chemiconsult.to.ParametroTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -16,13 +18,13 @@ public class ParametroController {
 
     ParametroService parametroService;
 
-    // GET /api/parametros â€” solo activos
+    // GET /api/parametros â€" solo activos
     @GetMapping
     public List<ParametroDE> getParametros() {
         return parametroService.getParametros();
     }
 
-    // GET /api/parametros/todos â€” todos incluyendo inactivos
+    // GET /api/parametros/todos â€" todos incluyendo inactivos
     @GetMapping("/todos")
     public List<ParametroDE> getParametrosTodos() {
         return parametroService.getParametrosTodos();
@@ -53,20 +55,45 @@ public class ParametroController {
         return ResponseEntity.ok(actualizado);
     }
 
-    // PATCH /api/parametros/{id}/desactivar â€” baja lÃ³gica
+    // PATCH /api/parametros/{id}/desactivar â€" baja lÃ³gica
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<Void> desactivarParametro(@PathVariable Long id) {
         parametroService.desactivarParametro(id);
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE /api/parametros/{id} â€” baja fÃ­sica
+    // DELETE /api/parametros/{id} — baja física
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteParametro(@PathVariable Long id) {
         parametroService.deleteParametro(id);
         return ResponseEntity.noContent().build();
     }
 
+    // ── Metodologías ──────────────────────────────────────────────────────────
+
+    // GET /api/parametros/{id}/metodologias
+    @GetMapping("/{id}/metodologias")
+    public ResponseEntity<List<ParametroMetodologiaDE>> getMetodologias(@PathVariable Long id) {
+        return ResponseEntity.ok(parametroService.getMetodologias(id));
+    }
+
+    // POST /api/parametros/{id}/metodologias  body: { metodologiaId, matrizId? }
+    @PostMapping("/{id}/metodologias")
+    public ResponseEntity<ParametroMetodologiaDE> addMetodologia(
+            @PathVariable Long id,
+            @RequestBody Map<String, Long> body) {
+        Long metodologiaId = body.get("metodologiaId");
+        Long matrizId      = body.get("matrizId");
+        ParametroMetodologiaDE pm = parametroService.addMetodologia(id, metodologiaId, matrizId);
+        return ResponseEntity.status(201).body(pm);
+    }
+
+    // DELETE /api/parametros/{id}/metodologias/{pmId}
+    @DeleteMapping("/{id}/metodologias/{pmId}")
+    public ResponseEntity<Void> removeMetodologia(@PathVariable Long id, @PathVariable Long pmId) {
+        parametroService.removeMetodologia(id, pmId);
+        return ResponseEntity.noContent().build();
+    }
 
     @Autowired
     public ParametroController(ParametroService parametroService) {
