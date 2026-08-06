@@ -366,11 +366,11 @@ public class InformeService {
     private String formatLimite(LimiteAplicableTO l) {
         if (l.getTipoLimite() == null) return "-";
         return switch (l.getTipoLimite()) {
-            case "MAX" -> l.getLimiteMax() != null ? fmtNum(l.getLimiteMax()) : "-";
-            case "MIN" -> l.getLimiteMin() != null ? fmtNum(l.getLimiteMin()) : "-";
-            case "RANGO" -> (l.getLimiteMin() != null && l.getLimiteMax() != null)
-                    ? fmtNum(l.getLimiteMin()) + "-" + fmtNum(l.getLimiteMax()) : "-";
-            case "TEXTO" -> l.getLimiteTexto() != null ? l.getLimiteTexto() : "-";
+            case "MAX"    -> l.getLimiteMax() != null ? l.getLimiteMax() : "-";
+            case "MIN"    -> l.getLimiteMin() != null ? l.getLimiteMin() : "-";
+            case "RANGO"  -> (l.getLimiteMin() != null && l.getLimiteMax() != null)
+                    ? l.getLimiteMin() + " - " + l.getLimiteMax() : "-";
+            case "TEXTO"  -> l.getLimiteTexto() != null ? l.getLimiteTexto() : "-";
             case "AUSENCIA" -> "Ausente";
             default -> "-";
         };

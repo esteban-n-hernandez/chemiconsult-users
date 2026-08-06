@@ -78,8 +78,8 @@ public class ResolucionController {
     public ResponseEntity<Void> actualizarLimite(@PathVariable Long id, @PathVariable Long parametroId,
                                                   @RequestBody Map<String, Object> body) {
         String tipoLimite  = (String) body.get("tipoLimite");
-        Double valorMinimo = body.get("valorMinimo") != null ? ((Number) body.get("valorMinimo")).doubleValue() : null;
-        Double valorMaximo = body.get("valorMaximo") != null ? ((Number) body.get("valorMaximo")).doubleValue() : null;
+        String valorMinimo = body.get("valorMinimo") != null ? body.get("valorMinimo").toString().trim() : null;
+        String valorMaximo = body.get("valorMaximo") != null ? body.get("valorMaximo").toString().trim() : null;
         String limiteTexto = (String) body.get("limiteTexto");
         resolucionService.actualizarLimite(id, parametroId, tipoLimite, valorMinimo, valorMaximo, limiteTexto);
         return ResponseEntity.noContent().build();
@@ -130,8 +130,8 @@ public class ResolucionController {
                                                          @PathVariable Long parametroId,
                                                          @RequestBody Map<String, Object> body) {
         String tipoLimite  = (String) body.get("tipoLimite");
-        Double valorMinimo = body.get("valorMinimo") != null ? ((Number) body.get("valorMinimo")).doubleValue() : null;
-        Double valorMaximo = body.get("valorMaximo") != null ? ((Number) body.get("valorMaximo")).doubleValue() : null;
+        String valorMinimo = body.get("valorMinimo") != null ? body.get("valorMinimo").toString().trim() : null;
+        String valorMaximo = body.get("valorMaximo") != null ? body.get("valorMaximo").toString().trim() : null;
         String limiteTexto = (String) body.get("limiteTexto");
         resolucionService.actualizarLimiteDestino(destinoId, parametroId, tipoLimite, valorMinimo, valorMaximo, limiteTexto);
         return ResponseEntity.noContent().build();

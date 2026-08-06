@@ -112,7 +112,7 @@ public class ResolucionService {
 
     @Transactional
     public void actualizarLimite(Long resolucionId, Long parametroId,
-                                  String tipoLimite, Double valorMinimo, Double valorMaximo, String limiteTexto) {
+                                  String tipoLimite, String valorMinimo, String valorMaximo, String limiteTexto) {
         destinoParametroRepository.findByResolucionIdAndParametroId(resolucionId, parametroId)
                 .forEach(rel -> {
                     rel.setTipoLimite(tipoLimite);
@@ -236,7 +236,7 @@ public class ResolucionService {
 
     @Transactional
     public void actualizarLimiteDestino(Long destinoId, Long parametroId, String tipoLimite,
-                                         Double valorMinimo, Double valorMaximo, String limiteTexto) {
+                                         String valorMinimo, String valorMaximo, String limiteTexto) {
         destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
                 .ifPresent(rel -> {
                     rel.setTipoLimite(tipoLimite);

@@ -8,8 +8,8 @@ import lombok.Data;
 public class LimiteAplicableTO {
     private String origenNombre; // "Res 336/06 - Colectora cloacal"
     private String tipoLimite;
-    private Double limiteMin;
-    private Double limiteMax;
+    private String limiteMin;
+    private String limiteMax;
     private String limiteTexto;
     private Boolean cumple;
 }

@@ -31,10 +31,10 @@ public class AnalisisParametroLimiteDE {
 
     // Snapshot del límite al momento del análisis (auditoría, por si la norma cambia después)
     @Column(name = "LIMITE_MIN")
-    private Double limiteMin;
+    private String limiteMin;
 
     @Column(name = "LIMITE_MAX")
-    private Double limiteMax;
+    private String limiteMax;
 
     @Column(name = "LIMITE_TEXTO")
     private String limiteTexto;

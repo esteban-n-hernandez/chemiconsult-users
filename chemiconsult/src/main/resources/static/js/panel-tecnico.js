@@ -686,8 +686,8 @@ async function guardarLimiteParam() {
     const tipoLimite  = document.getElementById('limiteTipo').value;
     const minVal      = document.getElementById('limiteMin').value;
     const maxVal      = document.getElementById('limiteMax').value;
-    const valorMinimo = minVal !== '' ? parseFloat(minVal) : null;
-    const valorMaximo = maxVal !== '' ? parseFloat(maxVal) : null;
+    const valorMinimo = minVal !== '' ? minVal.trim() : null;
+    const valorMaximo = maxVal !== '' ? maxVal.trim() : null;
     const limiteTexto = document.getElementById('limiteTextoInput').value.trim() || null;
 
     const token = localStorage.getItem('token');

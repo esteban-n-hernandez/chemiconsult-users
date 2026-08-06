@@ -399,8 +399,8 @@ public class AnalisisService {
         }
         try {
             double valor = Double.parseDouble(valorStr.replace(",", ".").trim());
-            Double sMin = limite.getLimiteMin() != null ? limite.getLimiteMin() : limite.getLimiteOrigen().getValorMinimo();
-            Double sMax = limite.getLimiteMax() != null ? limite.getLimiteMax() : limite.getLimiteOrigen().getValorMaximo();
+            Double sMin = parseLimit(limite.getLimiteMin() != null ? limite.getLimiteMin() : limite.getLimiteOrigen().getValorMinimo());
+            Double sMax = parseLimit(limite.getLimiteMax() != null ? limite.getLimiteMax() : limite.getLimiteOrigen().getValorMaximo());
             // Fallback: si min/max nulos, intentar parsear limiteTexto como "X/Y"
             if (sMin == null || sMax == null) {
                 double[] rango = parsearRangoTexto(limite.getLimiteOrigen().getLimiteTexto());
@@ -415,6 +415,12 @@ public class AnalisisService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private static Double parseLimit(String s) {
+        if (s == null || s.isBlank()) return null;
+        try { return Double.parseDouble(s.replace(",", ".")); }
+        catch (NumberFormatException e) { return null; }
     }
 
     private static double[] parsearRangoTexto(String texto) {

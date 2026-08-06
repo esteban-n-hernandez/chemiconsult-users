@@ -35,24 +35,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const puedeVer = (modulo) => esIT || (userModulos && userModulos.includes(modulo));
 
+    const SIDEBAR_ORDER_KEY = "chemiconsult_sidebar_order";
+
     const link = (href, icon, label) => `
         <a href="${href}" class="${paginaActual === href ? 'active' : ''}" title="${label}">
             <i class="bi ${icon}"></i><span class="sidebar-label"> ${label}</span>
         </a>`;
 
+    // Links reordenables (Dashboard excluido — siempre primero)
+    const ALL_LINKS = [
+        { key: 'AGENDA',        href: 'agenda.html',        icon: 'bi-calendar-check',       label: 'Agenda' },
+        { key: 'CLIENTES',      href: 'clientes.html',      icon: 'bi-people',               label: 'Clientes' },
+        { key: 'DOCUMENTOS',    href: 'documentos.html',    icon: 'bi-folder2-open',         label: 'Documentación' },
+        { key: 'FACTURACION',   href: 'facturacion.html',   icon: 'bi-receipt',              label: 'Facturación' },
+        { key: 'MUESTRAS',      href: 'muestras.html',      icon: 'bi-file-earmark-medical', label: 'Muestras' },
+        { key: 'PANEL_TECNICO', href: 'panel-tecnico.html', icon: 'bi-gear-fill',            label: 'Panel Técnico' },
+        { key: 'COLA_ANALISIS', href: 'cola-analisis.html', icon: 'bi-collection',           label: 'Parámetros a Analizar' },
+        { key: 'PRESUPUESTO',   href: 'presupuesto.html',   icon: 'bi-file-earmark-text',    label: 'Presupuestos' },
+        { key: 'STOCK',         href: 'stock.html',         icon: 'bi-box-seam',             label: 'Stock' },
+        { key: 'TAREAS',        href: 'task.html',          icon: 'bi-list-task',            label: 'Tareas' },
+        { key: 'USUARIOS',      href: 'usuarios.html',      icon: 'bi-shield-lock',          label: 'Usuarios' },
+    ];
+
+    const savedOrder = JSON.parse(localStorage.getItem(SIDEBAR_ORDER_KEY) || 'null');
+    if (savedOrder && Array.isArray(savedOrder)) {
+        ALL_LINKS.sort((a, b) => {
+            const ia = savedOrder.indexOf(a.key);
+            const ib = savedOrder.indexOf(b.key);
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+    }
+
+    const orderedLinksHtml = ALL_LINKS
+        .filter(l => puedeVer(l.key))
+        .map(l => `<a href="${l.href}" class="${paginaActual === l.href ? 'active' : ''}" title="${l.label}" data-key="${l.key}" draggable="true">
+            <i class="bi ${l.icon}"></i><span class="sidebar-label"> ${l.label}</span>
+        </a>`)
+        .join('');
+
     const linksEmpleado = `
         ${puedeVer('DASHBOARD') ? link('dashboard-empleado.html', 'bi-speedometer2', 'Dashboard') : ''}
-        ${puedeVer('AGENDA') ? link('agenda.html', 'bi-calendar-check', 'Agenda') : ''}
-        ${puedeVer('CLIENTES') ? link('clientes.html', 'bi-people', 'Clientes') : ''}
-        ${puedeVer('DOCUMENTOS') ? link('documentos.html', 'bi-folder2-open', 'Documentación') : ''}
-        ${puedeVer('FACTURACION') ? link('facturacion.html', 'bi-receipt', 'Facturación') : ''}
-        ${puedeVer('MUESTRAS') ? link('muestras.html', 'bi-file-earmark-medical', 'Muestras') : ''}
-        ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html', 'bi-gear-fill', 'Panel Técnico') : ''}
-        ${puedeVer('COLA_ANALISIS') ? link('cola-analisis.html', 'bi-collection', 'Parámetros a Analizar') : ''}
-        ${puedeVer('PRESUPUESTO') ? link('presupuesto.html', 'bi-file-earmark-text', 'Presupuestos') : ''}
-        ${puedeVer('STOCK') ? link('stock.html', 'bi-box-seam', 'Stock') : ''}
-        ${puedeVer('TAREAS') ? link('task.html', 'bi-list-task', 'Tareas') : ''}
-        ${puedeVer('USUARIOS') ? link('usuarios.html', 'bi-shield-lock', 'Usuarios') : ''}
+        ${orderedLinksHtml}
     `;
 
     const linksCliente = `
@@ -87,6 +110,47 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         </div>
     `;
+
+    // ── Drag & drop reorder ──────────────────────────────────────
+    if (!esCliente) {
+        const nav = container.querySelector('.sidebar-nav');
+        let dragSrc = null;
+
+        nav.querySelectorAll('a[draggable="true"]').forEach(el => {
+            el.addEventListener('dragstart', e => {
+                dragSrc = el;
+                el.classList.add('sidebar-dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            el.addEventListener('dragend', () => {
+                dragSrc = null;
+                nav.querySelectorAll('a').forEach(a => a.classList.remove('sidebar-dragging', 'sidebar-drag-over'));
+                // Guardar orden nuevo
+                const order = [...nav.querySelectorAll('a[data-key]')].map(a => a.dataset.key);
+                localStorage.setItem(SIDEBAR_ORDER_KEY, JSON.stringify(order));
+            });
+            el.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (dragSrc && el !== dragSrc) {
+                    nav.querySelectorAll('a').forEach(a => a.classList.remove('sidebar-drag-over'));
+                    el.classList.add('sidebar-drag-over');
+                }
+            });
+            el.addEventListener('dragleave', () => el.classList.remove('sidebar-drag-over'));
+            el.addEventListener('drop', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dragSrc && dragSrc !== el) {
+                    const items = [...nav.querySelectorAll('a')];
+                    const srcIdx = items.indexOf(dragSrc);
+                    const dstIdx = items.indexOf(el);
+                    if (srcIdx < dstIdx) el.after(dragSrc);
+                    else el.before(dragSrc);
+                }
+                el.classList.remove('sidebar-drag-over');
+            });
+        });
+    }
 
     document.getElementById("logout-btn")?.addEventListener("click", (e) => {
         e.preventDefault();
