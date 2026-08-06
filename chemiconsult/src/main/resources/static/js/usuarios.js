@@ -438,7 +438,7 @@ const MODULOS_LABELS = {
     STOCK:        { label: 'Stock',          icon: 'bi-box-seam' },
     PANEL_TECNICO:{ label: 'Panel Técnico',  icon: 'bi-gear-fill' },
     PRESUPUESTO:  { label: 'Presupuestos',   icon: 'bi-file-earmark-text' },
-    COLA_ANALISIS:{ label: 'Cola de análisis', icon: 'bi-flask' },
+    COLA_ANALISIS:{ label: 'Parámetros a Analizar', icon: 'bi-collection' },
     FACTURACION:  { label: 'Facturación',    icon: 'bi-receipt' },
     USUARIOS:     { label: 'Usuarios',       icon: 'bi-shield-lock' }
 };

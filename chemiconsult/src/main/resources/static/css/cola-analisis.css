@@ -157,12 +157,19 @@
 }
 .mc-btn-refresh:hover { border-color: var(--verde, #5EA504); color: var(--verde, #5EA504); }
 
+/* Grilla de bloques — auto-fill: 4 col en desktop, 3 en medio, 1 en mobile */
+#mcLista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
 /* Bloque de parámetro */
 .mc-param-block {
     background: var(--bg-surface, #fff);
     border: 1px solid var(--color-border-tertiary, #e5e7eb);
     border-radius: 12px;
-    margin-bottom: 12px;
     overflow: hidden;
     transition: box-shadow .15s;
 }

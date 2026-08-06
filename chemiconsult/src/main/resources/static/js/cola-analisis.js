@@ -11,6 +11,9 @@
     let filtroEstado    = 'todos';
     let filtroUserId    = null;   // null = "yo"; '*' = todos
     let busqueda        = '';
+    const openParamIds  = new Set();  // persist accordion open state across re-renders
+
+    const FLASK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 0a.5.5 0 0 0 0 1h1v2.013A2.5 2.5 0 0 0 5.3 4.9L2.294 8.907A2 2 0 0 0 3.9 12h8.2a2 2 0 0 0 1.606-3.193L10.7 4.9A2.5 2.5 0 0 0 9 3.013V1h1a.5.5 0 0 0 0-1H6z"/></svg>`;
 
     const miUserId       = localStorage.getItem('userId');
     const miUserNombre   = localStorage.getItem('userName') || localStorage.getItem('userEmail') || 'Yo';
@@ -171,11 +174,19 @@
         lista.innerHTML = datos.map(p => renderParametroBloque(p)).join('');
 
         lista.querySelectorAll('.mc-param-head').forEach(head => {
+            const pid     = head.dataset.parametroId;
+            const body    = head.nextElementSibling;
+            const chevron = head.querySelector('.mc-chevron');
+            // Restore open state from before re-render
+            if (openParamIds.has(pid)) {
+                body.classList.add('open');
+                chevron.classList.add('open');
+            }
             head.addEventListener('click', () => {
-                const body    = head.nextElementSibling;
-                const chevron = head.querySelector('.mc-chevron');
                 const abierto = body.classList.toggle('open');
                 chevron.classList.toggle('open', abierto);
+                if (abierto) openParamIds.add(pid);
+                else openParamIds.delete(pid);
             });
         });
 
@@ -209,9 +220,9 @@
 
         return `
         <div class="mc-param-block">
-            <div class="mc-param-head">
+            <div class="mc-param-head" data-parametro-id="${p.parametroId}">
                 <div class="mc-param-info">
-                    <div class="mc-param-icon"><i class="bi bi-flask"></i></div>
+                    <div class="mc-param-icon">${FLASK_SVG}</div>
                     <div>
                         <div class="mc-param-nombre">${esc(p.parametroNombre)} ${responsableLabel}</div>
                         ${p.unidad ? `<div class="mc-param-unidad">${esc(p.unidad)}</div>` : ''}
@@ -225,10 +236,6 @@
                     <thead>
                         <tr>
                             <th>N° Protocolo</th>
-                            <th>Cliente</th>
-                            <th>Punto de muestreo</th>
-                            <th>Fecha entrega</th>
-                            <th>Estado muestra</th>
                             <th style="text-align:center">Estado análisis</th>
                         </tr>
                     </thead>
@@ -241,12 +248,6 @@
     }
 
     function renderMuestraRow(m) {
-        const estadoClass = `mc-estado-${m.estado || 'INGRESADO'}`;
-        const estadoLabel = (m.estado || 'INGRESADO').replace(/_/g, ' ');
-        const fecha = m.fechaEntrega
-            ? new Date(m.fechaEntrega + 'T00:00:00').toLocaleDateString('es-AR')
-            : '—';
-
         const ea = m.estadoAnalisis || 'PENDIENTE';
         const eaClass = `mc-ea-${ea === 'REPETIR' ? 'repetir' : ea.toLowerCase()}`;
         const eaLabel = labelEstadoAnalisis(ea);
@@ -255,10 +256,6 @@
         return `
         <tr>
             <td><span class="mc-proto">${esc(m.nroProtocolo || '—')}</span></td>
-            <td>${esc(m.clienteNombre || '—')}</td>
-            <td>${esc(m.puntoMuestreo || '—')}</td>
-            <td>${fecha}</td>
-            <td><span class="mc-estado-badge ${estadoClass}">${estadoLabel}</span></td>
             <td>
                 <div class="mc-toggle-wrap">
                     <button class="mc-estado-btn ${eaClass}"
@@ -312,10 +309,17 @@
     $('mcEstadoDrop').querySelectorAll('.mc-estado-opt').forEach(opt => {
         opt.addEventListener('click', async () => {
             if (!dropActivoBtn) return;
-            const id         = dropActivoBtn.dataset.id;
+            const id          = dropActivoBtn.dataset.id;
             const nuevoEstado = opt.dataset.estado;
-            cerrarEstadoDrop();
             await cambiarEstado(id, nuevoEstado);
+            // After re-render, reposition dropdown on the new button (if still visible)
+            const newBtn = document.querySelector(`.mc-estado-btn[data-id="${id}"]`);
+            if (newBtn) {
+                dropActivoBtn = null;  // reset so abrirEstadoDrop doesn't toggle-close
+                abrirEstadoDrop(newBtn);
+            } else {
+                cerrarEstadoDrop();
+            }
         });
     });
 
@@ -345,7 +349,7 @@
                     p.totalPendientes = p.muestras.filter(m => m.estadoAnalisis === 'PENDIENTE').length;
                     p.totalAnalizado  = p.muestras.filter(m => m.estadoAnalisis === 'ANALIZADO').length;
                     p.totalConfirmado = p.muestras.filter(m => m.estadoAnalisis === 'CONFIRMADO').length;
-                    p.totalObservado  = p.muestras.filter(m => m.estadoAnalisis === 'OBSERVADO').length;
+                    p.totalObservado  = p.muestras.filter(m => m.estadoAnalisis === 'REPETIR').length;
                     break;
                 }
             }
