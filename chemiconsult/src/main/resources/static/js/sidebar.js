@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${puedeVer('DOCUMENTOS') ? link('documentos.html', 'bi-folder2-open', 'Documentación') : ''}
         ${puedeVer('PANEL_TECNICO') ? link('panel-tecnico.html', 'bi-gear-fill', 'Panel Técnico') : ''}
         ${puedeVer('PRESUPUESTO') ? link('presupuesto.html', 'bi-file-earmark-text', 'Presupuestos') : ''}
-        ${puedeVer('COLA_ANALISIS') ? link('mi-cola.html', 'bi-collection', 'Parametros a Analizar') : ''}
+        ${puedeVer('COLA_ANALISIS') ? link('cola-analisis.html', 'bi-collection', 'Parametros a Analizar') : ''}
         ${puedeVer('FACTURACION') ? link('facturacion.html', 'bi-receipt', 'Facturación') : ''}
         ${puedeVer('USUARIOS') ? link('usuarios.html', 'bi-shield-lock', 'Usuarios') : ''}
     `;

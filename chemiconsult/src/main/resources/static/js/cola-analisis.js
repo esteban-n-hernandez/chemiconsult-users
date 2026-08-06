@@ -129,8 +129,7 @@
         setText('statAnalizadoPlural', anal === 1 ? '' : 's');
         setText('statConfirmado', conf);
         setText('statConfirmadoPlural', conf === 1 ? '' : 's');
-        setText('statObservado', obs);
-        setText('statObservadoPlural', obs === 1 ? '' : 's');
+        setText('statRepetir', obs);
         $('mcStats').style.display = 'flex';
     }
 
@@ -145,9 +144,13 @@
         const filtro = filtroEstado;
 
         const datos = datosFiltradosPorUsuario().filter(p => {
+            // Excluir siempre los confirmados de la vista
+            const visibles = p.muestras.filter(m => m.estadoAnalisis !== 'CONFIRMADO');
+            if (visibles.length === 0) return false;
+
             const hayText = !busq ||
                 p.parametroNombre.toLowerCase().includes(busq) ||
-                p.muestras.some(m =>
+                visibles.some(m =>
                     (m.nroProtocolo || '').toLowerCase().includes(busq) ||
                     (m.clienteNombre || '').toLowerCase().includes(busq) ||
                     (m.puntoMuestreo || '').toLowerCase().includes(busq)
@@ -155,7 +158,7 @@
             if (!hayText) return false;
 
             if (filtro === 'todos') return true;
-            return p.muestras.some(m => m.estadoAnalisis === filtro);
+            return visibles.some(m => m.estadoAnalisis === filtro);
         });
 
         if (datos.length === 0) {
@@ -185,15 +188,20 @@
     }
 
     function renderParametroBloque(p) {
+        // Los confirmados no se muestran en la lista
+        const muestrasNoConf = p.muestras.filter(m => m.estadoAnalisis !== 'CONFIRMADO');
         const muestrasParaRender = filtroEstado === 'todos'
-            ? p.muestras
-            : p.muestras.filter(m => m.estadoAnalisis === filtroEstado);
+            ? muestrasNoConf
+            : muestrasNoConf.filter(m => m.estadoAnalisis === filtroEstado);
+
+        const pend = muestrasNoConf.filter(m => m.estadoAnalisis === 'PENDIENTE').length;
+        const anal = muestrasNoConf.filter(m => m.estadoAnalisis === 'ANALIZADO').length;
+        const rep  = muestrasNoConf.filter(m => m.estadoAnalisis === 'REPETIR').length;
 
         const badges = [
-            p.totalPendientes > 0 ? `<span class="mc-badge mc-badge-pend"><i class="bi bi-hourglass-split"></i> ${p.totalPendientes}</span>` : '',
-            p.totalAnalizado  > 0 ? `<span class="mc-badge mc-badge-anal"><i class="bi bi-check2-circle"></i> ${p.totalAnalizado}</span>`    : '',
-            p.totalConfirmado > 0 ? `<span class="mc-badge mc-badge-conf"><i class="bi bi-patch-check"></i> ${p.totalConfirmado}</span>`      : '',
-            p.totalObservado  > 0 ? `<span class="mc-badge mc-badge-obs"><i class="bi bi-exclamation-circle"></i> ${p.totalObservado}</span>` : '',
+            pend > 0 ? `<span class="mc-badge mc-badge-pend"><i class="bi bi-hourglass-split"></i> ${pend}</span>`   : '',
+            anal > 0 ? `<span class="mc-badge mc-badge-anal"><i class="bi bi-check2-circle"></i> ${anal}</span>`      : '',
+            rep  > 0 ? `<span class="mc-badge mc-badge-rep"><i class="bi bi-arrow-repeat"></i> ${rep}</span>`          : '',
         ].join('');
 
         const responsableLabel = (filtroUserId === '*' && p.responsableNombre)
@@ -240,7 +248,7 @@
             : '—';
 
         const ea = m.estadoAnalisis || 'PENDIENTE';
-        const eaClass = `mc-ea-${ea.toLowerCase()}`;
+        const eaClass = `mc-ea-${ea === 'REPETIR' ? 'repetir' : ea.toLowerCase()}`;
         const eaLabel = labelEstadoAnalisis(ea);
         const eaIcon  = iconEstadoAnalisis(ea);
 
@@ -265,7 +273,7 @@
     }
 
     function labelEstadoAnalisis(estado) {
-        return { PENDIENTE: 'Pendiente', ANALIZADO: 'Analizado', CONFIRMADO: 'Confirmado', OBSERVADO: 'Observado' }[estado] || estado;
+        return { PENDIENTE: 'Pendiente', ANALIZADO: 'Analizado', CONFIRMADO: 'Confirmado', REPETIR: 'A repetir' }[estado] || estado;
     }
 
     function iconEstadoAnalisis(estado) {
@@ -273,7 +281,7 @@
             PENDIENTE:  'bi-hourglass-split',
             ANALIZADO:  'bi-check2-circle',
             CONFIRMADO: 'bi-patch-check-fill',
-            OBSERVADO:  'bi-exclamation-circle',
+            REPETIR:    'bi-arrow-repeat',
         }[estado] || 'bi-hourglass-split';
     }
 

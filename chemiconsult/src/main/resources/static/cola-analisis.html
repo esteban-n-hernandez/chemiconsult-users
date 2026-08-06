@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
-    <link rel="stylesheet" href="css/mi-cola.css"/>
+    <link rel="stylesheet" href="css/cola-analisis.css"/>
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="COLA_ANALISIS"></script>
 </head>
 <body>
@@ -53,9 +53,9 @@
             <i class="bi bi-patch-check"></i>
             <span id="statConfirmado">0</span> confirmado<span id="statConfirmadoPlural">s</span>
         </div>
-        <div class="mc-stat-chip mc-stat-observado">
-            <i class="bi bi-exclamation-circle"></i>
-            <span id="statObservado">0</span> observado<span id="statObservadoPlural">s</span>
+        <div class="mc-stat-chip mc-stat-repetir">
+            <i class="bi bi-arrow-repeat"></i>
+            <span id="statRepetir">0</span> a repetir
         </div>
     </div>
 
@@ -69,8 +69,7 @@
             <button class="mc-filter-btn active" data-filtro="todos">Todos</button>
             <button class="mc-filter-btn" data-filtro="PENDIENTE">Pendiente</button>
             <button class="mc-filter-btn" data-filtro="ANALIZADO">Analizado</button>
-            <button class="mc-filter-btn" data-filtro="CONFIRMADO">Confirmado</button>
-            <button class="mc-filter-btn" data-filtro="OBSERVADO">Observado</button>
+            <button class="mc-filter-btn" data-filtro="REPETIR">A repetir</button>
         </div>
         <button class="mc-btn-refresh" id="mcRefresh" title="Actualizar">
             <i class="bi bi-arrow-clockwise"></i>
@@ -99,12 +98,12 @@
     <button class="mc-estado-opt confirmado" data-estado="CONFIRMADO">
         <span class="mc-estado-dot"></span> Confirmado
     </button>
-    <button class="mc-estado-opt observado" data-estado="OBSERVADO">
-        <span class="mc-estado-dot"></span> Observado
+    <button class="mc-estado-opt repetir" data-estado="REPETIR">
+        <span class="mc-estado-dot"></span> A repetir
     </button>
 </div>
 
 <script src="js/sidebar.js"></script>
-<script src="js/mi-cola.js"></script>
+<script src="js/cola-analisis.js"></script>
 </body>
 </html>

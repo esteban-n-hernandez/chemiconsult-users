@@ -118,9 +118,11 @@
             </div>
             <div class="form-group">
                 <label>Cliente <span class="required">*</span></label>
-                <select id="npInputCliente" class="form-control-custom">
-                    <option value="">— Seleccioná un cliente —</option>
-                </select>
+                <div class="np-cliente-wrap">
+                    <input type="text" id="npInputCliente" class="form-control-custom"
+                           placeholder="Buscar cliente o escribir nombre libre…" autocomplete="off"/>
+                    <div id="npClienteDrop" class="np-cliente-drop" style="display:none;"></div>
+                </div>
             </div>
             <div class="form-group">
                 <label>Solicitado por</label>

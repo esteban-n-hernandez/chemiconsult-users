@@ -88,7 +88,7 @@ public class ColaAnalisisService {
                     cola.setTotalConfirmado((int) grupo.stream()
                             .filter(ap -> estadoSafe(ap) == EstadoAnalisisParametroEnum.CONFIRMADO).count());
                     cola.setTotalObservado((int) grupo.stream()
-                            .filter(ap -> estadoSafe(ap) == EstadoAnalisisParametroEnum.OBSERVADO).count());
+                            .filter(ap -> estadoSafe(ap) == EstadoAnalisisParametroEnum.REPETIR).count());
                     cola.setMuestras(grupo.stream().map(this::toColaMuestra).collect(Collectors.toList()));
                     return cola;
                 })

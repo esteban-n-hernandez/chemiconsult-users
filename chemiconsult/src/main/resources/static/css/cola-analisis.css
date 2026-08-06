@@ -75,7 +75,7 @@
     border: 1.5px solid #bfdbfe;
 }
 
-.mc-stat-observado {
+.mc-stat-repetir {
     background: #fff1f2;
     color: #be123c;
     border: 1.5px solid #fecdd3;
@@ -248,7 +248,7 @@
     border: 1px solid #bfdbfe;
 }
 
-.mc-badge-obs {
+.mc-badge-rep {
     background: #fff1f2;
     color: #be123c;
     border: 1px solid #fecdd3;
@@ -351,7 +351,7 @@
 .mc-ea-pendiente  { border-color: #fde68a; color: #b45309; background: #fff8e6; }
 .mc-ea-analizado  { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
 .mc-ea-confirmado { border-color: #bfdbfe; color: #1d4ed8; background: #eff6ff; }
-.mc-ea-observado  { border-color: #fecdd3; color: #be123c; background: #fff1f2; }
+.mc-ea-repetir    { border-color: #fecdd3; color: #be123c; background: #fff1f2; }
 
 .mc-estado-btn:hover { filter: brightness(.94); }
 .mc-estado-btn i { font-size: 12px; }
@@ -399,8 +399,8 @@
 .mc-estado-opt.analizado  .mc-estado-dot { background: #10b981; }
 .mc-estado-opt.confirmado { color: #1d4ed8; }
 .mc-estado-opt.confirmado .mc-estado-dot { background: #3b82f6; }
-.mc-estado-opt.observado  { color: #be123c; }
-.mc-estado-opt.observado  .mc-estado-dot { background: #f43f5e; }
+.mc-estado-opt.repetir  { color: #be123c; }
+.mc-estado-opt.repetir  .mc-estado-dot { background: #f43f5e; }
 
 /* Label de responsable en el bloque de parámetro */
 .mc-param-resp {

@@ -69,33 +69,57 @@ let npItemCount  = 0;
 let npStepActual = 1;
 
 // ── Clientes ──
+let clientesLista   = [];
 let clientesCargados = false;
 
 async function cargarClientes() {
     if (clientesCargados) return;
-    const sel = document.getElementById("npInputCliente");
     try {
         const res = await apiFetch(`${API_BASE}/api/clientes`);
         if (!res.ok) throw new Error();
-        const clientes = await res.json();
-        sel.innerHTML = '<option value="">— Seleccioná un cliente —</option>';
-        clientes.forEach(c => {
-            const opt = document.createElement("option");
-            opt.value = JSON.stringify({
-                razonSocial: c.razonSocial || null,
-                nombre:      c.nombre      || null,
-                apellido:    c.apellido    || null,
-            });
-            opt.textContent = c.tipoCliente === "PERSONA_FISICA"
+        const data = await res.json();
+        clientesLista = data.map(c => ({
+            label: c.tipoCliente === "PERSONA_FISICA"
                 ? `${c.nombre || ""} ${c.apellido || ""}`.trim()
-                : (c.razonSocial || c.nombre || c.email);
-            sel.appendChild(opt);
-        });
+                : (c.razonSocial || c.nombre || c.email || ""),
+        })).filter(c => c.label);
         clientesCargados = true;
-    } catch {
-        sel.innerHTML = '<option value="">Error al cargar clientes</option>';
-    }
+    } catch { /* silencioso — el usuario igual puede escribir libre */ }
 }
+
+// ── Combobox cliente ──
+const npClienteInput = document.getElementById("npInputCliente");
+const npClienteDrop  = document.getElementById("npClienteDrop");
+
+function mostrarClienteDrop(lista) {
+    if (!lista.length) { npClienteDrop.style.display = "none"; return; }
+    npClienteDrop.innerHTML = lista.map(c =>
+        `<div class="np-cliente-item">${esc(c.label)}</div>`
+    ).join("");
+    npClienteDrop.style.display = "block";
+    npClienteDrop.querySelectorAll(".np-cliente-item").forEach((el, i) => {
+        el.addEventListener("mousedown", e => {
+            e.preventDefault();
+            npClienteInput.value = lista[i].label;
+            npClienteDrop.style.display = "none";
+        });
+    });
+}
+
+npClienteInput.addEventListener("input", () => {
+    const q = npClienteInput.value.trim().toLowerCase();
+    if (!q) { npClienteDrop.style.display = "none"; return; }
+    mostrarClienteDrop(clientesLista.filter(c => c.label.toLowerCase().includes(q)).slice(0, 8));
+});
+
+npClienteInput.addEventListener("focus", () => {
+    const q = npClienteInput.value.trim().toLowerCase();
+    if (!q) mostrarClienteDrop(clientesLista.slice(0, 8));
+});
+
+npClienteInput.addEventListener("blur", () => {
+    setTimeout(() => { npClienteDrop.style.display = "none"; }, 150);
+});
 
 // ── Abrir / Cerrar modal ──
 function abrirModalNuevo() {
@@ -176,7 +200,7 @@ function irAStep(paso) {
 function validarStep1() {
     const cliente = document.getElementById("npInputCliente").value;
     const fecha   = document.getElementById("npInputFecha").value;
-    if (!cliente) { toast("Seleccioná un cliente.", "error"); return false; }
+    if (!cliente.trim()) { toast("Ingresá el nombre del cliente.", "error"); return false; }
     if (!fecha)   { toast("Ingresá una fecha.", "error"); return false; }
     return true;
 }
@@ -258,7 +282,7 @@ document.getElementById("npBtnGenerar").addEventListener("click", async () => {
     const filas = document.querySelectorAll("#npItemsBody tr");
     if (filas.length === 0) { toast("Agregá al menos un ítem.", "error"); return; }
 
-    const cliente = JSON.parse(document.getElementById("npInputCliente").value);
+    const cliente = { razonSocial: document.getElementById("npInputCliente").value.trim() };
 
     const items = Array.from(filas).map(tr => ({
         matriz:           tr.querySelector('[data-field="matriz"]').value.trim()        || null,
