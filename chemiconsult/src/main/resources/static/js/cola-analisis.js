@@ -270,7 +270,7 @@
     }
 
     function labelEstadoAnalisis(estado) {
-        return { PENDIENTE: 'Pendiente', ANALIZADO: 'Analizado', CONFIRMADO: 'Confirmado', REPETIR: 'A repetir' }[estado] || estado;
+        return { PENDIENTE: 'Pendiente', ANALIZADO: 'Analizado', CONFIRMADO: 'Confirmado', REPETIR: ' Repetir' }[estado] || estado;
     }
 
     function iconEstadoAnalisis(estado) {

@@ -1846,7 +1846,6 @@ async function autoGuardar() {
     _autoGuardarTimer = null;
     if (!detalleAnalisisId) return;
 
-    // Si hay una request en vuelo, cancelarla y enviar una nueva con los valores actuales
     if (_autoGuardarController) {
         _autoGuardarController.abort();
         _autoGuardarController = null;
@@ -1862,13 +1861,11 @@ async function autoGuardar() {
         inputs.forEach(input => {
             const parametroId = parseInt(input.dataset.parametroId);
             const obsInput = document.getElementById(`obs-param-${parametroId}`);
-            const metodoSelect = document.querySelector(`.param-metodologia-select[data-parametro-id="${parametroId}"]`);
             const rawVal = input.value.trim();
             resultados.push({
                 parametroId,
                 valorResultado: rawVal !== "" ? rawVal : null,
                 observacion: obsInput ? (obsInput.value.trim() || null) : null,
-                metodologiaId: metodoSelect && metodoSelect.value ? parseInt(metodoSelect.value) : null,
             });
         });
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/resultados`, {
