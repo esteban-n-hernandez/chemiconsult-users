@@ -335,3 +335,14 @@
 .estado-drop-opt.aceptado   { color: #065f46; }
 .estado-drop-opt.rechazado .estado-drop-dot { background: #ef4444; }
 .estado-drop-opt.rechazado  { color: #991b1b; }
+
+.hist-panel .panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--color-border-tertiary);
+    background: var(--bg-subtle);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}

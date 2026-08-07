@@ -227,7 +227,7 @@ function mockDetalleMuestra(id) {
 // Estado de la tabla: filtro activo y página actual
 let estadoActivo = "todos";
 let paginaActual = 0;
-const ITEMS_POR_PAGINA = 20;
+let ITEMS_POR_PAGINA = 5;
 
 // Snapshot de todas las muestras cargadas (para filtrar/buscar en cliente)
 let todasLasMuestras = [];
@@ -372,6 +372,13 @@ function vincularEventos() {
     // — Búsqueda por texto —
     document.getElementById("inputBuscarCodigo").addEventListener("input", aplicarFiltrosYBusqueda);
     document.getElementById("inputBuscarCliente").addEventListener("input", aplicarFiltrosYBusqueda);
+
+    // — Selector de cantidad por página —
+    document.getElementById("selectPageSize").addEventListener("change", function () {
+        ITEMS_POR_PAGINA = Number(this.value);
+        paginaActual = 0;
+        aplicarFiltrosYBusqueda();
+    });
 
     // — Generar informe PDF —
     document.getElementById("btnGenerarInforme").addEventListener("click", onGenerarInforme);
@@ -1378,27 +1385,34 @@ function actualizarPaginacion(total, fin) {
     const totalPaginas = Math.ceil(total / ITEMS_POR_PAGINA);
     if (totalPaginas <= 1) return;
 
-    if (paginaActual > 0) {
-        const btnAnterior = document.createElement("button");
-        btnAnterior.className = "btn btn-sm btn-outline-secondary me-1";
-        btnAnterior.textContent = "← Anterior";
-        btnAnterior.addEventListener("click", () => {
-            paginaActual--;
-            aplicarFiltrosYBusqueda();
-        });
-        controles.appendChild(btnAnterior);
+    const mkBtn = (label, onClick, disabled) => {
+        const b = document.createElement("button");
+        b.className = "pag-btn" + (disabled ? " pag-btn-disabled" : "");
+        b.innerHTML = label;
+        b.disabled = disabled;
+        if (!disabled) b.addEventListener("click", onClick);
+        return b;
+    };
+
+    controles.appendChild(mkBtn(
+        '<i class="bi bi-chevron-left"></i>',
+        () => { paginaActual--; aplicarFiltrosYBusqueda(); },
+        paginaActual === 0
+    ));
+
+    for (let i = 0; i < totalPaginas; i++) {
+        const b = document.createElement("button");
+        b.className = "pag-btn" + (i === paginaActual ? " pag-btn-active" : "");
+        b.textContent = i + 1;
+        if (i !== paginaActual) b.addEventListener("click", () => { paginaActual = i; aplicarFiltrosYBusqueda(); });
+        controles.appendChild(b);
     }
 
-    if (paginaActual < totalPaginas - 1) {
-        const btnSiguiente = document.createElement("button");
-        btnSiguiente.className = "btn btn-sm btn-outline-secondary";
-        btnSiguiente.textContent = "Siguiente →";
-        btnSiguiente.addEventListener("click", () => {
-            paginaActual++;
-            aplicarFiltrosYBusqueda();
-        });
-        controles.appendChild(btnSiguiente);
-    }
+    controles.appendChild(mkBtn(
+        '<i class="bi bi-chevron-right"></i>',
+        () => { paginaActual++; aplicarFiltrosYBusqueda(); },
+        paginaActual === totalPaginas - 1
+    ));
 }
 
 

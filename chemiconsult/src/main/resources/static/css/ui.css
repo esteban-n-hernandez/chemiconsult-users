@@ -205,3 +205,65 @@
 .ui-btn-confirm.warning:hover   { background: #d97706; }
 .ui-btn-confirm.primary         { background: #2563eb; }
 .ui-btn-confirm.primary:hover   { background: #1d4ed8; }
+
+/* ══════════════════════════════════════════
+   PAGINACIÓN COMPARTIDA
+══════════════════════════════════════════ */
+.pag-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pag-btn {
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border-tertiary);
+    background: var(--bg-surface);
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: all 0.2s;
+    line-height: 1.4;
+    min-width: 28px;
+    text-align: center;
+    font-family: inherit;
+}
+
+.pag-btn:hover:not(:disabled) {
+    background: var(--verde);
+    color: white;
+    border-color: var(--verde);
+}
+
+.pag-btn-active {
+    background: var(--verde);
+    color: white;
+    border-color: var(--verde);
+    font-weight: 600;
+    cursor: default;
+}
+
+.pag-btn-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.pag-page-size {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.pag-page-size select {
+    padding: 3px 6px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--color-text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+}
