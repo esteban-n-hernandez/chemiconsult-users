@@ -10,6 +10,7 @@ public class ParametroMapper {
     public static ParametroDE createParametro(ParametroTO to) {
         ParametroDE parametro = new ParametroDE();
         parametro.setNombre(to.getNombre());
+        parametro.setTipoAnalisis(to.getTipoAnalisis());
         parametro.setActivo(true);
         parametro.setCreatedDate(LocalDate.now());
         parametro.setUpdateDate(LocalDate.now());
@@ -18,6 +19,7 @@ public class ParametroMapper {
 
     public static ParametroDE updateParametro(ParametroDE existing, ParametroTO to) {
         existing.setNombre(to.getNombre());
+        existing.setTipoAnalisis(to.getTipoAnalisis());
         existing.setUpdateDate(LocalDate.now());
         return existing;
     }

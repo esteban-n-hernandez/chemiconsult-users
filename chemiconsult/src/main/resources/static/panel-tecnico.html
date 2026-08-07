@@ -135,6 +135,14 @@
                                    placeholder="Ej: pH, Turbidez, Arsénico" required>
                         </div>
                         <div class="form-group-custom">
+                            <label>Tipo de análisis</label>
+                            <select id="paramTipo" class="form-control-custom">
+                                <option value="">Sin clasificar</option>
+                                <option value="FISICO_QUIMICO">Físico Químico</option>
+                                <option value="BACTERIOLOGICO">Bacteriológico</option>
+                            </select>
+                        </div>
+                        <div class="form-group-custom">
                             <label>Analista responsable</label>
                             <select id="paramAnalista" class="form-control-custom">
                                 <option value="">Sin asignar</option>
@@ -159,6 +167,7 @@
                         <thead>
                         <tr>
                             <th>Parámetro</th>
+                            <th>Tipo</th>
                             <th>Analista</th>
                             <th>Acción</th>
                         </tr>

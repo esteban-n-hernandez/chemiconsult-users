@@ -24,7 +24,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -187,14 +190,27 @@ public class InformeService {
         secResul.setSpacingAfter(6);
         doc.add(secResul);
 
-        Paragraph subSec = new Paragraph("Análisis Físico Químico", fSubseccion);
-        subSec.setSpacingAfter(8);
-        doc.add(subSec);
+        // Agrupar parámetros por tipoAnalisis y renderizar una tabla por grupo
+        List<String> resoluciones = d.getResolucionesAplicadas() != null
+                ? d.getResolucionesAplicadas() : List.of();
+        List<String> colLabels   = buildResolucionColumnLabels(resoluciones);
+        List<String> footnotes   = buildResolucionFootnotes(resoluciones);
+        Map<String, List<ParametroResultadoTO>> grupos = agruparPorTipo(d.getParametros());
 
-        // Tabla de resultados
-        addTabla(doc, d);
+        for (Map.Entry<String, List<ParametroResultadoTO>> entry : grupos.entrySet()) {
+            String tipo = entry.getKey();
+            if (!tipo.isEmpty()) {
+                Paragraph subSec = new Paragraph(labelTipoAnalisis(tipo), fSubseccion);
+                subSec.setSpacingAfter(8);
+                doc.add(subSec);
+            }
+            addTablaGrupo(doc, entry.getValue(), resoluciones, colLabels);
+        }
 
-        // Notas debajo de la tabla
+        // Notas de resoluciones (solo cuando hay más de una)
+        addNotasResoluciones(doc, footnotes, fNota);
+
+        // Notas de abreviaturas (CAA, Ley 19587)
         addNotas(doc, d, fNota);
 
         // Párrafo de conclusión
@@ -246,15 +262,88 @@ public class InformeService {
     }
 
     // ----------------------------------------------------------------
+    // Agrupación por tipo de análisis
+    // ----------------------------------------------------------------
+
+    private Map<String, List<ParametroResultadoTO>> agruparPorTipo(List<ParametroResultadoTO> params) {
+        Map<String, List<ParametroResultadoTO>> grupos = new LinkedHashMap<>();
+        if (params == null) return grupos;
+        for (ParametroResultadoTO p : params) {
+            String key = (p.getTipoAnalisis() != null && !p.getTipoAnalisis().isBlank())
+                    ? p.getTipoAnalisis() : "";
+            grupos.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
+        }
+        // Mover el grupo sin tipo al final si hay otros grupos con tipo
+        if (grupos.containsKey("") && grupos.size() > 1) {
+            List<ParametroResultadoTO> sinTipo = grupos.remove("");
+            grupos.put("", sinTipo);
+        }
+        return grupos;
+    }
+
+    private String labelTipoAnalisis(String tipo) {
+        return switch (tipo) {
+            case "FISICO_QUIMICO"  -> "Análisis Físico Químico";
+            case "BACTERIOLOGICO"  -> "Análisis Bacteriológico";
+            default -> "Análisis " + tipo;
+        };
+    }
+
+    // ----------------------------------------------------------------
+    // Cabeceras y notas de resoluciones (superíndices cuando hay >1)
+    // ----------------------------------------------------------------
+
+    private List<String> buildResolucionColumnLabels(List<String> resoluciones) {
+        if (resoluciones.size() <= 1) {
+            return resoluciones.stream().map(this::buildLimiteHeader).toList();
+        }
+        List<String> labels = new ArrayList<>();
+        for (int i = 0; i < resoluciones.size(); i++) {
+            labels.add("Límites" + superscriptNum(i + 1));
+        }
+        return labels;
+    }
+
+    private List<String> buildResolucionFootnotes(List<String> resoluciones) {
+        if (resoluciones.size() <= 1) return List.of();
+        List<String> notes = new ArrayList<>();
+        for (int i = 0; i < resoluciones.size(); i++) {
+            String nombre = resoluciones.get(i);
+            if (nombre.endsWith(" - Unico") || nombre.endsWith(" - Único")) {
+                nombre = nombre.substring(0, nombre.lastIndexOf(" - "));
+            }
+            notes.add(superscriptNum(i + 1) + " " + nombre);
+        }
+        return notes;
+    }
+
+    private String superscriptNum(int n) {
+        String[] sups = {"", "¹", "²", "³", "⁴", "⁵",
+                         "⁶", "⁷", "⁸", "⁹"};
+        return n > 0 && n < sups.length ? sups[n] : String.valueOf(n);
+    }
+
+    private void addNotasResoluciones(Document doc, List<String> footnotes,
+                                      Font fNota) throws DocumentException {
+        for (String note : footnotes) {
+            doc.add(new Paragraph(note, fNota));
+        }
+        if (!footnotes.isEmpty()) {
+            Paragraph espacio = new Paragraph(" ");
+            espacio.setSpacingAfter(2);
+            doc.add(espacio);
+        }
+    }
+
+    // ----------------------------------------------------------------
     // Tabla de resultados
     // ----------------------------------------------------------------
 
-    private void addTabla(Document doc, AnalisisDetalleTO d) throws DocumentException {
-        List<String> resoluciones = d.getResolucionesAplicadas() != null
-                ? d.getResolucionesAplicadas() : List.of();
-
+    private void addTablaGrupo(Document doc, List<ParametroResultadoTO> params,
+                                List<String> resoluciones,
+                                List<String> colLabels) throws DocumentException {
         int numCols = 3 + resoluciones.size() + 1;
-        float[] widths = buildWidthsDynamic(resoluciones, d.getParametros());
+        float[] widths = buildWidthsDynamic(colLabels, params);
 
         PdfPTable tabla = new PdfPTable(numCols);
         tabla.setWidthPercentage(100);
@@ -269,8 +358,8 @@ public class InformeService {
         addHeaderCell(tabla, "Analito", fHeader, headerBg);
         addHeaderCell(tabla, "Unidad", fHeader, headerBg);
         addHeaderCell(tabla, "Resultados", fHeader, headerBg);
-        for (String r : resoluciones) {
-            addHeaderCell(tabla, buildLimiteHeader(r), fHeader, headerBg);
+        for (String label : colLabels) {
+            addHeaderCell(tabla, label, fHeader, headerBg);
         }
         addHeaderCell(tabla, "Metodología", fHeader, headerBg);
 
@@ -278,31 +367,30 @@ public class InformeService {
         Font fResult = new Font(Font.HELVETICA, 9, Font.BOLD);
         Font fSmall = new Font(Font.HELVETICA, 8, Font.NORMAL);
 
-        if (d.getParametros() != null) {
-            for (ParametroResultadoTO p : d.getParametros()) {
-                addDataCell(tabla, nvl(p.getNombre()), fParam, Element.ALIGN_LEFT);
-                addDataCell(tabla, nvl(p.getUnidad()), fParam, Element.ALIGN_CENTER);
-                addDataCell(tabla, nvl(p.getValorResultado()), fResult, Element.ALIGN_CENTER);
-                for (String r : resoluciones) {
-                    addDataCell(tabla, findLimite(p.getLimites(), r), fParam, Element.ALIGN_CENTER);
-                }
-                addDataCell(tabla, nvl(p.getMetodologiaNombre()), fSmall, Element.ALIGN_LEFT);
+        for (ParametroResultadoTO p : params) {
+            addDataCell(tabla, nvl(p.getNombre()), fParam, Element.ALIGN_LEFT);
+            addDataCell(tabla, nvl(p.getUnidad()), fParam, Element.ALIGN_CENTER);
+            addDataCell(tabla, nvl(p.getValorResultado()), fResult, Element.ALIGN_CENTER);
+            for (String r : resoluciones) {
+                addDataCell(tabla, findLimite(p.getLimites(), r), fParam, Element.ALIGN_CENTER);
             }
+            addDataCell(tabla, nvl(p.getMetodologiaNombre()), fSmall, Element.ALIGN_LEFT);
         }
 
         doc.add(tabla);
     }
 
-    private float[] buildWidthsDynamic(List<String> resoluciones, List<ParametroResultadoTO> parametros) {
-        int cols = 4 + resoluciones.size();
+    private float[] buildWidthsDynamic(List<String> colLabels, List<ParametroResultadoTO> parametros) {
+        int numLimCols = colLabels.size();
+        int cols = 4 + numLimCols;
 
         // Arrancar con la longitud del header de cada columna
         int[] maxLen = new int[cols];
         maxLen[0] = 7;   // "Analito"
         maxLen[1] = 6;   // "Unidad"
         maxLen[2] = 10;  // "Resultados"
-        for (int i = 0; i < resoluciones.size(); i++) {
-            maxLen[3 + i] = buildLimiteHeader(resoluciones.get(i)).length();
+        for (int i = 0; i < numLimCols; i++) {
+            maxLen[3 + i] = colLabels.get(i).length();
         }
         maxLen[cols - 1] = 11; // "Metodología"
 
@@ -312,9 +400,13 @@ public class InformeService {
                 maxLen[0] = Math.max(maxLen[0], slen(p.getNombre()));
                 maxLen[1] = Math.max(maxLen[1], slen(p.getUnidad()));
                 maxLen[2] = Math.max(maxLen[2], slen(p.getValorResultado()));
-                for (int i = 0; i < resoluciones.size(); i++) {
-                    maxLen[3 + i] = Math.max(maxLen[3 + i],
-                            findLimite(p.getLimites(), resoluciones.get(i)).length());
+                if (p.getLimites() != null) {
+                    for (LimiteAplicableTO l : p.getLimites()) {
+                        String val = formatLimite(l);
+                        for (int i = 0; i < numLimCols; i++) {
+                            maxLen[3 + i] = Math.max(maxLen[3 + i], val.length());
+                        }
+                    }
                 }
                 maxLen[cols - 1] = Math.max(maxLen[cols - 1], slen(p.getMetodologiaNombre()));
             }
@@ -322,13 +414,14 @@ public class InformeService {
 
         // Pesos con clamp por tipo de columna
         float[] weights = new float[cols];
-        weights[0] = clampW(maxLen[0], 18, 40); // Analito: puede ser largo
-        weights[1] = clampW(maxLen[1], 5, 9); // Unidad: corto
-        weights[2] = clampW(maxLen[2], 8, 13); // Resultados: número corto
-        for (int i = 0; i < resoluciones.size(); i++) {
-            weights[3 + i] = clampW(maxLen[3 + i], 10, 24); // Límites
+        weights[0] = clampW(maxLen[0], 18, 40);
+        weights[1] = clampW(maxLen[1], 5, 9);
+        weights[2] = clampW(maxLen[2], 8, 13);
+        for (int i = 0; i < numLimCols; i++) {
+            // Con superíndices el header es corto ("Límites¹"), el contenido manda
+            weights[3 + i] = clampW(maxLen[3 + i], 8, 24);
         }
-        weights[cols - 1] = clampW(maxLen[cols - 1], 14, 36); // Metodología
+        weights[cols - 1] = clampW(maxLen[cols - 1], 14, 36);
 
         // Normalizar a 100 %
         float total = 0f;

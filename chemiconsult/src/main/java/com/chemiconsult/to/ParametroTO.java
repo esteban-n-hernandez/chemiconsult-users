@@ -7,6 +7,7 @@ public class ParametroTO {
 
     private String nombre;
     private Long responsableId;
+    private String tipoAnalisis;
     private Double valorMinimo;
     private Double valorMaximo;
     private String normaReferencia;

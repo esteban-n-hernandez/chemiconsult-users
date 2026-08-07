@@ -11,6 +11,7 @@ public class ParametroResultadoTO {
     private Long id;
     private String nombre;
     private String unidad;
+    private String tipoAnalisis;
     private Long metodologiaId;
     private String metodologiaNombre;
     private String valorResultado;
