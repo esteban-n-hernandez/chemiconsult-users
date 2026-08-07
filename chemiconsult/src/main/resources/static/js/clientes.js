@@ -4,7 +4,7 @@ const TOKEN   = () => localStorage.getItem('token');
 let todosLosClientes  = [];
 let clientesFiltrados = [];
 let paginaActual      = 1;
-const ITEMS_POR_PAGINA = 10;
+let ITEMS_POR_PAGINA  = 5;
 
 // ── NUEVO: variable que indica si estamos editando ──
 let clienteEditandoId = null;
@@ -29,6 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('inputBusqueda')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') buscarClientes();
+    });
+
+    document.getElementById('selectPageSize')?.addEventListener('change', e => {
+        ITEMS_POR_PAGINA = parseInt(e.target.value);
+        paginaActual = 1;
+        renderTabla();
     });
 });
 
@@ -130,19 +136,25 @@ function renderTabla() {
 }
 
 function renderPaginacion() {
-    const total = Math.ceil(clientesFiltrados.length / ITEMS_POR_PAGINA);
-    const ul    = document.getElementById('paginacion');
+    const total    = Math.ceil(clientesFiltrados.length / ITEMS_POR_PAGINA);
+    const controles = document.getElementById('paginacion');
+    controles.innerHTML = '';
+    if (total <= 1) return;
 
-    ul.innerHTML = Array.from({ length: total }, (_, i) => i + 1).map(n => `
-        <li class="${n === paginaActual ? 'active' : ''}">
-            <button onclick="irAPagina(${n})">${n}</button>
-        </li>
-    `).join('');
-}
+    const mkBtn = (label, onClick, disabled, active) => {
+        const b = document.createElement('button');
+        b.className = 'pag-btn' + (disabled ? ' pag-btn-disabled' : '') + (active ? ' pag-btn-active' : '');
+        b.innerHTML = label;
+        b.disabled  = disabled;
+        if (!disabled && !active) b.addEventListener('click', onClick);
+        return b;
+    };
 
-function irAPagina(n) {
-    paginaActual = n;
-    renderTabla();
+    controles.appendChild(mkBtn('<i class="bi bi-chevron-left"></i>', () => { paginaActual--; renderTabla(); }, paginaActual === 1, false));
+    for (let p = 1; p <= total; p++) {
+        controles.appendChild(mkBtn(p, () => { paginaActual = p; renderTabla(); }, false, p === paginaActual));
+    }
+    controles.appendChild(mkBtn('<i class="bi bi-chevron-right"></i>', () => { paginaActual++; renderTabla(); }, paginaActual === total, false));
 }
 
 // ══════════════════════════════════════════

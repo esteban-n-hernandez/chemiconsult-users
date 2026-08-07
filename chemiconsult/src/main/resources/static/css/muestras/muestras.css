@@ -115,12 +115,16 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 0;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .paginacion-info {
     font-size: 14px;
     color: var(--color-text-secondary);
 }
+
+/* Estilos de paginación (.pag-btn etc.) vienen de css/ui.css */
 
 button.btn-nueva-muestra-btn {
     font-size: 13px;

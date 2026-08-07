@@ -10,7 +10,7 @@ let items = [];
 let itemsFiltrados = [];
 let itemEditandoId = null;
 let itemEliminandoId = null;
-const POR_PAGINA = 10;
+let POR_PAGINA = 5;
 let paginaActual = 1;
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
@@ -96,6 +96,12 @@ inputBusqueda.addEventListener('input', aplicarFiltros);
 selectCategoria.addEventListener('change', aplicarFiltros);
 selectNivel.addEventListener('change', aplicarFiltros);
 
+document.getElementById('selectPageSize')?.addEventListener('change', e => {
+    POR_PAGINA = parseInt(e.target.value);
+    paginaActual = 1;
+    renderTabla();
+});
+
 // ── Tabla ────────────────────────────────────────────────────────────────────
 const CATEGORIA_LABEL = {
     REACTIVOS: 'Reactivos', SOLVENTES: 'Solventes',
@@ -148,26 +154,24 @@ function renderTabla() {
 }
 
 function renderPaginacion() {
-    const totalPags = Math.ceil(itemsFiltrados.length / POR_PAGINA);
+    const total = Math.ceil(itemsFiltrados.length / POR_PAGINA);
     paginacionEl.innerHTML = '';
-    if (totalPags <= 1) return;
+    if (total <= 1) return;
 
-    const crearBtn = (label, pagina, deshabilitado = false, activo = false) => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.innerHTML = label;
-        if (activo) btn.classList.add('active');
-        if (deshabilitado) btn.disabled = true;
-        btn.addEventListener('click', () => { paginaActual = pagina; renderTabla(); });
-        li.appendChild(btn);
-        return li;
+    const mkBtn = (label, onClick, disabled, active) => {
+        const b = document.createElement('button');
+        b.className = 'pag-btn' + (disabled ? ' pag-btn-disabled' : '') + (active ? ' pag-btn-active' : '');
+        b.innerHTML = label;
+        b.disabled  = disabled;
+        if (!disabled && !active) b.addEventListener('click', onClick);
+        return b;
     };
 
-    paginacionEl.appendChild(crearBtn('<i class="bi bi-chevron-left"></i>', paginaActual - 1, paginaActual === 1));
-    for (let p = 1; p <= totalPags; p++) {
-        paginacionEl.appendChild(crearBtn(p, p, false, p === paginaActual));
+    paginacionEl.appendChild(mkBtn('<i class="bi bi-chevron-left"></i>', () => { paginaActual--; renderTabla(); }, paginaActual === 1, false));
+    for (let p = 1; p <= total; p++) {
+        paginacionEl.appendChild(mkBtn(p, () => { paginaActual = p; renderTabla(); }, false, p === paginaActual));
     }
-    paginacionEl.appendChild(crearBtn('<i class="bi bi-chevron-right"></i>', paginaActual + 1, paginaActual === totalPags));
+    paginacionEl.appendChild(mkBtn('<i class="bi bi-chevron-right"></i>', () => { paginaActual++; renderTabla(); }, paginaActual === total, false));
 }
 
 // ── Modal alta / edición ─────────────────────────────────────────────────────

@@ -29,6 +29,9 @@ public class ParametroDE {
                             "hibernateLazyInitializer", "handler"})
     private UserDE responsable;
 
+    @Column(name = "TIPO_ANALISIS")
+    private String tipoAnalisis;
+
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
 

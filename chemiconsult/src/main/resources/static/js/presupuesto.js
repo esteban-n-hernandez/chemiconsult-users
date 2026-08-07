@@ -334,6 +334,11 @@ document.getElementById("npBtnGenerar").addEventListener("click", async () => {
 
 let historialData = [];
 let filtroEstado  = "";
+let POR_PAGINA    = 5;
+let paginaActual  = 1;
+
+const infoPag    = document.getElementById("infoPaginacion");
+const pagControls = document.getElementById("paginacion");
 
 async function cargarHistorial() {
     try {
@@ -352,14 +357,18 @@ function renderHistorial() {
         ? historialData.filter(p => p.estado === filtroEstado)
         : historialData;
 
-    const tbody = document.getElementById("histBody");
+    const tbody  = document.getElementById("histBody");
+    const inicio = (paginaActual - 1) * POR_PAGINA;
+    const pagina = data.slice(inicio, inicio + POR_PAGINA);
 
     if (data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="hist-loading">Sin presupuestos${filtroEstado ? " en este estado" : ""}.</td></tr>`;
+        if (infoPag) infoPag.textContent = "Sin resultados";
+        if (pagControls) pagControls.innerHTML = "";
         return;
     }
 
-    tbody.innerHTML = data.map(p => `
+    tbody.innerHTML = pagina.map(p => `
         <tr class="${p.estado === "PENDIENTE" ? "hist-row-pendiente" : ""}">
             <td><span class="cod-badge">N°${String(p.numero).padStart(7, "0")}</span></td>
             <td>${formatFecha(p.fecha)}</td>
@@ -386,6 +395,32 @@ function renderHistorial() {
             </td>
         </tr>
     `).join("");
+
+    const fin = Math.min(inicio + POR_PAGINA, data.length);
+    if (infoPag) infoPag.textContent = `Mostrando ${inicio + 1}–${fin} de ${data.length} presupuestos`;
+    renderPaginacionPres(data.length);
+}
+
+function renderPaginacionPres(totalItems) {
+    if (!pagControls) return;
+    const total = Math.ceil(totalItems / POR_PAGINA);
+    pagControls.innerHTML = '';
+    if (total <= 1) return;
+
+    const mkBtn = (label, onClick, disabled, active) => {
+        const b = document.createElement('button');
+        b.className = 'pag-btn' + (disabled ? ' pag-btn-disabled' : '') + (active ? ' pag-btn-active' : '');
+        b.innerHTML = label;
+        b.disabled  = disabled;
+        if (!disabled && !active) b.addEventListener('click', onClick);
+        return b;
+    };
+
+    pagControls.appendChild(mkBtn('<i class="bi bi-chevron-left"></i>', () => { paginaActual--; renderHistorial(); }, paginaActual === 1, false));
+    for (let p = 1; p <= total; p++) {
+        pagControls.appendChild(mkBtn(p, () => { paginaActual = p; renderHistorial(); }, false, p === paginaActual));
+    }
+    pagControls.appendChild(mkBtn('<i class="bi bi-chevron-right"></i>', () => { paginaActual++; renderHistorial(); }, paginaActual === total, false));
 }
 
 function labelEstado(e) {
@@ -397,8 +432,15 @@ document.querySelectorAll(".hist-filter-btn").forEach(btn => {
         document.querySelectorAll(".hist-filter-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         filtroEstado = btn.dataset.estado;
+        paginaActual = 1;
         renderHistorial();
     });
+});
+
+document.getElementById("selectPageSize")?.addEventListener("change", e => {
+    POR_PAGINA   = parseInt(e.target.value);
+    paginaActual = 1;
+    renderHistorial();
 });
 
 document.getElementById("btnRefreshHistorial").addEventListener("click", cargarHistorial);

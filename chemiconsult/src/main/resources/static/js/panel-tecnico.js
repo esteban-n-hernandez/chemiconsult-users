@@ -7,6 +7,14 @@ function esc(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function labelTipoAnalisis(tipo) {
+    const mapa = {
+        FISICO_QUIMICO: 'Físico Químico',
+        BACTERIOLOGICO: 'Bacteriológico',
+    };
+    return tipo ? (mapa[tipo] || tipo) : '<span class="text-muted-pt">—</span>';
+}
+
 // ── Estado por tabla ──
 const tablas = {
     resoluciones: {
@@ -31,24 +39,35 @@ const tablas = {
         tbodyId: 'tablaParametrosBody',
         filtroId: 'filtroParametros',
         pagId:    'paginadorParametros',
-        colSpan:  3,
+        colSpan:  4,
         data: [], filtro: '', pagina: 1,
         renderFila: r => {
             const analista = r.responsable
                 ? `<span class="badge-analista">${esc(r.responsable.username)}</span>`
                 : '<span class="text-muted-pt">Sin asignar</span>';
-            return `<td>${r.nombre}</td><td>${analista}</td>`;
+            const tipoLabel = labelTipoAnalisis(r.tipoAnalisis);
+            return `<td>${r.nombre}</td><td>${tipoLabel}</td><td>${analista}</td>`;
         },
         textoVacio: 'No hay parámetros cargados.',
-        textoBuscar: r => `${r.nombre} ${r.responsable?.username || ''}`,
+        textoBuscar: r => `${r.nombre} ${r.responsable?.username || ''} ${r.tipoAnalisis || ''}`,
         renderAccionesExtra: r => `<button class="btn-accion-info" onclick="verMetodologias(${r.id}, '${esc(r.nombre)}')" title="Metodologías asociadas"><i class="bi bi-journal-bookmark"></i></button>`,
         editUrl: id => `${API_URL}/parametros/${id}`,
         renderFilaEdit: r => {
             const opts = empleadosCache.map(u =>
                 `<option value="${u.id}" ${r.responsable?.id === u.id ? 'selected' : ''}>${esc(u.username)}</option>`
             ).join('');
+            const tipoOpts = [
+                { value: '', label: 'Sin clasificar' },
+                { value: 'FISICO_QUIMICO', label: 'Físico Químico' },
+                { value: 'BACTERIOLOGICO', label: 'Bacteriológico' },
+            ].map(o => `<option value="${o.value}" ${(r.tipoAnalisis || '') === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
             return `
                 <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
+                <td>
+                    <select id="ef-tipo" class="unidad-inline-input" style="width:100%">
+                        ${tipoOpts}
+                    </select>
+                </td>
                 <td>
                     <select id="ef-responsable" class="unidad-inline-input" style="width:100%">
                         <option value="">Sin asignar</option>
@@ -58,6 +77,7 @@ const tablas = {
         },
         buildPutBody: () => ({
             nombre:        document.getElementById('ef-nombre').value.trim(),
+            tipoAnalisis:  document.getElementById('ef-tipo').value || null,
             responsableId: document.getElementById('ef-responsable').value
                            ? Number(document.getElementById('ef-responsable').value)
                            : null,
@@ -287,8 +307,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const token = localStorage.getItem('token');
         const respVal = document.getElementById('paramAnalista').value;
+        const tipoVal = document.getElementById('paramTipo').value;
         const body = {
             nombre:        document.getElementById('paramNombre').value.trim(),
+            tipoAnalisis:  tipoVal || null,
             responsableId: respVal ? Number(respVal) : null,
         };
         try {
