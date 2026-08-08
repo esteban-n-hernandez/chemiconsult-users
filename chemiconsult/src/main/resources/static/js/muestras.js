@@ -3,6 +3,10 @@
 
 const API_URL = `${API_BASE}/api`;
 
+function esc(s) {
+    return (s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // FIX: endpoint real ya disponible con datos cargados (matriz Líquida) — mock desactivado.
 // Volver a true solo si necesitás developear sin backend levantado.
 const USAR_MOCK_NORMATIVAS = false;
@@ -408,7 +412,7 @@ function vincularEventos() {
             });
             recalcularEstadoBtnGenerarInforme();
         }
-        if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-obs-input")) {
+        if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-obs-input") || e.target.classList.contains("param-metodologia-select")) {
             dispararAutoGuardar();
         }
     }
@@ -1307,7 +1311,7 @@ function renderizarTablaMuestras(lista) {
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
-            <td>${m.matrizNombre || m.tipoAnalisis || '—'}</td>
+            <td>${m.tipoMuestraNombre || m.matrizNombre || '—'}</td>
             <td>${badgeHTML(m.estado)}</td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
@@ -1695,12 +1699,19 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
         const nLimites   = hayLimites ? p.limites.length : 0;
 
         const opcMetod = metodCatalog.get(p.id) || [];
-        const metodoHtml = opcMetod.length > 0 && !bloqueado
-            ? `<select class="param-metodologia-select" data-parametro-id="${p.id}">
-                   <option value="">Sin metodología</option>
-                   ${opcMetod.map(m => `<option value="${m.id}"${p.metodologiaId === m.id ? " selected" : ""}>${m.nombre}</option>`).join("")}
-               </select>`
-            : `<div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>`;
+        let metodoHtml;
+        if (opcMetod.length === 0 || bloqueado) {
+            metodoHtml = `<div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>`;
+        } else if (opcMetod.length === 1) {
+            // Una sola metodología: muestra como texto y pre-selecciona con hidden input
+            metodoHtml = `<div class="param-card-metodo">${esc(opcMetod[0].nombre)}</div>
+                <input type="hidden" class="param-metodologia-hidden" data-parametro-id="${p.id}" value="${opcMetod[0].id}">`;
+        } else {
+            metodoHtml = `<select class="param-metodologia-select" data-parametro-id="${p.id}">
+                <option value="">Sin metodología</option>
+                ${opcMetod.map(m => `<option value="${m.id}"${p.metodologiaId === m.id ? " selected" : ""}>${m.nombre}</option>`).join("")}
+            </select>`;
+        }
 
         card.innerHTML = `
             <div class="param-card-header">
@@ -1813,6 +1824,30 @@ function actualizarBadge(badge, valorStr) {
         return;
     }
 
+    // Valores con prefijo de comparación (<0.05, <=0.05, >5, >=5)
+    const prefixMatch = valorStr.replace(",", ".").trim().match(/^([<>]=?)(.+)$/);
+    if (prefixMatch) {
+        const umbral = parseFloat(prefixMatch[2].trim());
+        if (!isNaN(umbral)) {
+            const esMenor = prefixMatch[1] === "<" || prefixMatch[1] === "<=";
+            let min = parseFloat(badge.dataset.min);
+            let max = parseFloat(badge.dataset.max);
+            if ((isNaN(min) || isNaN(max)) && (tipo === "RANGO" || tipo === "MAX" || tipo === "MIN")) {
+                const rango = parsearRangoTexto(badge.dataset.texto);
+                if (rango) { min = rango.min; max = rango.max; }
+            }
+            let cumple = null;
+            if (esMenor) {
+                if (tipo === "MAX" && !isNaN(max) && umbral <= max) cumple = true;
+            } else {
+                if (tipo === "MAX" && !isNaN(max) && umbral >= max) cumple = false;
+                else if (tipo === "MIN" && !isNaN(min) && umbral >= min) cumple = true;
+            }
+            aplicarCumpleBadge(badge, cumple);
+            return;
+        }
+    }
+
     const valor = parseFloat(valorStr.replace(",", ".").trim());
     if (isNaN(valor)) {
         badge.className = "badge-cumple badge-cumple-nd";
@@ -1876,10 +1911,14 @@ async function autoGuardar() {
             const parametroId = parseInt(input.dataset.parametroId);
             const obsInput = document.getElementById(`obs-param-${parametroId}`);
             const rawVal = input.value.trim();
+            const selectMetod = document.querySelector(`.param-metodologia-select[data-parametro-id="${parametroId}"]`);
+            const hiddenMetod = document.querySelector(`.param-metodologia-hidden[data-parametro-id="${parametroId}"]`);
+            const metodRaw = selectMetod ? selectMetod.value : (hiddenMetod ? hiddenMetod.value : null);
             resultados.push({
                 parametroId,
                 valorResultado: rawVal !== "" ? rawVal : null,
                 observacion: obsInput ? (obsInput.value.trim() || null) : null,
+                metodologiaId: metodRaw ? (parseInt(metodRaw) || null) : null,
             });
         });
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/resultados`, {

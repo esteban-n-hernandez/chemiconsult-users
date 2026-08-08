@@ -386,7 +386,7 @@
 
 <!-- Modal: metodologías de un parámetro -->
 <div class="params-overlay" id="metodoOverlay" onclick="cerrarMetodoOverlay(event)">
-    <div class="params-modal" style="max-width:560px;">
+    <div class="params-modal" style="max-width:680px;">
         <div class="params-modal-header">
             <h5 id="metodoModalTitulo">Metodologías</h5>
             <button class="params-modal-close" onclick="document.getElementById('metodoOverlay').classList.remove('visible')" title="Cerrar">
@@ -406,9 +406,11 @@
             </table>
 
             <div class="destino-crear-form" style="margin-top:18px;gap:8px;flex-wrap:wrap;">
-                <select id="metodoSelectMetod" class="form-control-custom" style="flex:2;min-width:160px;">
-                    <option value="">Seleccionar metodología…</option>
-                </select>
+                <div class="metodo-combo-wrap" style="flex:2;min-width:160px;">
+                    <input type="text" id="metodoSearchInput" class="form-control-custom" placeholder="Buscar metodología…" autocomplete="off" style="width:100%">
+                    <input type="hidden" id="metodoSelectMetod">
+                    <div class="metodo-combo-drop" id="metodoComboDrop"></div>
+                </div>
                 <select id="metodoSelectMatriz" class="form-control-custom" style="flex:1;min-width:130px;">
                     <option value="">Cualquier matriz</option>
                 </select>

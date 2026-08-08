@@ -22,6 +22,7 @@ public class EstudioTO {
     private String fechaEntrega;
     private String puntoMuestreo;
     private Long tipoMuestraId;
+    private String tipoMuestraNombre;
     private Long clienteId;    // NUEVO — reemplaza a userId como entrada de alta
     private Long sucursalId;   // NUEVO — opcional
     private Long matrizId;

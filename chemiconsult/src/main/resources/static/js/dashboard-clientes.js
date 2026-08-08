@@ -58,7 +58,7 @@ async function cargarEstudios() {
         todasLasMuestras = data.map(e => ({
             id:       e.id,
             codigo:    e.nroProtocolo || `ID-${e.id}`,
-            tipo:      e.tipo || "—",
+            tipo:      e.tipoMuestraNombre || e.tipo || "—",
             fechaRaw:  e.fechaIngreso || e.createdDate || "",
             fecha:     e.fechaIngreso
                 ? new Date(e.fechaIngreso + "T00:00:00").toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })

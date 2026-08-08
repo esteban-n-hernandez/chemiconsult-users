@@ -165,17 +165,14 @@ public class InformeService {
         doc.add(fechaLine);
 
         addCampoConLinea(doc, "Cliente", upper(d.getCliente()), fLabel, fValor);
-        if (d.getMatrizNombre() != null && !d.getMatrizNombre().isBlank()) {
-            addCampo(doc, "Muestra", d.getMatrizNombre(), fLabel, fValor);
+        String labelMuestra = (d.getTipoMuestraNombre() != null && !d.getTipoMuestraNombre().isBlank())
+                ? d.getTipoMuestraNombre() : d.getMatrizNombre();
+        if (labelMuestra != null && !labelMuestra.isBlank()) {
+            addCampo(doc, "Muestra", labelMuestra, fLabel, fValor);
         }
         if (d.getPuntoMuestreo() != null && !d.getPuntoMuestreo().isBlank()) {
             addCampo(doc, "Punto de muestreo", d.getPuntoMuestreo(), fLabel, fValor);
         }
-       /* Tipo de muestra
-        if (d.getTipoMuestraNombre() != null && !d.getTipoMuestraNombre().isBlank()) {
-            addCampo(doc, "Tipo de muestra", d.getTipoMuestraNombre(), fLabel, fValor);
-        }
-        */
 
         addCampo(doc, "Protocolo de análisis", "N°" + nvl(d.getNroProtocolo()), fLabel, fValor);
         addCampo(doc, "Fecha recepción de la muestra", formatFecha(d.getFechaIngreso()), fLabel, fValor);
