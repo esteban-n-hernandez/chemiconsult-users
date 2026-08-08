@@ -427,6 +427,38 @@
     font-size: 12px;
 }
 
+/* ── Combobox buscable de metodología ── */
+.metodo-combo-wrap {
+    position: relative;
+}
+.metodo-combo-drop {
+    display: none;
+    position: fixed;
+    z-index: 1400;
+    background: var(--bg-surface);
+    border: 1.5px solid var(--verde);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.14);
+    overflow-y: auto;
+    max-height: 200px;
+}
+.metodo-combo-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-tertiary);
+    transition: background .1s;
+}
+.metodo-combo-item:last-child { border-bottom: none; }
+.metodo-combo-item:hover { background: var(--bg-subtle); color: var(--verde); }
+.metodo-combo-empty {
+    color: var(--color-text-secondary);
+    font-style: italic;
+    cursor: default;
+}
+.metodo-combo-empty:hover { background: none; color: var(--color-text-secondary); }
+
 .destino-section {
     border: 1px solid var(--color-border-tertiary);
     border-radius: 10px;
@@ -581,6 +613,30 @@
     font-size: 12px;
     color: var(--color-text-secondary);
     padding: 0 4px;
+}
+
+.pag-pp-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    margin-right: 6px;
+}
+
+.pag-pp-select {
+    padding: 3px 6px;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 6px;
+    font-size: 12px;
+    background: var(--bg-surface);
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+}
+.pag-pp-select:focus {
+    border-color: var(--verde);
 }
 
 @media (max-width: 1100px) {

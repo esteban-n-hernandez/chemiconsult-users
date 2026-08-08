@@ -1,5 +1,4 @@
 const API_URL = `${API_BASE}/api`;
-const POR_PAGINA = 10;
 
 let empleadosCache = [];
 
@@ -23,7 +22,7 @@ const tablas = {
         filtroId: 'filtroResoluciones',
         pagId:    'paginadorResoluciones',
         colSpan:  3,
-        data: [], filtro: '', pagina: 1,
+        data: [], filtro: '', pagina: 1, porPagina: 10,
         renderFila: r => `<td>${r.nombre}</td><td>${r.descripcion || '-'}</td>`,
         textoVacio: 'No hay resoluciones registradas.',
         textoBuscar: r => `${r.nombre} ${r.descripcion || ''}`,
@@ -40,7 +39,8 @@ const tablas = {
         filtroId: 'filtroParametros',
         pagId:    'paginadorParametros',
         colSpan:  4,
-        data: [], filtro: '', pagina: 1,
+        data: [], filtro: '', pagina: 1, porPagina: 10,
+        sortFn: (a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }),
         renderFila: r => {
             const analista = r.responsable
                 ? `<span class="badge-analista">${esc(r.responsable.username)}</span>`
@@ -89,7 +89,7 @@ const tablas = {
         filtroId: 'filtroMetodologias',
         pagId:    'paginadorMetodologias',
         colSpan:  3,
-        data: [], filtro: '', pagina: 1,
+        data: [], filtro: '', pagina: 1, porPagina: 10,
         renderFila: r => `<td>${r.nombre}</td><td>${r.descripcion || '-'}</td>`,
         textoVacio: 'No hay metodologías cargadas.',
         textoBuscar: r => `${r.nombre} ${r.descripcion || ''}`,
@@ -105,7 +105,7 @@ const tablas = {
         filtroId: 'filtroTiposMuestra',
         pagId:    'paginadorTiposMuestra',
         colSpan:  3,
-        data: [], filtro: '', pagina: 1,
+        data: [], filtro: '', pagina: 1, porPagina: 10,
         renderFila: r => `<td>${r.nombre}</td><td>${r.matriz?.nombre || '-'}</td>`,
         textoVacio: 'No hay tipos de muestra registrados.',
         textoBuscar: r => `${r.nombre} ${r.matriz?.nombre || ''}`,
@@ -121,7 +121,7 @@ const tablas = {
         filtroId: 'filtroCategoriasDoc',
         pagId:    'paginadorCategoriasDoc',
         colSpan:  2,
-        data: [], filtro: '', pagina: 1,
+        data: [], filtro: '', pagina: 1, porPagina: 10,
         renderFila: r => `<td>${r.nombre}</td>`,
         textoVacio: 'No hay categorías registradas.',
         textoBuscar: r => r.nombre,
@@ -208,6 +208,7 @@ async function cargarTabla(nombre) {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         t.data = await res.json();
+        if (t.sortFn) t.data.sort(t.sortFn);
         renderTabla(nombre);
     } catch (err) {
         console.error(`Error cargando ${nombre}:`, err);
@@ -223,11 +224,12 @@ function renderTabla(nombre) {
         ? t.data.filter(r => t.textoBuscar(r).toLowerCase().includes(t.filtro))
         : t.data;
 
-    const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+    const pp = t.porPagina || 10;
+    const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pp));
     if (t.pagina > totalPaginas) t.pagina = totalPaginas;
 
-    const inicio = (t.pagina - 1) * POR_PAGINA;
-    const pagina = filtrados.slice(inicio, inicio + POR_PAGINA);
+    const inicio = (t.pagina - 1) * pp;
+    const pagina = filtrados.slice(inicio, inicio + pp);
 
     const tbody = document.getElementById(t.tbodyId);
 
@@ -256,22 +258,38 @@ function renderTabla(nombre) {
 
 function renderPaginador(nombre, total, totalPaginas) {
     const t = tablas[nombre];
-    const inicio = Math.min((t.pagina - 1) * POR_PAGINA + 1, total);
-    const fin    = Math.min(t.pagina * POR_PAGINA, total);
+    const pp = t.porPagina || 10;
+    const inicio = Math.min((t.pagina - 1) * pp + 1, total);
+    const fin    = Math.min(t.pagina * pp, total);
 
     const infoTexto = total === 0
         ? 'Sin resultados'
         : `Mostrando ${inicio}–${fin} de ${total}`;
 
+    const opcionesPP = [5, 10, 15].map(v =>
+        `<option value="${v}" ${pp === v ? 'selected' : ''}>${v}</option>`
+    ).join('');
+
     document.getElementById(t.pagId).innerHTML = `
         <span class="pag-info">${infoTexto}</span>
         <div class="pag-controles">
+            <label class="pag-pp-label">Por página:
+                <select class="pag-pp-select" onchange="cambiarPorPagina('${nombre}', this.value)">
+                    ${opcionesPP}
+                </select>
+            </label>
             <button class="pag-btn" onclick="cambiarPagina('${nombre}', ${t.pagina - 1})"
                 ${t.pagina <= 1 ? 'disabled' : ''}>‹ Anterior</button>
             <span class="pag-pagina">${t.pagina} / ${totalPaginas}</span>
             <button class="pag-btn" onclick="cambiarPagina('${nombre}', ${t.pagina + 1})"
                 ${t.pagina >= totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
         </div>`;
+}
+
+function cambiarPorPagina(nombre, valor) {
+    tablas[nombre].porPagina = parseInt(valor, 10);
+    tablas[nombre].pagina = 1;
+    renderTabla(nombre);
 }
 
 function cambiarPagina(nombre, nuevaPagina) {
@@ -559,7 +577,7 @@ function _renderEditorParams(detalle, todosLosParams) {
                 </div>
                 <div class="params-section-label">Parámetros (${(d.parametros || []).length})</div>
                 <table class="tabla-config">
-                    <thead><tr><th>Parámetro</th><th>Unidad</th><th>Límite</th><th></th></tr></thead>
+                    <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th>Límite</th><th></th></tr></thead>
                     <tbody>${filasIncluidos}</tbody>
                 </table>
                 <details class="destino-agregar-params">
@@ -567,7 +585,7 @@ function _renderEditorParams(detalle, todosLosParams) {
                     <input type="text" class="tabla-filtro params-buscador" placeholder="Buscar..."
                            oninput="filtrarParamsExcluidosDestino(this, ${d.id})">
                     <table class="tabla-config">
-                        <thead><tr><th>Parámetro</th><th>Unidad</th><th></th></tr></thead>
+                        <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th></th></tr></thead>
                         <tbody>${filasExcluidos}</tbody>
                     </table>
                 </details>
@@ -844,6 +862,9 @@ async function verMetodologias(parametroId, parametroNombre) {
     _metodoParamId = parametroId;
     document.getElementById('metodoModalTitulo').textContent = `Metodologías — ${parametroNombre}`;
     document.getElementById('metodoTbody').innerHTML = '<tr><td colspan="3" style="padding:12px;color:#888">Cargando…</td></tr>';
+    document.getElementById('metodoSearchInput').value = '';
+    document.getElementById('metodoSelectMetod').value = '';
+    document.getElementById('metodoComboDrop').style.display = 'none';
     document.getElementById('metodoOverlay').classList.add('visible');
 
     await Promise.all([
@@ -888,18 +909,61 @@ function _renderMetodoTabla(lista) {
 }
 
 async function _poblarSelectMetodologias() {
-    if (_metodologiasList.length > 0) return;  // ya cargadas
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(`${API_URL}/metodologias`, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!res.ok) return;
-        _metodologiasList = await res.json();
-        const sel = document.getElementById('metodoSelectMetod');
-        sel.innerHTML = '<option value="">Seleccionar metodología…</option>' +
-            _metodologiasList.map(m => `<option value="${m.id}">${esc(m.nombre)}</option>`).join('');
+        if (_metodologiasList.length === 0) {
+            const res = await fetch(`${API_URL}/metodologias`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!res.ok) return;
+            _metodologiasList = (await res.json()).sort((a, b) =>
+                a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+        }
+        _initMetodoCombo();
     } catch {
-        // silencioso — el select queda vacío
+        // silencioso
     }
+}
+
+function _renderComboDrop(query) {
+    const input = document.getElementById('metodoSearchInput');
+    const drop  = document.getElementById('metodoComboDrop');
+    const q = query.toLowerCase();
+    const filtrados = q ? _metodologiasList.filter(m => m.nombre.toLowerCase().includes(q)) : _metodologiasList;
+    if (filtrados.length === 0) {
+        drop.innerHTML = '<div class="metodo-combo-item metodo-combo-empty">Sin resultados</div>';
+    } else {
+        drop.innerHTML = filtrados.map(m =>
+            `<div class="metodo-combo-item" data-id="${m.id}" data-nombre="${esc(m.nombre)}">${esc(m.nombre)}</div>`
+        ).join('');
+        drop.querySelectorAll('.metodo-combo-item').forEach(item => {
+            item.addEventListener('mousedown', e => {
+                e.preventDefault();
+                document.getElementById('metodoSelectMetod').value = item.dataset.id;
+                document.getElementById('metodoSearchInput').value = item.dataset.nombre;
+                drop.style.display = 'none';
+            });
+        });
+    }
+    // Posicionar con fixed para escapar del overflow del modal
+    const rect = input.getBoundingClientRect();
+    drop.style.top   = (rect.bottom + 2) + 'px';
+    drop.style.left  = rect.left + 'px';
+    drop.style.width = rect.width + 'px';
+    drop.style.display = 'block';
+}
+
+function _initMetodoCombo() {
+    const input = document.getElementById('metodoSearchInput');
+    const clone = input.cloneNode(true);
+    input.parentNode.replaceChild(clone, input);
+
+    clone.addEventListener('input', e => {
+        document.getElementById('metodoSelectMetod').value = '';
+        _renderComboDrop(e.target.value.trim());
+    });
+    clone.addEventListener('focus', () => _renderComboDrop(clone.value.trim()));
+    clone.addEventListener('blur', () => {
+        setTimeout(() => { document.getElementById('metodoComboDrop').style.display = 'none'; }, 150);
+    });
 }
 
 async function agregarMetodologia() {
@@ -925,6 +989,7 @@ async function agregarMetodologia() {
             return;
         }
         mostrarToast('Metodología agregada.', 'success');
+        document.getElementById('metodoSearchInput').value = '';
         document.getElementById('metodoSelectMetod').value = '';
         document.getElementById('metodoSelectMatriz').value = '';
         await _cargarMetodologiasDelParam();
