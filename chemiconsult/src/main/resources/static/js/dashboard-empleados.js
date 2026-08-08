@@ -984,7 +984,7 @@ function mostrarMuestras(estudios) {
             id: est.id || est._id || est.codigo || est.protocolo || null,
             codigo: est.nroProtocolo || est.protocolo || est.codigo || est.id || "-",
             cliente: est.cliente || est.clienteNombre || est.customer || "-",
-            tipo: est.tipo || est.tipoAnalisis || est.tipo_de_analisis || "-",
+            tipo: est.tipoMuestraNombre || est.tipo || est.tipoAnalisis || est.tipo_de_analisis || "-",
             estado: est.estado || est.status || "-",
             tieneInforme: (est.estado || est.status || "").toString().toUpperCase() === "COMPLETO",
             fechaAlta: formatearFechaDMY(

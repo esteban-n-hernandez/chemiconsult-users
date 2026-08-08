@@ -43,6 +43,7 @@ public class EstudiosMapper {
                 .fechaIngreso(entity.getFechaIngreso() != null ? entity.getFechaIngreso().toString() : null)
                 .fechaEntrega(entity.getFechaEntrega() != null ? entity.getFechaEntrega().toString() : null)
                 .createdDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
+                .tipoMuestraNombre(entity.getTipoMuestra() != null ? entity.getTipoMuestra().getNombre() : null)
                 .build();
     }
 

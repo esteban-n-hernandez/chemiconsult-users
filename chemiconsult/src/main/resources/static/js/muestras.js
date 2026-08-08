@@ -1307,7 +1307,7 @@ function renderizarTablaMuestras(lista) {
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
-            <td>${m.matrizNombre || m.tipoAnalisis || '—'}</td>
+            <td>${m.tipoMuestraNombre || m.matrizNombre || '—'}</td>
             <td>${badgeHTML(m.estado)}</td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
@@ -1811,6 +1811,30 @@ function actualizarBadge(badge, valorStr) {
             badge.textContent = "Sin evaluar";
         }
         return;
+    }
+
+    // Valores con prefijo de comparación (<0.05, <=0.05, >5, >=5)
+    const prefixMatch = valorStr.replace(",", ".").trim().match(/^([<>]=?)(.+)$/);
+    if (prefixMatch) {
+        const umbral = parseFloat(prefixMatch[2].trim());
+        if (!isNaN(umbral)) {
+            const esMenor = prefixMatch[1] === "<" || prefixMatch[1] === "<=";
+            let min = parseFloat(badge.dataset.min);
+            let max = parseFloat(badge.dataset.max);
+            if ((isNaN(min) || isNaN(max)) && (tipo === "RANGO" || tipo === "MAX" || tipo === "MIN")) {
+                const rango = parsearRangoTexto(badge.dataset.texto);
+                if (rango) { min = rango.min; max = rango.max; }
+            }
+            let cumple = null;
+            if (esMenor) {
+                if (tipo === "MAX" && !isNaN(max) && umbral <= max) cumple = true;
+            } else {
+                if (tipo === "MAX" && !isNaN(max) && umbral >= max) cumple = false;
+                else if (tipo === "MIN" && !isNaN(min) && umbral >= min) cumple = true;
+            }
+            aplicarCumpleBadge(badge, cumple);
+            return;
+        }
     }
 
     const valor = parseFloat(valorStr.replace(",", ".").trim());

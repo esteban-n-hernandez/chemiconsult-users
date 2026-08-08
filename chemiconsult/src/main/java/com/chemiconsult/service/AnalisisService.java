@@ -397,8 +397,36 @@ public class AnalisisService {
                 return val >= rango[0] && val <= rango[1];
             } catch (NumberFormatException e) { return null; }
         }
+        String vStr = valorStr.replace(",", ".").trim();
+        // Resultados con prefijo de comparación (<0.05, <=0.05, >5, >=5)
+        boolean esMenor  = vStr.startsWith("<=") || vStr.startsWith("<");
+        boolean esMayor  = !esMenor && (vStr.startsWith(">=") || vStr.startsWith(">"));
+        if (esMenor || esMayor) {
+            String numStr = vStr.replaceFirst("^[<>]=?", "").trim();
+            try {
+                double umbral = Double.parseDouble(numStr);
+                Double sMin = parseLimit(limite.getLimiteMin() != null ? limite.getLimiteMin() : limite.getLimiteOrigen().getValorMinimo());
+                Double sMax = parseLimit(limite.getLimiteMax() != null ? limite.getLimiteMax() : limite.getLimiteOrigen().getValorMaximo());
+                if (sMin == null || sMax == null) {
+                    double[] rango = parsearRangoTexto(limite.getLimiteOrigen().getLimiteTexto());
+                    if (rango != null) { sMin = rango[0]; sMax = rango[1]; }
+                }
+                if (esMenor) {
+                    // valor real < umbral: si umbral <= sMax, el valor definitivamente cumple el MAX
+                    return "MAX".equals(tipo) && sMax != null && umbral <= sMax ? true : null;
+                } else {
+                    // valor real > umbral: si umbral >= sMax, definitivamente NO cumple el MAX
+                    if ("MAX".equals(tipo) && sMax != null && umbral >= sMax) return false;
+                    // si umbral >= sMin, definitivamente cumple el MIN
+                    if ("MIN".equals(tipo) && sMin != null && umbral >= sMin) return true;
+                    return null;
+                }
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
         try {
-            double valor = Double.parseDouble(valorStr.replace(",", ".").trim());
+            double valor = Double.parseDouble(vStr);
             Double sMin = parseLimit(limite.getLimiteMin() != null ? limite.getLimiteMin() : limite.getLimiteOrigen().getValorMinimo());
             Double sMax = parseLimit(limite.getLimiteMax() != null ? limite.getLimiteMax() : limite.getLimiteOrigen().getValorMaximo());
             // Fallback: si min/max nulos, intentar parsear limiteTexto como "X/Y"
