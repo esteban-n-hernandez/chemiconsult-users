@@ -1000,6 +1000,7 @@ function mostrarMuestras(estudios) {
     allEstudios = mapped;
     // Solo activas para la tabla
     allMuestras = mapped.filter((m) => ESTADOS_VISIBLES.has(normalizarEstado(m.estado)));
+    allMuestras.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
 
     const demoTotal = parseInt(localStorage.getItem("demoTotal") || "0");
     if (demoTotal > allMuestras.length) {
