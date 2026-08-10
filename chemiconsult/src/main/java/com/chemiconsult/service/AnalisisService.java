@@ -34,6 +34,7 @@ public class AnalisisService {
     private final BrevoEmailService   brevoEmailService;
     private final MetodologiaRepository metodologiaRepository;
     private final ParametroMetodologiaRepository parametroMetodologiaRepository;
+    private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -58,7 +59,7 @@ public class AnalisisService {
             log.info("Marcadas {} muestra(s) como DEMORADA por fecha de entrega vencida.", vencidas.size());
         }
         return all.stream()
-                .map(EstudiosMapper::mapEntityToEstudioTO)
+                .map(estudiosMapper::mapEntityToEstudioTO)
                 .toList();
     }
 
@@ -68,7 +69,7 @@ public class AnalisisService {
 
         return analisisRepository.findAllByCliente(cliente)
                 .stream()
-                .map(EstudiosMapper::mapEntityToEstudioTO)
+                .map(estudiosMapper::mapEntityToEstudioTO)
                 .toList();
     }
 
@@ -80,7 +81,7 @@ public class AnalisisService {
     public AnalisisDetalleTO getEstudioDetalle(Long id) {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Muestra no encontrada con ID: " + id));
-        return EstudiosMapper.mapEntityToDetalleTO(analisis);
+        return estudiosMapper.mapEntityToDetalleTO(analisis);
     }
 
     @Transactional
@@ -126,7 +127,7 @@ public class AnalisisService {
             }
         }
 
-        AnalisisDE analisis = EstudiosMapper.createEstudio(estudio, cliente, matriz, sucursal);
+        AnalisisDE analisis = estudiosMapper.createEstudio(estudio, cliente, matriz, sucursal);
         if (estudio.getTipoMuestraId() != null) {
             tipoMuestraRepository.findById(estudio.getTipoMuestraId())
                     .ifPresent(analisis::setTipoMuestra);
@@ -476,7 +477,8 @@ public class AnalisisService {
                            NumeradorService numeradorService,
                            BrevoEmailService brevoEmailService,
                            MetodologiaRepository metodologiaRepository,
-                           ParametroMetodologiaRepository parametroMetodologiaRepository) {
+                           ParametroMetodologiaRepository parametroMetodologiaRepository,
+                           com.chemiconsult.mapper.EstudiosMapper estudiosMapper) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -489,5 +491,6 @@ public class AnalisisService {
         this.brevoEmailService = brevoEmailService;
         this.metodologiaRepository = metodologiaRepository;
         this.parametroMetodologiaRepository = parametroMetodologiaRepository;
+        this.estudiosMapper = estudiosMapper;
     }
 }

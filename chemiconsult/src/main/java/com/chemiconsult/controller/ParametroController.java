@@ -79,15 +79,26 @@ public class ParametroController {
         return ResponseEntity.ok(parametroService.getMetodologias(id, matrizId));
     }
 
-    // POST /api/parametros/{id}/metodologias  body: { metodologiaId, matrizId? }
+    // POST /api/parametros/{id}/metodologias  body: { metodologiaId, matrizId?, tipoAnalisis? }
     @PostMapping("/{id}/metodologias")
     public ResponseEntity<ParametroMetodologiaDE> addMetodologia(
             @PathVariable Long id,
-            @RequestBody Map<String, Long> body) {
-        Long metodologiaId = body.get("metodologiaId");
-        Long matrizId      = body.get("matrizId");
-        ParametroMetodologiaDE pm = parametroService.addMetodologia(id, metodologiaId, matrizId);
+            @RequestBody Map<String, Object> body) {
+        Long metodologiaId = body.get("metodologiaId") != null ? ((Number) body.get("metodologiaId")).longValue() : null;
+        Long matrizId      = body.get("matrizId")      != null ? ((Number) body.get("matrizId")).longValue()      : null;
+        String tipoAnalisis = body.get("tipoAnalisis") != null ? body.get("tipoAnalisis").toString() : null;
+        ParametroMetodologiaDE pm = parametroService.addMetodologia(id, metodologiaId, matrizId, tipoAnalisis);
         return ResponseEntity.status(201).body(pm);
+    }
+
+    // PATCH /api/parametros/{id}/metodologias/{pmId}  body: { tipoAnalisis }
+    @PatchMapping("/{id}/metodologias/{pmId}")
+    public ResponseEntity<ParametroMetodologiaDE> updateMetodologiaTipo(
+            @PathVariable Long id,
+            @PathVariable Long pmId,
+            @RequestBody Map<String, String> body) {
+        ParametroMetodologiaDE pm = parametroService.updateMetodologiaTipo(id, pmId, body.get("tipoAnalisis"));
+        return ResponseEntity.ok(pm);
     }
 
     // DELETE /api/parametros/{id}/metodologias/{pmId}

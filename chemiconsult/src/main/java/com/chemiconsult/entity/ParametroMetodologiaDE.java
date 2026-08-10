@@ -30,4 +30,7 @@ public class ParametroMetodologiaDE {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "MATRIZ_ID")
     private MatrizDE matriz;
+
+    @Column(name = "TIPO_ANALISIS")
+    private String tipoAnalisis;
 }

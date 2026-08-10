@@ -401,6 +401,7 @@
                     <tr>
                         <th>Metodología</th>
                         <th>Matriz</th>
+                        <th>Grupo en informe</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -415,6 +416,16 @@
                 </div>
                 <select id="metodoSelectMatriz" class="form-control-custom" style="flex:1;min-width:130px;">
                     <option value="">Cualquier matriz</option>
+                </select>
+                <select id="metodoSelectTipo" class="form-control-custom" style="flex:1;min-width:160px;">
+                    <option value="">— Grupo en informe —</option>
+                    <option value="FISICO_QUIMICO">Físico Químico</option>
+                    <option value="BACTERIOLOGICO">Bacteriológico</option>
+                    <option value="CONTAMINANTES_ORGANICOS">Contaminantes orgánicos</option>
+                    <option value="HAPN">Hidrocarburos Aromáticos (HAPN)</option>
+                    <option value="PLAGUICIDAS_ORGANOFOSFORADOS">Plaguicidas organofosforados</option>
+                    <option value="PLAGUICIDAS_ORGANOCLORADOS">Plaguicidas organoclorados</option>
+                    <option value="METALES_PESADOS">Metales pesados</option>
                 </select>
                 <button type="button" class="btn-guardar-custom" onclick="agregarMetodologia()" style="white-space:nowrap;">
                     <i class="bi bi-plus-circle"></i> Agregar

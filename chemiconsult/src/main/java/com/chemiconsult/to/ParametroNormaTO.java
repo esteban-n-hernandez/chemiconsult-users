@@ -14,5 +14,6 @@ public class ParametroNormaTO {
     private String valorMinimo;
     private String valorMaximo;
     private String limiteTexto;
+    private String tipoAnalisis;
 }
 

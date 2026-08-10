@@ -102,7 +102,7 @@ public class ParametroService {
         return pmRepository.findByParametroId(parametroId);
     }
 
-    public ParametroMetodologiaDE addMetodologia(Long parametroId, Long metodologiaId, Long matrizId) {
+    public ParametroMetodologiaDE addMetodologia(Long parametroId, Long metodologiaId, Long matrizId, String tipoAnalisis) {
         ParametroDE parametro = parametroRepository.findById(parametroId)
                 .orElseThrow(() -> new RuntimeException("Parámetro no encontrado: " + parametroId));
         MetodologiaDE metodologia = metodologiaRepository.findById(metodologiaId)
@@ -118,11 +118,22 @@ public class ParametroService {
         ParametroMetodologiaDE pm = new ParametroMetodologiaDE();
         pm.setParametro(parametro);
         pm.setMetodologia(metodologia);
+        pm.setTipoAnalisis(tipoAnalisis);
         if (matrizId != null) {
             MatrizDE matriz = matrizRepository.findById(matrizId)
                     .orElseThrow(() -> new RuntimeException("Matriz no encontrada: " + matrizId));
             pm.setMatriz(matriz);
         }
+        return pmRepository.save(pm);
+    }
+
+    public ParametroMetodologiaDE updateMetodologiaTipo(Long parametroId, Long pmId, String tipoAnalisis) {
+        ParametroMetodologiaDE pm = pmRepository.findById(pmId)
+                .orElseThrow(() -> new RuntimeException("Asociación no encontrada: " + pmId));
+        if (!pmRepository.existsByIdAndParametroId(pmId, parametroId)) {
+            throw new RuntimeException("La asociación no pertenece al parámetro indicado.");
+        }
+        pm.setTipoAnalisis(tipoAnalisis != null && !tipoAnalisis.isBlank() ? tipoAnalisis : null);
         return pmRepository.save(pm);
     }
 
