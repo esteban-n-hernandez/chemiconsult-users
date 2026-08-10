@@ -471,6 +471,33 @@
     background: var(--bg-subtle);
     border-bottom: 1px solid var(--color-border-tertiary);
     gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.destino-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.destino-toggle-icon {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.destino-section.collapsed .destino-toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.destino-section.collapsed .destino-section-body {
+    display: none;
+}
+
+.destino-section.collapsed .destino-section-header {
+    border-bottom: none;
 }
 
 .destino-nombre {

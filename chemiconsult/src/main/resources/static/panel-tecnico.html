@@ -54,6 +54,9 @@
         <button class="tab-btn-custom" onclick="cambiarPestaña('categoriasDoc')">
             <i class="bi bi-tags"></i> Categ. Documentación
         </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('gruposInforme')">
+            <i class="bi bi-bookmark-check"></i> Grupos de Informe
+        </button>
     </div>
 
     <!-- ==========================================
@@ -138,10 +141,6 @@
                             <label>Tipo de análisis</label>
                             <select id="paramTipo" class="form-control-custom">
                                 <option value="">Sin clasificar</option>
-                                <option value="FISICO_QUIMICO">Físico Químico</option>
-                                <option value="BACTERIOLOGICO">Bacteriológico</option>
-                                <option value="CONTAMINANTES">Contaminantes orgánicos</option>
-                                <option value="HAPN">Hidrocarburos Aromáticos Polinucleares (HAPN)</option>
                             </select>
                         </div>
                         <div class="form-group-custom">
@@ -319,6 +318,60 @@
     <!-- ==========================================
          PÁGINA / SECCIÓN: CATEGORÍAS DE DOCUMENTACIÓN
          ========================================== -->
+    <div id="tab-gruposInforme" class="tab-content-panel">
+        <div class="main-row-config">
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <h5><i class="bi bi-plus-circle text-success"></i> Nuevo grupo</h5>
+                </div>
+                <div class="panel-body-custom">
+                    <form id="formGrupoInforme">
+                        <div class="form-group-custom">
+                            <label>Nombre del grupo</label>
+                            <input type="text" id="grupoLabel" class="form-control-custom"
+                                   placeholder="Ej: Físico Químico" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Código interno</label>
+                            <input type="text" id="grupoCodigo" class="form-control-custom"
+                                   placeholder="Ej: FISICO_QUIMICO (opcional)">
+                            <small class="params-hint">Se genera automáticamente del nombre si se deja vacío.</small>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Orden de aparición</label>
+                            <input type="number" id="grupoOrden" class="form-control-custom" value="0" min="0">
+                        </div>
+                        <button type="submit" class="btn-guardar-custom">
+                            <i class="bi bi-check-lg"></i> Guardar grupo
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <div class="panel-header-row">
+                        <h5><i class="bi bi-table text-primary"></i> Grupos registrados</h5>
+                        <input type="text" id="filtroGruposInforme" class="tabla-filtro" placeholder="Buscar...">
+                    </div>
+                </div>
+                <div class="panel-body-custom" style="padding:0;">
+                    <table class="tabla-config">
+                        <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Código</th>
+                            <th>Orden</th>
+                            <th>Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaGruposInformeBody"></tbody>
+                    </table>
+                    <div class="tabla-paginador" id="paginadorGruposInforme"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="tab-categoriasDoc" class="tab-content-panel">
         <div class="main-row-config">
             <div class="panel-custom">
@@ -419,13 +472,6 @@
                 </select>
                 <select id="metodoSelectTipo" class="form-control-custom" style="flex:1;min-width:160px;">
                     <option value="">— Grupo en informe —</option>
-                    <option value="FISICO_QUIMICO">Físico Químico</option>
-                    <option value="BACTERIOLOGICO">Bacteriológico</option>
-                    <option value="CONTAMINANTES_ORGANICOS">Contaminantes orgánicos</option>
-                    <option value="HAPN">Hidrocarburos Aromáticos (HAPN)</option>
-                    <option value="PLAGUICIDAS_ORGANOFOSFORADOS">Plaguicidas organofosforados</option>
-                    <option value="PLAGUICIDAS_ORGANOCLORADOS">Plaguicidas organoclorados</option>
-                    <option value="METALES_PESADOS">Metales pesados</option>
                 </select>
                 <button type="button" class="btn-guardar-custom" onclick="agregarMetodologia()" style="white-space:nowrap;">
                     <i class="bi bi-plus-circle"></i> Agregar
