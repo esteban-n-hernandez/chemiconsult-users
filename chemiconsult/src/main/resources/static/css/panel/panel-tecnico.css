@@ -149,7 +149,7 @@
 
 .tabla-config thead th {
     background: var(--bg-subtle);
-    color: var(--color-text-secondary);
+    color: var(--verde);
     font-weight: 600;
     padding: 10px 14px;
     text-align: left;
@@ -159,14 +159,11 @@
     border-bottom: 1px solid var(--color-border-tertiary);
 }
 
-.tabla-config tbody tr {
-    border-bottom: 1px solid var(--color-border-soft);
-    transition: background 0.15s;
-}
+.tabla-config tbody tr { transition: background 0.12s; }
 
-.tabla-config tbody tr:hover {
-    background: var(--bg-subtle);
-}
+.tabla-config tbody tr:nth-child(even) td { background: var(--bg-subtle, #f9fafb); }
+
+.tabla-config tbody tr:hover td { background: rgba(94, 165, 4, 0.06); }
 
 .tabla-config td {
     padding: 12px 14px;

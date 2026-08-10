@@ -133,7 +133,8 @@ async function cargarPreviewNumero() {
     const input = document.getElementById("npInputNumero");
     input.placeholder = "cargando...";
     try {
-        const data = await apiFetch("/api/numeradores/preview/NUMERO_PRESUPUESTO");
+        const res  = await apiFetch("/api/numeradores/preview/NUMERO_PRESUPUESTO");
+        const data = await res.json();
         input.placeholder = String(data.siguiente).padStart(7, "0");
     } catch {
         input.placeholder = "auto";
@@ -340,6 +341,66 @@ let paginaActual  = 1;
 const infoPag    = document.getElementById("infoPaginacion");
 const pagControls = document.getElementById("paginacion");
 
+// ── Alerta: pendientes demorados ──
+
+const DIAS_ALERTA = 15;
+let alertaColapsada = false;
+
+function diasDesde(isoStr) {
+    if (!isoStr) return 0;
+    const [y, m, d] = isoStr.split("-").map(Number);
+    const fecha = new Date(y, m - 1, d);
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    return Math.floor((hoy - fecha) / 86400000);
+}
+
+function renderAlertaPendientes() {
+    const panel     = document.getElementById("alertaPendientes");
+    const titulo    = document.getElementById("alertaTitulo");
+    const body      = document.getElementById("alertaBody");
+    const toggle    = document.getElementById("alertaToggle");
+
+    const demorados = historialData.filter(
+        p => p.estado === "PENDIENTE" && diasDesde(p.fecha) >= DIAS_ALERTA
+    ).sort((a, b) => diasDesde(b.fecha) - diasDesde(a.fecha)); // más viejos primero
+
+    if (demorados.length === 0) { panel.style.display = "none"; return; }
+
+    panel.style.display = "block";
+    titulo.textContent = demorados.length === 1
+        ? "1 presupuesto pendiente hace más de 15 días"
+        : `${demorados.length} presupuestos pendientes hace más de 15 días`;
+
+    body.style.display = alertaColapsada ? "none" : "";
+    toggle.querySelector("i").className = alertaColapsada ? "bi bi-chevron-down" : "bi bi-chevron-up";
+
+    body.innerHTML = demorados.map(p => {
+        const dias = diasDesde(p.fecha);
+        const nro  = `N°${String(p.numero).padStart(7, "0")}`;
+        return `
+        <div class="pres-alerta-row">
+            <span class="pres-alerta-nro">${nro}</span>
+            <span class="pres-alerta-cliente">${esc(p.clienteNombre || "-")}</span>
+            <span class="pres-alerta-dias">hace ${dias} días</span>
+            <div class="pres-alerta-acciones">
+                <button class="btn-accion btn-pdf" title="Descargar PDF"
+                    onclick="descargarPdf(${p.id}, ${p.numero})">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </button>
+                <button class="btn-accion btn-accion-verde hist-action-estado"
+                    title="Cambiar estado" data-id="${p.id}" onclick="toggleEstadoDrop(this)">
+                    <i class="bi bi-arrow-left-right"></i>
+                </button>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+document.getElementById("alertaToggle").addEventListener("click", () => {
+    alertaColapsada = !alertaColapsada;
+    renderAlertaPendientes();
+});
+
 async function cargarHistorial() {
     try {
         const res = await apiFetch(`${API_BASE}/api/presupuesto`);
@@ -370,7 +431,7 @@ function renderHistorial() {
 
     tbody.innerHTML = pagina.map(p => `
         <tr class="${p.estado === "PENDIENTE" ? "hist-row-pendiente" : ""}">
-            <td><span class="cod-badge">N°${String(p.numero).padStart(7, "0")}</span></td>
+            <td><strong>N°${String(p.numero).padStart(7, "0")}</strong></td>
             <td>${formatFecha(p.fecha)}</td>
             <td>${esc(p.clienteNombre || "-")}</td>
             <td>${esc(p.solicitadoPor || "-")}</td>
@@ -399,6 +460,7 @@ function renderHistorial() {
     const fin = Math.min(inicio + POR_PAGINA, data.length);
     if (infoPag) infoPag.textContent = `Mostrando ${inicio + 1}–${fin} de ${data.length} presupuestos`;
     renderPaginacionPres(data.length);
+    renderAlertaPendientes();
 }
 
 function renderPaginacionPres(totalItems) {

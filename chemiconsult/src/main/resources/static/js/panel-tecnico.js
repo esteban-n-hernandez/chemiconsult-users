@@ -10,6 +10,8 @@ function labelTipoAnalisis(tipo) {
     const mapa = {
         FISICO_QUIMICO: 'Físico Químico',
         BACTERIOLOGICO: 'Bacteriológico',
+        CONTAMINANTES_ORGANICOS: 'Contaminantes orgánicos',
+        HAPN: 'Hidrocarburos Aromáticos Polinucleares (HAPN)',
     };
     return tipo ? (mapa[tipo] || tipo) : '<span class="text-muted-pt">—</span>';
 }
@@ -60,6 +62,8 @@ const tablas = {
                 { value: '', label: 'Sin clasificar' },
                 { value: 'FISICO_QUIMICO', label: 'Físico Químico' },
                 { value: 'BACTERIOLOGICO', label: 'Bacteriológico' },
+                { value: 'CONTAMINANTES_ORGANICOS', label: 'Contaminantes orgánicos' },
+                { value: 'HAPN', label: 'Hidrocarburos Aromáticos Polinucleares (HAPN)' },
             ].map(o => `<option value="${o.value}" ${(r.tipoAnalisis || '') === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
             return `
                 <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>

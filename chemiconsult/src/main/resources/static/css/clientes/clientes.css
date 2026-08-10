@@ -142,7 +142,7 @@
 
 .tabla-clientes thead th {
     background: var(--bg-subtle);
-    color: var(--color-text-secondary);
+    color: var(--verde);
     font-weight: 600;
     padding: 10px 14px;
     text-align: left;
@@ -152,18 +152,11 @@
     border-bottom: 1px solid var(--color-border-tertiary);
 }
 
-.tabla-clientes tbody tr {
-    border-bottom: 1px solid #f1f3f5;
-    transition: background 0.15s;
-}
+.tabla-clientes tbody tr { transition: background 0.12s; }
 
-.tabla-clientes tbody tr:hover {
-    background: var(--bg-subtle);
-}
+.tabla-clientes tbody tr:nth-child(even) td { background: var(--bg-subtle, #f9fafb); }
 
-.tabla-clientes tbody tr:last-child {
-    border-bottom: none;
-}
+.tabla-clientes tbody tr:hover td { background: rgba(94, 165, 4, 0.06); }
 
 .tabla-clientes td {
     padding: 11px 14px;
