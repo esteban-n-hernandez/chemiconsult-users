@@ -1334,9 +1334,11 @@ function renderPage() {
                 );
             }
 
-            acciones.push(
-                `<button class="btn-accion btn-accion-gris btn-archivos" data-id="${m.id}" data-codigo="${m.codigo}" title="Archivos"><i class="bi bi-paperclip"></i></button>`,
-            );
+            if (estadoNorm === "COMPLETO_SIN_INFORME" || estadoNorm === "COMPLETO") {
+                acciones.push(
+                    `<button class="btn-accion btn-accion-gris btn-archivos" data-id="${m.id}" data-codigo="${m.codigo}" title="Archivos"><i class="bi bi-paperclip"></i></button>`,
+                );
+            }
 
             if (estadoNorm === "COMPLETO_SIN_INFORME") {
                 acciones.push(
