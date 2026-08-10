@@ -6,15 +6,28 @@ function esc(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-const TIPOS_ANALISIS = [
-    { value: 'FISICO_QUIMICO',               label: 'Físico Químico' },
-    { value: 'BACTERIOLOGICO',               label: 'Bacteriológico' },
-    { value: 'CONTAMINANTES_ORGANICOS',      label: 'Contaminantes orgánicos' },
-    { value: 'HAPN',                         label: 'Hidrocarburos Aromáticos (HAPN)' },
-    { value: 'PLAGUICIDAS_ORGANOFOSFORADOS', label: 'Plaguicidas organofosforados' },
-    { value: 'PLAGUICIDAS_ORGANOCLORADOS',   label: 'Plaguicidas organoclorados' },
-    { value: 'METALES_PESADOS',              label: 'Metales pesados' },
-];
+let TIPOS_ANALISIS = [];
+
+async function cargarGruposInforme() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/grupos-informe`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        TIPOS_ANALISIS = data.map(g => ({ value: g.codigo, label: g.label }));
+        const tipoOpts = TIPOS_ANALISIS.map(t =>
+            `<option value="${t.value}">${t.label}</option>`
+        ).join('');
+        const paramTipoEl = document.getElementById('paramTipo');
+        if (paramTipoEl) paramTipoEl.innerHTML = `<option value="">Sin clasificar</option>${tipoOpts}`;
+        const metodoTipoEl = document.getElementById('metodoSelectTipo');
+        if (metodoTipoEl) metodoTipoEl.innerHTML = `<option value="">— Grupo en informe —</option>${tipoOpts}`;
+    } catch (e) {
+        console.error('Error cargando grupos informe', e);
+    }
+}
 
 function labelTipoAnalisis(tipo) {
     const found = TIPOS_ANALISIS.find(t => t.value === tipo);
@@ -63,13 +76,8 @@ const tablas = {
             const opts = empleadosCache.map(u =>
                 `<option value="${u.id}" ${r.responsable?.id === u.id ? 'selected' : ''}>${esc(u.username)}</option>`
             ).join('');
-            const tipoOpts = [
-                { value: '', label: 'Sin clasificar' },
-                { value: 'FISICO_QUIMICO', label: 'Físico Químico' },
-                { value: 'BACTERIOLOGICO', label: 'Bacteriológico' },
-                { value: 'CONTAMINANTES_ORGANICOS', label: 'Contaminantes orgánicos' },
-                { value: 'HAPN', label: 'Hidrocarburos Aromáticos Polinucleares (HAPN)' },
-            ].map(o => `<option value="${o.value}" ${(r.tipoAnalisis || '') === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+            const tipoOpts = [{ value: '', label: 'Sin clasificar' }, ...TIPOS_ANALISIS]
+                .map(o => `<option value="${o.value}" ${(r.tipoAnalisis || '') === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
             return `
                 <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
                 <td>
@@ -139,11 +147,33 @@ const tablas = {
             <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>`,
         buildPutBody: r => ({ nombre: document.getElementById('ef-nombre').value.trim() }),
     },
+    gruposInforme: {
+        url: `${API_URL}/grupos-informe`,
+        tbodyId: 'tablaGruposInformeBody',
+        filtroId: 'filtroGruposInforme',
+        pagId:    'paginadorGruposInforme',
+        colSpan:  4,
+        data: [], filtro: '', pagina: 1, porPagina: 20,
+        renderFila: r => `<td>${esc(r.label)}</td><td><code style="font-size:11px">${esc(r.codigo)}</code></td><td>${r.orden ?? 0}</td>`,
+        textoVacio: 'No hay grupos definidos.',
+        textoBuscar: r => `${r.label} ${r.codigo}`,
+        editUrl: id => `${API_URL}/grupos-informe/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-label" value="${esc(r.label)}" style="width:100%" placeholder="Nombre del grupo"></td>
+            <td><input class="unidad-inline-input" id="ef-codigo" value="${esc(r.codigo)}" style="width:100%"></td>
+            <td><input type="number" class="unidad-inline-input" id="ef-orden" value="${r.orden ?? 0}" style="width:60px" min="0"></td>`,
+        buildPutBody: r => ({
+            label:  document.getElementById('ef-label').value.trim(),
+            codigo: document.getElementById('ef-codigo').value.trim().toUpperCase().replace(/\s+/g, '_'),
+            orden:  parseInt(document.getElementById('ef-orden').value) || 0,
+        }),
+    },
 };
 
 // ── Carga inicial ──
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     inicializarHeader();
+    await cargarGruposInforme();
     Object.keys(tablas).forEach(nombre => {
         cargarTabla(nombre);
         document.getElementById(tablas[nombre].filtroId)
@@ -441,6 +471,32 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarToast('No se pudo guardar la categoría.', 'danger');
         }
     });
+
+    document.getElementById('formGrupoInforme').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const label = document.getElementById('grupoLabel').value.trim();
+        const codigoRaw = document.getElementById('grupoCodigo').value.trim();
+        const codigo = codigoRaw
+            || label.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+        const orden = parseInt(document.getElementById('grupoOrden').value) || 0;
+        try {
+            const res = await fetch(`${API_URL}/grupos-informe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ label, codigo, orden }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            document.getElementById('grupoOrden').value = '0';
+            await cargarGruposInforme();
+            cargarTabla('gruposInforme');
+            mostrarToast('Grupo guardado.');
+        } catch (err) {
+            console.error('Error guardando grupo:', err);
+            mostrarToast('No se pudo guardar el grupo.', 'danger');
+        }
+    });
 });
 
 async function cargarMatrices() {
@@ -590,30 +646,39 @@ function _renderEditorParams(detalle, todosLosParams) {
 
         return `
             <div class="destino-section">
-                <div class="destino-section-header">
-                    <span class="destino-nombre">${esc(d.nombre)}</span>
-                    <button class="btn-accion-danger" onclick="eliminarDestino(${d.id})" title="Eliminar destino">
+                <div class="destino-section-header" onclick="toggleDestinoSection(this)">
+                    <div class="destino-header-left">
+                        <i class="bi bi-chevron-down destino-toggle-icon"></i>
+                        <span class="destino-nombre">${esc(d.nombre)}</span>
+                    </div>
+                    <button class="btn-accion-danger" onclick="event.stopPropagation();eliminarDestino(${d.id})" title="Eliminar destino">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
-                <div class="params-section-label">Parámetros (${(d.parametros || []).length})</div>
-                <table class="tabla-config">
-                    <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th>Límite</th><th>Grupo en informe</th><th></th></tr></thead>
-                    <tbody>${filasIncluidos}</tbody>
-                </table>
-                <details class="destino-agregar-params">
-                    <summary>Agregar parámetros a este destino (${excluded.length} disponibles)</summary>
-                    <input type="text" class="tabla-filtro params-buscador" placeholder="Buscar..."
-                           oninput="filtrarParamsExcluidosDestino(this, ${d.id})">
+                <div class="destino-section-body">
+                    <div class="params-section-label">Parámetros (${(d.parametros || []).length})</div>
                     <table class="tabla-config">
-                        <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th></th></tr></thead>
-                        <tbody>${filasExcluidos}</tbody>
+                        <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th>Límite</th><th>Grupo en informe</th><th></th></tr></thead>
+                        <tbody>${filasIncluidos}</tbody>
                     </table>
-                </details>
+                    <details class="destino-agregar-params">
+                        <summary>Agregar parámetros a este destino (${excluded.length} disponibles)</summary>
+                        <input type="text" class="tabla-filtro params-buscador" placeholder="Buscar..."
+                               oninput="filtrarParamsExcluidosDestino(this, ${d.id})">
+                        <table class="tabla-config">
+                            <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th></th></tr></thead>
+                            <tbody>${filasExcluidos}</tbody>
+                        </table>
+                    </details>
+                </div>
             </div>`;
     }).join('');
 
     cuerpo.innerHTML = crearDestinoHtml + destinosSections;
+}
+
+function toggleDestinoSection(header) {
+    header.closest('.destino-section').classList.toggle('collapsed');
 }
 
 function filtrarParamsExcluidosDestino(input, destinoId) {
@@ -819,7 +884,7 @@ async function guardarEdicionFila(tablaNombre, id) {
     if (!r) return;
 
     const body = t.buildPutBody(r);
-    if (!body.nombre?.trim()) {
+    if (!(body.nombre ?? body.label ?? body.codigo)?.trim()) {
         mostrarToast('El nombre no puede estar vacío.', 'danger');
         return;
     }
@@ -834,6 +899,7 @@ async function guardarEdicionFila(tablaNombre, id) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         mostrarToast('Guardado correctamente.');
         cargarTabla(tablaNombre);
+        if (tablaNombre === 'gruposInforme') await cargarGruposInforme();
     } catch (err) {
         console.error('Error guardando edición:', err);
         mostrarToast('No se pudo guardar.', 'danger');
@@ -848,6 +914,7 @@ async function eliminar(nombre, id) {
         metodologias:  'metodología',
         tiposmuestra:  'tipo de muestra',
         categoriasDoc: 'categoría',
+        gruposInforme: 'grupo de informe',
     };
     const ok = await UI.confirmar({ titulo: `¿Eliminar esta ${labels[nombre] || 'entrada'}?`, subtexto: 'Esta acción no se puede deshacer.', textoConfirmar: 'Eliminar', tipo: 'danger' });
     if (!ok) return;
@@ -858,6 +925,7 @@ async function eliminar(nombre, id) {
         metodologias:  `${API_URL}/metodologias/${id}`,
         tiposmuestra:  `${API_URL}/tipos-muestra/${id}`,
         categoriasDoc: `${API_URL}/categorias-documento/${id}`,
+        gruposInforme: `${API_URL}/grupos-informe/${id}`,
     };
 
     const token = localStorage.getItem('token');
@@ -868,6 +936,7 @@ async function eliminar(nombre, id) {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         cargarTabla(nombre);
+        if (nombre === 'gruposInforme') await cargarGruposInforme();
     } catch (err) {
         console.error(`Error eliminando ${nombre}:`, err);
         mostrarToast('No se pudo eliminar el elemento.', 'danger');

@@ -68,16 +68,19 @@ public class InformeService {
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final SupabaseBucketService supabaseBucketService;
     private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
+    private final GrupoInformeService grupoInformeService;
 
     @Autowired
     public InformeService(AnalisisRepository analisisRepository,
                           AnalisisArchivoRepository analisisArchivoRepository,
                           SupabaseBucketService supabaseBucketService,
-                          com.chemiconsult.mapper.EstudiosMapper estudiosMapper) {
+                          com.chemiconsult.mapper.EstudiosMapper estudiosMapper,
+                          GrupoInformeService grupoInformeService) {
         this.analisisRepository = analisisRepository;
         this.analisisArchivoRepository = analisisArchivoRepository;
         this.supabaseBucketService = supabaseBucketService;
         this.estudiosMapper = estudiosMapper;
+        this.grupoInformeService = grupoInformeService;
     }
 
     @Transactional
@@ -196,11 +199,12 @@ public class InformeService {
         List<String> colLabels   = buildResolucionColumnLabels(resoluciones);
         List<String> footnotes   = buildResolucionFootnotes(resoluciones);
         Map<String, List<ParametroResultadoTO>> grupos = agruparPorTipo(d.getParametros());
+        Map<String, String> grupoLabels = grupoInformeService.buildLabelMap();
 
         for (Map.Entry<String, List<ParametroResultadoTO>> entry : grupos.entrySet()) {
             String tipo = entry.getKey();
             if (!tipo.isEmpty()) {
-                Paragraph subSec = new Paragraph(labelTipoAnalisis(tipo), fSubseccion);
+                Paragraph subSec = new Paragraph(labelTipoAnalisis(tipo, grupoLabels), fSubseccion);
                 subSec.setSpacingAfter(8);
                 doc.add(subSec);
             }
@@ -281,17 +285,10 @@ public class InformeService {
         return grupos;
     }
 
-    private String labelTipoAnalisis(String tipo) {
-        return switch (tipo) {
-            case "FISICO_QUIMICO"                -> "Análisis Físico Químico";
-            case "BACTERIOLOGICO"                -> "Análisis Bacteriológico";
-            case "CONTAMINANTES_ORGANICOS"       -> "Contaminantes orgánicos";
-            case "HAPN"                          -> "Hidrocarburos Aromáticos Polinucleares (HAPN)";
-            case "PLAGUICIDAS_ORGANOFOSFORADOS"  -> "Plaguicidas organofosforados";
-            case "PLAGUICIDAS_ORGANOCLORADOS"    -> "Plaguicidas organoclorados";
-            case "METALES_PESADOS"               -> "Metales pesados";
-            default -> "Análisis " + tipo;
-        };
+    private String labelTipoAnalisis(String tipo, Map<String, String> labels) {
+        if (tipo == null || tipo.isEmpty()) return "";
+        String lbl = labels.get(tipo);
+        return lbl != null ? lbl : tipo;
     }
 
     // ----------------------------------------------------------------
