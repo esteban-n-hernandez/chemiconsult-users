@@ -1,3 +1,107 @@
+/* ── Alerta: pendientes demorados ── */
+
+.pres-alerta {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--color-border-tertiary);
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.pres-alerta-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px 11px 12px;
+}
+
+.pres-alerta-icon {
+    font-size: 15px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.pres-alerta-titulo {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.pres-alerta-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    padding: 3px 6px;
+    border-radius: 6px;
+    transition: background .12s, color .12s;
+}
+.pres-alerta-toggle:hover {
+    background: var(--bg-subtle);
+    color: var(--text-main);
+}
+
+.pres-alerta-body {
+    border-top: 1px solid var(--color-border-tertiary);
+    padding: 8px 12px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pres-alerta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--color-border-tertiary);
+    font-size: 13px;
+    transition: background .12s;
+}
+.pres-alerta-row:hover { background: var(--bg-surface-hover, var(--bg-subtle)); }
+
+.pres-alerta-nro {
+    font-weight: 700;
+    font-family: monospace;
+    font-size: 12px;
+    color: #f59e0b;
+    white-space: nowrap;
+    min-width: 90px;
+}
+
+.pres-alerta-cliente {
+    flex: 1;
+    color: var(--text-main);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pres-alerta-dias {
+    font-size: 11px;
+    font-weight: 700;
+    color: #d97706;
+    background: rgba(245,158,11,.12);
+    border: 1px solid rgba(245,158,11,.30);
+    border-radius: 20px;
+    padding: 2px 9px;
+    white-space: nowrap;
+}
+
+.pres-alerta-acciones {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
 /* ── Botón nuevo presupuesto + header ── */
 
 .btn-nuevo-pres {
@@ -147,10 +251,10 @@
     padding: 8px 10px;
     text-align: left;
     font-size: 11px; font-weight: 700;
-    color: var(--color-text-secondary);
+    color: var(--verde);
     text-transform: uppercase; letter-spacing: .4px;
     border-bottom: 2px solid var(--color-border-tertiary);
-    background: var(--bg-surface);
+    background: var(--bg-subtle, #f9fafb);
     white-space: nowrap;
 }
 
@@ -161,8 +265,9 @@
 .col-total   { width: 14%; }
 .col-del     { width: 6%; }
 
-.pres-tabla tbody tr { border-bottom: 1px solid var(--color-border-tertiary); }
-.pres-tabla tbody tr:hover { background: var(--bg-subtle); }
+.pres-tabla tbody tr { transition: background 0.12s; }
+.pres-tabla tbody tr:nth-child(even) td { background: var(--bg-subtle, #f9fafb); }
+.pres-tabla tbody tr:hover td { background: rgba(94, 165, 4, 0.06); }
 .pres-tabla td { padding: 6px 8px; vertical-align: top; }
 
 .pres-cell-input,

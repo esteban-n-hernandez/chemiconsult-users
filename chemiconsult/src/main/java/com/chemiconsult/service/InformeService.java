@@ -282,6 +282,8 @@ public class InformeService {
         return switch (tipo) {
             case "FISICO_QUIMICO"  -> "Análisis Físico Químico";
             case "BACTERIOLOGICO"  -> "Análisis Bacteriológico";
+            case "CONTAMINANTES_ORGANICO"  -> "Contaminantes orgánicos";
+            case "HAPN"  -> "Hidrocarburos Aromáticos Polinucleares (HAPN)";
             default -> "Análisis " + tipo;
         };
     }

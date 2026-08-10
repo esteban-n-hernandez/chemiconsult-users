@@ -148,7 +148,7 @@ function renderTabla() {
 
     tbody.innerHTML = slice.map(m => `
         <tr>
-            <td><span class="cod-badge">${m.codigo}</span></td>
+            <td><strong>${m.codigo}</strong></td>
             <td>${m.tipo}</td>
             <td>${m.fecha}</td>
             <td>${badgeHTML(m.estado)}</td>
