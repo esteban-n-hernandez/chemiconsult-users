@@ -6,14 +6,19 @@ function esc(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+const TIPOS_ANALISIS = [
+    { value: 'FISICO_QUIMICO',               label: 'Físico Químico' },
+    { value: 'BACTERIOLOGICO',               label: 'Bacteriológico' },
+    { value: 'CONTAMINANTES_ORGANICOS',      label: 'Contaminantes orgánicos' },
+    { value: 'HAPN',                         label: 'Hidrocarburos Aromáticos (HAPN)' },
+    { value: 'PLAGUICIDAS_ORGANOFOSFORADOS', label: 'Plaguicidas organofosforados' },
+    { value: 'PLAGUICIDAS_ORGANOCLORADOS',   label: 'Plaguicidas organoclorados' },
+    { value: 'METALES_PESADOS',              label: 'Metales pesados' },
+];
+
 function labelTipoAnalisis(tipo) {
-    const mapa = {
-        FISICO_QUIMICO: 'Físico Químico',
-        BACTERIOLOGICO: 'Bacteriológico',
-        CONTAMINANTES_ORGANICOS: 'Contaminantes orgánicos',
-        HAPN: 'Hidrocarburos Aromáticos Polinucleares (HAPN)',
-    };
-    return tipo ? (mapa[tipo] || tipo) : '<span class="text-muted-pt">—</span>';
+    const found = TIPOS_ANALISIS.find(t => t.value === tipo);
+    return tipo ? (found ? found.label : tipo) : '<span class="text-muted-pt">—</span>';
 }
 
 // ── Estado por tabla ──
@@ -535,7 +540,11 @@ function _renderEditorParams(detalle, todosLosParams) {
             .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
         const filasIncluidos = (d.parametros || []).length > 0
-            ? [...(d.parametros || [])].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => `
+            ? [...(d.parametros || [])].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => {
+                const opcionesTipo = TIPOS_ANALISIS.map(t =>
+                    `<option value="${t.value}" ${p.tipoAnalisis === t.value ? 'selected' : ''}>${t.label}</option>`
+                ).join('');
+                return `
                 <tr>
                     <td>${esc(p.nombre)}</td>
                     <td>
@@ -546,6 +555,13 @@ function _renderEditorParams(detalle, todosLosParams) {
                     </td>
                     <td>${formatearLimite(p)}</td>
                     <td>
+                        <select class="form-control-custom" style="font-size:12px;padding:4px 8px;min-width:140px;"
+                                onchange="actualizarTipoParamDestino(${d.id}, ${p.id}, this.value)">
+                            <option value="">— Sin grupo —</option>
+                            ${opcionesTipo}
+                        </select>
+                    </td>
+                    <td>
                         <div class="tabla-acciones">
                             <button class="btn-accion-info" onclick="abrirEditorLimite(${d.id}, ${p.id})" title="Editar límite">
                                 <i class="bi bi-sliders"></i>
@@ -555,8 +571,9 @@ function _renderEditorParams(detalle, todosLosParams) {
                             </button>
                         </div>
                     </td>
-                </tr>`).join('')
-            : `<tr><td colspan="4" class="params-vacio">Sin parámetros configurados.</td></tr>`;
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="5" class="params-vacio">Sin parámetros configurados.</td></tr>`;
 
         const filasExcluidos = excluded.length > 0
             ? excluded.map(p => `
@@ -581,7 +598,7 @@ function _renderEditorParams(detalle, todosLosParams) {
                 </div>
                 <div class="params-section-label">Parámetros (${(d.parametros || []).length})</div>
                 <table class="tabla-config">
-                    <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th>Límite</th><th></th></tr></thead>
+                    <thead><tr><th>Parámetro</th><th style="white-space:nowrap;min-width:62px">Unidad</th><th>Límite</th><th>Grupo en informe</th><th></th></tr></thead>
                     <tbody>${filasIncluidos}</tbody>
                 </table>
                 <details class="destino-agregar-params">
@@ -895,13 +912,24 @@ async function _cargarMetodologiasDelParam() {
 function _renderMetodoTabla(lista) {
     const tbody = document.getElementById('metodoTbody');
     if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="padding:12px;color:#888;text-align:center">Sin metodologías asociadas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:12px;color:#888;text-align:center">Sin metodologías asociadas.</td></tr>';
         return;
     }
-    tbody.innerHTML = lista.map(pm => `
+    tbody.innerHTML = lista.map(pm => {
+        const opciones = TIPOS_ANALISIS.map(t =>
+            `<option value="${t.value}" ${pm.tipoAnalisis === t.value ? 'selected' : ''}>${t.label}</option>`
+        ).join('');
+        return `
         <tr>
             <td>${esc(pm.metodologia?.nombre || '—')}</td>
             <td>${pm.matriz ? esc(pm.matriz.nombre) : '<span style="color:#aaa;font-style:italic">Cualquier matriz</span>'}</td>
+            <td>
+                <select class="form-control-custom metodo-tipo-select" style="font-size:12px;padding:4px 8px;"
+                        onchange="actualizarTipoMetodologia(${pm.id}, this.value)">
+                    <option value="">— Sin grupo —</option>
+                    ${opciones}
+                </select>
+            </td>
             <td>
                 <div class="tabla-acciones">
                     <button class="btn-accion-danger" onclick="quitarMetodologia(${pm.id})" title="Quitar">
@@ -909,7 +937,8 @@ function _renderMetodoTabla(lista) {
                     </button>
                 </div>
             </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 
 async function _poblarSelectMetodologias() {
@@ -975,9 +1004,11 @@ async function agregarMetodologia() {
     if (!metodologiaId) { mostrarToast('Seleccioná una metodología.', 'danger'); return; }
 
     const matrizVal = document.getElementById('metodoSelectMatriz').value;
+    const tipoVal   = document.getElementById('metodoSelectTipo').value;
     const body = {
         metodologiaId: Number(metodologiaId),
         matrizId:      matrizVal ? Number(matrizVal) : null,
+        tipoAnalisis:  tipoVal   || null,
     };
 
     const token = localStorage.getItem('token');
@@ -996,7 +1027,38 @@ async function agregarMetodologia() {
         document.getElementById('metodoSearchInput').value = '';
         document.getElementById('metodoSelectMetod').value = '';
         document.getElementById('metodoSelectMatriz').value = '';
+        document.getElementById('metodoSelectTipo').value = '';
         await _cargarMetodologiasDelParam();
+    } catch {
+        mostrarToast('Error de conexión.', 'danger');
+    }
+}
+
+async function actualizarTipoParamDestino(destinoId, parametroId, tipoAnalisis) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/resoluciones/${_currentResolucionId}/destinos/${destinoId}/parametros/${parametroId}/tipo-analisis`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ tipoAnalisis: tipoAnalisis || null }),
+        });
+        if (!res.ok) { mostrarToast('No se pudo actualizar el grupo.', 'danger'); return; }
+        mostrarToast('Grupo actualizado.', 'success');
+    } catch {
+        mostrarToast('Error de conexión.', 'danger');
+    }
+}
+
+async function actualizarTipoMetodologia(pmId, tipoAnalisis) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/parametros/${_metodoParamId}/metodologias/${pmId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ tipoAnalisis: tipoAnalisis || null }),
+        });
+        if (!res.ok) { mostrarToast('No se pudo actualizar el grupo.', 'danger'); return; }
+        mostrarToast('Grupo actualizado.', 'success');
     } catch {
         mostrarToast('Error de conexión.', 'danger');
     }

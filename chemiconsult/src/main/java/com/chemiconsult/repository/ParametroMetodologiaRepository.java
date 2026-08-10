@@ -21,4 +21,6 @@ public interface ParametroMetodologiaRepository extends JpaRepository<ParametroM
     boolean existsByParametroIdAndMetodologiaIdAndMatrizIsNull(Long parametroId, Long metodologiaId);
 
     boolean existsByIdAndParametroId(Long id, Long parametroId);
+
+    java.util.Optional<ParametroMetodologiaDE> findByParametroIdAndMetodologiaId(Long parametroId, Long metodologiaId);
 }

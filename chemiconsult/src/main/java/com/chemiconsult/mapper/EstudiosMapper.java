@@ -2,14 +2,21 @@ package com.chemiconsult.mapper;
 
 import com.chemiconsult.entity.*;
 import com.chemiconsult.enums.EstadoMuestraEnum;
+import com.chemiconsult.repository.ParametroMetodologiaRepository;
 import com.chemiconsult.to.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Component
 public class EstudiosMapper {
 
-    public static AnalisisDE createEstudio(EstudioTO estudio, ClienteDE cliente, MatrizDE matriz, ClienteSucursalDE sucursal) {
+    @Autowired
+    private ParametroMetodologiaRepository pmRepository;
+
+    public AnalisisDE createEstudio(EstudioTO estudio, ClienteDE cliente, MatrizDE matriz, ClienteSucursalDE sucursal) {
         AnalisisDE entity = new AnalisisDE();
         entity.setCliente(cliente);
         entity.setUser(cliente.getUser());
@@ -31,7 +38,7 @@ public class EstudiosMapper {
         return entity;
     }
 
-    public static EstudioTO mapEntityToEstudioTO(AnalisisDE entity) {
+    public EstudioTO mapEntityToEstudioTO(AnalisisDE entity) {
         return EstudioTO.builder()
                 .id(entity.getId())
                 .cliente(resolverNombreCliente(entity))
@@ -47,7 +54,7 @@ public class EstudiosMapper {
                 .build();
     }
 
-    public static AnalisisDetalleTO mapEntityToDetalleTO(AnalisisDE entity) {
+    public AnalisisDetalleTO mapEntityToDetalleTO(AnalisisDE entity) {
         String clienteStr = resolverNombreCliente(entity);
 
         List<String> resoluciones = entity.getResolucionesAplicadas() == null
@@ -60,7 +67,7 @@ public class EstudiosMapper {
         List<ParametroResultadoTO> parametros = entity.getParametros() == null
                 ? List.of()
                 : entity.getParametros().stream()
-                .map(EstudiosMapper::mapParametroToResultadoTO)
+                .map(this::mapParametroToResultadoTO)
                 .toList();
 
         return AnalisisDetalleTO.builder()
@@ -87,7 +94,7 @@ public class EstudiosMapper {
                 .build();
     }
 
-    private static ParametroResultadoTO mapParametroToResultadoTO(AnalisisParametroDE ap) {
+    private ParametroResultadoTO mapParametroToResultadoTO(AnalisisParametroDE ap) {
         List<LimiteAplicableTO> limites = ap.getLimites() == null
                 ? List.of()
                 : ap.getLimites().stream().map(l -> {
@@ -109,7 +116,7 @@ public class EstudiosMapper {
                 .id(ap.getParametro().getId())
                 .nombre(ap.getParametro().getNombre())
                 .unidad(resolverUnidad(ap))
-                .tipoAnalisis(ap.getParametro() != null ? ap.getParametro().getTipoAnalisis() : null)
+                .tipoAnalisis(resolverTipoAnalisis(ap))
                 .metodologiaId(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getId() : null)
                 .metodologiaNombre(ap.getMetodologiaUsada() != null ? ap.getMetodologiaUsada().getNombre() : null)
                 .valorResultado(ap.getValorResultado())
@@ -118,8 +125,39 @@ public class EstudiosMapper {
                 .build();
     }
 
+    /**
+     * Resuelve el grupo del parámetro para el informe:
+     * 1. tipoAnalisis en RESOL_DESTINO_PARAM (por resolución aplicada)
+     * 2. tipoAnalisis en PARAMETRO_METODOLOGIA (por metodología analítica)
+     * 3. Fallback: tipoAnalisis del parámetro
+     */
+    private String resolverTipoAnalisis(AnalisisParametroDE ap) {
+        if (ap.getParametro() == null) return null;
+
+        // 1. Desde los límites de la resolución aplicada
+        if (ap.getLimites() != null) {
+            String tipo = ap.getLimites().stream()
+                    .map(l -> l.getLimiteOrigen().getTipoAnalisis())
+                    .filter(t -> t != null && !t.isBlank())
+                    .findFirst().orElse(null);
+            if (tipo != null) return tipo;
+        }
+
+        // 2. Desde la asociación parámetro-metodología
+        if (ap.getMetodologiaUsada() != null) {
+            var pm = pmRepository.findByParametroIdAndMetodologiaId(
+                    ap.getParametro().getId(), ap.getMetodologiaUsada().getId());
+            if (pm.isPresent() && pm.get().getTipoAnalisis() != null
+                    && !pm.get().getTipoAnalisis().isBlank()) {
+                return pm.get().getTipoAnalisis();
+            }
+        }
+
+        // 3. Fallback: tipoAnalisis del parámetro
+        return ap.getParametro().getTipoAnalisis();
+    }
+
     private static String resolverUnidad(AnalisisParametroDE ap) {
-        // Primero: unidad configurada en la resolución para este parámetro
         if (ap.getLimites() != null) {
             String u = ap.getLimites().stream()
                     .map(l -> l.getLimiteOrigen().getUnidad())
@@ -127,7 +165,6 @@ public class EstudiosMapper {
                     .findFirst().orElse(null);
             if (u != null) return u;
         }
-        // Fallback: unidad global del parámetro
         return ap.getParametro() != null ? ap.getParametro().getUnidad() : null;
     }
 

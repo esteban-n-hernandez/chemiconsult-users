@@ -49,4 +49,7 @@ public class ResolucionDestinoParametroDE {
 
     @Column(name = "ACTIVO")
     private Boolean activo = true;
+
+    @Column(name = "TIPO_ANALISIS")
+    private String tipoAnalisis;
 }

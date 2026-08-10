@@ -67,14 +67,17 @@ public class InformeService {
     private final AnalisisRepository analisisRepository;
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final SupabaseBucketService supabaseBucketService;
+    private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
 
     @Autowired
     public InformeService(AnalisisRepository analisisRepository,
                           AnalisisArchivoRepository analisisArchivoRepository,
-                          SupabaseBucketService supabaseBucketService) {
+                          SupabaseBucketService supabaseBucketService,
+                          com.chemiconsult.mapper.EstudiosMapper estudiosMapper) {
         this.analisisRepository = analisisRepository;
         this.analisisArchivoRepository = analisisArchivoRepository;
         this.supabaseBucketService = supabaseBucketService;
+        this.estudiosMapper = estudiosMapper;
     }
 
     @Transactional
@@ -82,7 +85,7 @@ public class InformeService {
         AnalisisDE analisis = analisisRepository.findById(analisisId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Muestra no encontrada"));
 
-        AnalisisDetalleTO detalle = EstudiosMapper.mapEntityToDetalleTO(analisis);
+        AnalisisDetalleTO detalle = estudiosMapper.mapEntityToDetalleTO(analisis);
 
         List<String> sinResultado = detalle.getParametros() == null ? List.of() :
                 detalle.getParametros().stream()
@@ -280,10 +283,13 @@ public class InformeService {
 
     private String labelTipoAnalisis(String tipo) {
         return switch (tipo) {
-            case "FISICO_QUIMICO"  -> "Análisis Físico Químico";
-            case "BACTERIOLOGICO"  -> "Análisis Bacteriológico";
-            case "CONTAMINANTES_ORGANICO"  -> "Contaminantes orgánicos";
-            case "HAPN"  -> "Hidrocarburos Aromáticos Polinucleares (HAPN)";
+            case "FISICO_QUIMICO"                -> "Análisis Físico Químico";
+            case "BACTERIOLOGICO"                -> "Análisis Bacteriológico";
+            case "CONTAMINANTES_ORGANICOS"       -> "Contaminantes orgánicos";
+            case "HAPN"                          -> "Hidrocarburos Aromáticos Polinucleares (HAPN)";
+            case "PLAGUICIDAS_ORGANOFOSFORADOS"  -> "Plaguicidas organofosforados";
+            case "PLAGUICIDAS_ORGANOCLORADOS"    -> "Plaguicidas organoclorados";
+            case "METALES_PESADOS"               -> "Metales pesados";
             default -> "Análisis " + tipo;
         };
     }

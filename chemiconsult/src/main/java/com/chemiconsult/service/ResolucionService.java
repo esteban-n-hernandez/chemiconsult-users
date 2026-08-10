@@ -254,6 +254,15 @@ public class ResolucionService {
     }
 
     @Transactional
+    public void actualizarTipoAnalisisDestino(Long destinoId, Long parametroId, String tipoAnalisis) {
+        destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
+                .ifPresent(rel -> {
+                    rel.setTipoAnalisis(tipoAnalisis != null && !tipoAnalisis.isBlank() ? tipoAnalisis : null);
+                    destinoParametroRepository.save(rel);
+                });
+    }
+
+    @Transactional
     public void quitarParametroDeDestino(Long destinoId, Long parametroId) {
         destinoParametroRepository.findByDestinoIdAndParametroId(destinoId, parametroId)
                 .ifPresent(rel -> { rel.setActivo(false); destinoParametroRepository.save(rel); });
@@ -287,6 +296,7 @@ public class ResolucionService {
             dto.setValorMinimo(rel.getValorMinimo());
             dto.setValorMaximo(rel.getValorMaximo());
             dto.setLimiteTexto(rel.getLimiteTexto());
+            dto.setTipoAnalisis(rel.getTipoAnalisis());
 
             MetodologiaSimpleTO mDto = new MetodologiaSimpleTO();
             if (rel.getMetodologiaEstandar() != null) {

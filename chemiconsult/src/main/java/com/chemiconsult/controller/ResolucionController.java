@@ -146,6 +146,15 @@ public class ResolucionController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/destinos/{destinoId}/parametros/{parametroId}/tipo-analisis")
+    public ResponseEntity<Void> actualizarTipoAnalisisDestino(@PathVariable Long id,
+                                                               @PathVariable Long destinoId,
+                                                               @PathVariable Long parametroId,
+                                                               @RequestBody Map<String, String> body) {
+        resolucionService.actualizarTipoAnalisisDestino(destinoId, parametroId, body.get("tipoAnalisis"));
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}/destinos/{destinoId}/parametros/{parametroId}")
     public ResponseEntity<Void> quitarParamDeDestino(@PathVariable Long id,
                                                       @PathVariable Long destinoId,
