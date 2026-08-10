@@ -484,6 +484,11 @@ button.btn-nueva-muestra-btn {
     max-width: 740px;
 }
 
+/* El wizard de alta de muestra necesita más ancho para las resoluciones */
+#modalAltaMuestra .modal-box-lg {
+    max-width: min(92vw, 1020px);
+}
+
 /* Badge de estado arriba del contenido */
 .detalle-meta {
     padding-bottom: 1rem;
@@ -949,7 +954,9 @@ button.btn-nueva-muestra-btn {
     background: #dbeafe;
     color: #1e40af;
     border: 1px solid #bfdbfe;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
     font-weight: 500;
 }
 
