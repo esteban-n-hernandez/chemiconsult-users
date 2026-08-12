@@ -19,15 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.chemiconsult.entity.GrupoInformeDE;
+
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -198,8 +202,11 @@ public class InformeService {
                 ? d.getResolucionesAplicadas() : List.of();
         List<String> colLabels   = buildResolucionColumnLabels(resoluciones);
         List<String> footnotes   = buildResolucionFootnotes(resoluciones);
-        Map<String, List<ParametroResultadoTO>> grupos = agruparPorTipo(d.getParametros());
-        Map<String, String> grupoLabels = grupoInformeService.buildLabelMap();
+        List<GrupoInformeDE> gruposConfig = grupoInformeService.getAll();
+        Map<String, String> grupoLabels = gruposConfig.stream()
+                .collect(Collectors.toMap(GrupoInformeDE::getCodigo, GrupoInformeDE::getLabel, (a, b) -> a));
+        List<String> grupoOrden = gruposConfig.stream().map(GrupoInformeDE::getCodigo).toList();
+        Map<String, List<ParametroResultadoTO>> grupos = agruparPorTipo(d.getParametros(), grupoOrden);
 
         for (Map.Entry<String, List<ParametroResultadoTO>> entry : grupos.entrySet()) {
             String tipo = entry.getKey();
@@ -269,20 +276,33 @@ public class InformeService {
     // Agrupación por tipo de análisis
     // ----------------------------------------------------------------
 
-    private Map<String, List<ParametroResultadoTO>> agruparPorTipo(List<ParametroResultadoTO> params) {
-        Map<String, List<ParametroResultadoTO>> grupos = new LinkedHashMap<>();
-        if (params == null) return grupos;
+    private Map<String, List<ParametroResultadoTO>> agruparPorTipo(List<ParametroResultadoTO> params,
+                                                                     List<String> ordenGrupos) {
+        if (params == null) return new LinkedHashMap<>();
+
+        Map<String, List<ParametroResultadoTO>> raw = new LinkedHashMap<>();
         for (ParametroResultadoTO p : params) {
             String key = (p.getTipoAnalisis() != null && !p.getTipoAnalisis().isBlank())
                     ? p.getTipoAnalisis() : "";
-            grupos.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
+            raw.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
         }
-        // Mover el grupo sin tipo al final si hay otros grupos con tipo
-        if (grupos.containsKey("") && grupos.size() > 1) {
-            List<ParametroResultadoTO> sinTipo = grupos.remove("");
-            grupos.put("", sinTipo);
+
+        // Ordenar parámetros alfabéticamente dentro de cada grupo
+        Comparator<ParametroResultadoTO> alfa = Comparator.comparing(
+                ParametroResultadoTO::getNombre, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        raw.values().forEach(list -> list.sort(alfa));
+
+        // Reordenar grupos según ORDEN de GRUPO_INFORME
+        Map<String, List<ParametroResultadoTO>> ordered = new LinkedHashMap<>();
+        for (String codigo : ordenGrupos) {
+            if (raw.containsKey(codigo)) ordered.put(codigo, raw.get(codigo));
         }
-        return grupos;
+        // Grupos con tipo no registrado en la tabla (quedan al final antes de sin-tipo)
+        raw.forEach((k, v) -> { if (!k.isEmpty() && !ordered.containsKey(k)) ordered.put(k, v); });
+        // Sin tipo siempre al final
+        if (raw.containsKey("")) ordered.put("", raw.get(""));
+
+        return ordered;
     }
 
     private String labelTipoAnalisis(String tipo, Map<String, String> labels) {
