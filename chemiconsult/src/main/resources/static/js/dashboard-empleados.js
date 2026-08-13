@@ -917,7 +917,10 @@ async function generarInformeDesdeDash(id) {
         const token = localStorage.getItem("token");
         const resp = await fetch(`${API_BASE}/api/estudios/${id}/generar-informe`, {
             method: "POST",
-            headers: token ? { Authorization: "Bearer " + token } : {},
+            headers: token
+                ? { Authorization: "Bearer " + token, "Content-Type": "application/json" }
+                : { "Content-Type": "application/json" },
+            body: JSON.stringify({ equipoIds: [] }),
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const blob = await resp.blob();

@@ -93,9 +93,8 @@ function crearGrupoCola(grupo) {
 
 // ── Helpers ───────────────────────────────────────────────────
 function formatFechaCola(iso) {
-    const [y, m, d] = iso.split('-');
-    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    return `${parseInt(d)} ${meses[parseInt(m) - 1]} ${y}`;
+    const [y, m, d] = iso.split('T')[0].split('-');
+    return `${d}/${m}/${y}`;
 }
 
 function mostrarLoadingCola(show) {

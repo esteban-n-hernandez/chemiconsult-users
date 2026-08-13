@@ -76,6 +76,8 @@ public class SupabaseBucketService {
                 .header("Authorization", "Bearer " + serviceRoleKey)
                 .header("apikey", serviceRoleKey)
                 .retrieve()
+                .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(),
+                        (request, response) -> { /* el objeto ya no existe en storage, se considera borrado */ })
                 .toBodilessEntity();
     }
 

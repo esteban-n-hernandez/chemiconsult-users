@@ -201,8 +201,8 @@ function badgeFecha(task) {
     if (diff === 0) return `<span class="dl-badge dl-hoy">Hoy</span>`;
     if (diff === 1) return `<span class="dl-badge dl-soon">Mañana</span>`;
     if (diff <= 7)  return `<span class="dl-badge dl-soon">En ${diff} días</span>`;
-    const d = venc.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
-    return `<span class="dl-badge dl-ok">${d}</span>`;
+    const [y, mo, da] = task.dueDate.split('T')[0].split('-');
+    return `<span class="dl-badge dl-ok">${da}/${mo}/${y}</span>`;
 }
 
 // ── Swipe to delete ───────────────────────────────────────────

@@ -57,6 +57,9 @@
         <button class="tab-btn-custom" onclick="cambiarPestaña('gruposInforme')">
             <i class="bi bi-bookmark-check"></i> Grupos de Informe
         </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('equipos')">
+            <i class="bi bi-tools"></i> Equipos
+        </button>
     </div>
 
     <!-- ==========================================
@@ -367,6 +370,80 @@
                         <tbody id="tablaGruposInformeBody"></tbody>
                     </table>
                     <div class="tabla-paginador" id="paginadorGruposInforme"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PÁGINA / SECCIÓN: EQUIPOS
+         ========================================== -->
+    <div id="tab-equipos" class="tab-content-panel">
+        <div class="main-row-config">
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <h5><i class="bi bi-plus-circle text-success"></i> Nuevo equipo / instrumento</h5>
+                </div>
+                <div class="panel-body-custom">
+                    <form id="formEquipo">
+                        <div class="form-group-custom">
+                            <label>Nombre <span style="color:red">*</span></label>
+                            <input type="text" id="equipoNombre" class="form-control-custom"
+                                   placeholder="Ej: pHímetro, Conductímetro" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Marca</label>
+                            <input type="text" id="equipoMarca" class="form-control-custom"
+                                   placeholder="Ej: Hanna, Mettler Toledo">
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Modelo</label>
+                            <input type="text" id="equipoModelo" class="form-control-custom"
+                                   placeholder="Ej: HI9813-6">
+                        </div>
+                        <div class="form-group-custom">
+                            <label>N° de Serie</label>
+                            <input type="text" id="equipoNroSerie" class="form-control-custom"
+                                   placeholder="Ej: SN-20241234">
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Certificación / Calibración</label>
+                            <input type="text" id="equipoCertificacion" class="form-control-custom"
+                                   placeholder="Ej: CAL-2024-001">
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Vencimiento</label>
+                            <input type="date" id="equipoVencimiento" class="form-control-custom">
+                        </div>
+                        <button type="submit" class="btn-guardar-custom">
+                            <i class="bi bi-check-lg"></i> Guardar equipo
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <div class="panel-header-row">
+                        <h5><i class="bi bi-table text-primary"></i> Equipos registrados</h5>
+                        <input type="text" id="filtroEquipos" class="tabla-filtro" placeholder="Buscar...">
+                    </div>
+                </div>
+                <div class="panel-body-custom" style="padding:0;">
+                    <table class="tabla-config">
+                        <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>N° Serie</th>
+                            <th>Certificación</th>
+                            <th>Vencimiento</th>
+                            <th>Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaEquiposBody"></tbody>
+                    </table>
+                    <div class="tabla-paginador" id="paginadorEquipos"></div>
                 </div>
             </div>
         </div>

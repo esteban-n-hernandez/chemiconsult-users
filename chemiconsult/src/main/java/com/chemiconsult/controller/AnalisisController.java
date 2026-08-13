@@ -132,6 +132,7 @@ public class AnalisisController {
                         .id(a.getId())
                         .nombre(a.getNombre())
                         .createdAt(a.getCreatedAt() != null ? a.getCreatedAt().toString() : null)
+                        .tipo(a.getTipo())
                         .build())
                 .toList();
     }
@@ -160,7 +161,8 @@ public class AnalisisController {
     @Transactional
     public ResponseEntity<AnalisisArchivoTO> subirDocumento(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "tipo", defaultValue = "FACTURA") String tipo) {
 
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -173,6 +175,7 @@ public class AnalisisController {
         archivo.setArchivoUrl(path);
         archivo.setNombre(file.getOriginalFilename());
         archivo.setCreatedAt(LocalDate.now());
+        archivo.setTipo(tipo.toUpperCase());
         analisisArchivoRepository.save(archivo);
 
         analisis.setEstado(EstadoMuestraEnum.COMPLETO);
@@ -183,6 +186,7 @@ public class AnalisisController {
                 .id(archivo.getId())
                 .nombre(archivo.getNombre())
                 .createdAt(archivo.getCreatedAt().toString())
+                .tipo(archivo.getTipo())
                 .build());
     }
 
@@ -198,6 +202,20 @@ public class AnalisisController {
 
         supabaseBucketService.eliminarArchivo(BUCKET, archivo.getArchivoUrl());
         analisisArchivoRepository.delete(archivo);
+        analisisArchivoRepository.flush();
+
+        List<AnalisisArchivoDE> restantes = analisisArchivoRepository.findAllByAnalisisIdOrderByCreatedAtAsc(id);
+        boolean quedanInformes = restantes.stream()
+                .anyMatch(a -> "INFORME".equalsIgnoreCase(a.getTipo()) || a.getTipo() == null);
+        if (!quedanInformes) {
+            analisisRepository.findById(id).ifPresent(analisis -> {
+                if (analisis.getEstado() == EstadoMuestraEnum.COMPLETO) {
+                    analisis.setEstado(EstadoMuestraEnum.COMPLETO_SIN_INFORME);
+                    analisis.setUpdateDate(LocalDate.now());
+                    analisisRepository.save(analisis);
+                }
+            });
+        }
 
         return ResponseEntity.noContent().build();
     }
@@ -230,12 +248,19 @@ public class AnalisisController {
                 .body(bytes);
     }
 
+    @SuppressWarnings("unchecked")
     @PostMapping("/{id}/generar-informe")
-    public ResponseEntity<byte[]> generarInforme(@PathVariable Long id) {
+    public ResponseEntity<byte[]> generarInforme(@PathVariable Long id,
+                                                  @RequestBody(required = false) Map<String, Object> body) {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         String nro = analisis.getNumeroProtocolo() != null ? analisis.getNumeroProtocolo() : String.valueOf(id);
-        byte[] pdf = informeService.generarYPublicar(id);
+
+        List<Long> equipoIds = (body != null && body.get("equipoIds") != null)
+                ? ((List<Number>) body.get("equipoIds")).stream().map(Number::longValue).toList()
+                : List.of();
+
+        byte[] pdf = informeService.generarYPublicar(id, equipoIds);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"informe-" + nro + ".pdf\"")

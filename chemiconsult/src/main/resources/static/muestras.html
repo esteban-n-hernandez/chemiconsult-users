@@ -193,7 +193,7 @@
 
                 <!-- PANEL 1: Datos básicos -->
                 <div id="wizardPanel1" class="wizard-panel">
-                    <div class="form-row">
+                    <div class="form-row-3">
                         <div class="form-group">
                             <label>N° Protocolo <span class="required">*</span></label>
                             <input type="text" id="inputProtocolo" class="form-control-custom"
@@ -204,6 +204,10 @@
                             <label>Fecha de ingreso <span class="required">*</span></label>
                             <input type="date" id="inputFecha" class="form-control-custom"/>
                             <span class="field-error" id="errFecha">Campo requerido</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha estimada de entrega</label>
+                            <input type="date" id="inputFechaEntrega" class="form-control-custom"/>
                         </div>
                     </div>
                     <div class="form-row">
@@ -221,32 +225,24 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group" style="flex:1 1 100%;">
-                            <label>Tipo de muestra</label>
-                            <select id="inputTipoMuestraEspecifica" class="form-control-custom">
-                                <option value="">— sin especificar —</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Punto de muestreo</label>
-                            <input type="text" id="inputPuntoMuestreo" class="form-control-custom"
-                                   placeholder="Ej: Pozo norte, Salida planta..." autocomplete="off"/>
-                        </div>
-                        <div class="form-group">
-                            <label>Fecha estimada de entrega</label>
-                            <input type="date" id="inputFechaEntrega" class="form-control-custom"/>
-                        </div>
-                    </div>
-                    <div class="form-row">
+                    <div class="form-row-3">
                         <div class="form-group">
                             <label>Matriz <span class="required">*</span></label>
                             <select id="inputTipoMuestra" class="form-control-custom">
                                 <option value="">Seleccioná una matriz...</option>
                             </select>
                             <span class="field-error" id="errTipoMuestra">Seleccioná una matriz</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de muestra</label>
+                            <select id="inputTipoMuestraEspecifica" class="form-control-custom">
+                                <option value="">— sin especificar —</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Punto de muestreo</label>
+                            <input type="text" id="inputPuntoMuestreo" class="form-control-custom"
+                                   placeholder="Ej: Pozo norte, Salida planta..." autocomplete="off"/>
                         </div>
                     </div>
                 </div>
@@ -455,7 +451,20 @@
             </div>
             <!-- Upload nuevo archivo -->
             <div class="form-group">
-                <label>Agregar archivo PDF <span class="required">*</span></label>
+                <label>Tipo de archivo <span class="required">*</span></label>
+                <div style="display:flex; gap:10px; margin-bottom:4px;">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:normal; font-size:14px;">
+                        <input type="radio" name="tipoArchivo" id="tipoFactura" value="FACTURA" checked>
+                        <i class="bi bi-receipt" style="color:#6366f1;"></i> Factura
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:normal; font-size:14px;">
+                        <input type="radio" name="tipoArchivo" id="tipoInforme" value="INFORME">
+                        <i class="bi bi-file-earmark-text" style="color:#16a34a;"></i> Informe
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Archivo PDF <span class="required">*</span></label>
                 <input type="file" id="inputAltaInformePdf" class="form-control-custom"
                        accept=".pdf,application/pdf"/>
                 <span class="field-error" id="altaInformeError" style="display:none;"></span>
@@ -465,6 +474,41 @@
             <button type="button" class="btn-cancelar" id="altaInformeCancelar">Cerrar</button>
             <button type="button" class="btn-guardar" id="btnUploadAltaInforme">
                 <i class="bi bi-upload me-1"></i> Subir archivo
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SELECCIÓN DE EQUIPOS PARA INFORME -->
+<div class="modal-overlay" id="modalEquiposInforme">
+    <div class="modal-box" style="max-width: 540px;">
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-tools"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Generar informe</div>
+                <h5>Equipos / Instrumentos utilizados</h5>
+            </div>
+            <button class="modal-close" id="equiposInformeClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;">
+                Seleccioná los equipos que se utilizaron en este análisis. Podés dejar todo sin marcar si no querés incluir esta sección en el informe.
+            </p>
+            <div id="equiposInformeLoading" style="text-align:center;padding:16px 0;font-size:13px;color:var(--color-text-secondary);">
+                <span class="spinner-border spinner-border-sm me-2"></span> Cargando equipos...
+            </div>
+            <div id="equiposInformeList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;display:none;"></div>
+            <div id="equiposInformeVacio" style="display:none;font-size:13px;color:var(--color-text-secondary);padding:8px 0;">
+                No hay equipos registrados. Podés cargarlos desde el Panel Técnico.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="equiposInformeCancelar">Cancelar</button>
+            <button type="button" class="btn-cancelar" id="btnGenerarSinEquipos">
+                <i class="bi bi-file-earmark-pdf"></i> Sin equipos
+            </button>
+            <button type="button" class="btn-guardar" id="btnConfirmarEquipos">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Generar informe
             </button>
         </div>
     </div>

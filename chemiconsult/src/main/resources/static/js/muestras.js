@@ -1299,8 +1299,9 @@ function renderizarTablaMuestras(lista) {
     pagina.forEach(m => {
         const fila = document.createElement("tr");
         const codigo = m.nroProtocolo || m.id || "S/N";
-        const puedeGenerar  = m.estado === "COMPLETO_SIN_INFORME";
-        const esCancelado   = m.estado === "CANCELADO";
+        const puedeGenerar   = m.estado === "COMPLETO_SIN_INFORME";
+        const esCancelado    = m.estado === "CANCELADO";
+        const puedeAdjuntar  = m.estado === "COMPLETO" || m.estado === "COMPLETO_SIN_INFORME";
         const protocolo     = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
         const avanzarMap = {
             PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
@@ -1335,11 +1336,12 @@ function renderizarTablaMuestras(lista) {
                         onclick="onGenerarInformeDesdeTabla(${m.id})">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
                 </button>` : ''}
-                ${!esCancelado ? `
+                ${puedeAdjuntar ? `
                 <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
                         onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
                     <i class="bi bi-paperclip"></i>
-                </button>
+                </button>` : ''}
+                ${!esCancelado ? `
                 <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
                         onclick="abrirModalCancelar(${m.id}, '${codigo}')">
                     <i class="bi bi-x-circle"></i>
@@ -1442,7 +1444,7 @@ async function fetchConAuth(url, opciones = {}) {
 function establecerFechaHoy() {
     const el = document.getElementById("fecha-hoy");
     if (el) {
-        el.textContent = new Date().toLocaleDateString("es-ES", {
+        el.textContent = new Date().toLocaleDateString("es-AR", {
             weekday: "long", year: "numeric", month: "long", day: "numeric"
         });
     }
@@ -1451,7 +1453,8 @@ function establecerFechaHoy() {
 function formatearFecha(fecha) {
     if (!fecha) return "—";
     try {
-        return new Date(fecha).toLocaleDateString("es-AR");
+        const [y, m, d] = fecha.split("T")[0].split("-");
+        return `${d}/${m}/${y}`;
     } catch {
         return fecha;
     }
@@ -1959,17 +1962,68 @@ function mostrarAutoGuardadoStatus(estado) {
     }
 }
 
-async function onGenerarInforme() {
+// ── Modal de selección de equipos ────────────────────────────
+function abrirModalEquipos() {
+    const overlay = document.getElementById("modalEquiposInforme");
+    const lista   = document.getElementById("equiposInformeList");
+    const loading = document.getElementById("equiposInformeLoading");
+    const vacio   = document.getElementById("equiposInformeVacio");
+
+    lista.style.display   = "none";
+    loading.style.display = "block";
+    vacio.style.display   = "none";
+    overlay.classList.add("visible");
+
+    fetchConAuth(`${API_URL}/equipos`)
+        .then(r => r.json())
+        .then(equipos => {
+            loading.style.display = "none";
+            if (!equipos || equipos.length === 0) {
+                vacio.style.display = "block";
+                return;
+            }
+            lista.innerHTML = equipos.map(eq => `
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;font-size:13px;">
+                    <input type="checkbox" class="equipo-check" value="${eq.id}" style="margin-top:2px;flex-shrink:0;">
+                    <span>
+                        <strong>${escHtml(eq.nombre)}</strong>
+                        ${eq.marca || eq.modelo ? `<span style="color:var(--color-text-secondary)"> — ${[eq.marca, eq.modelo].filter(Boolean).join(' ')}</span>` : ''}
+                        ${eq.certificacion ? `<br><span style="font-size:11px;color:var(--color-text-secondary);">${escHtml(eq.certificacion)}</span>` : ''}
+                    </span>
+                </label>`).join('');
+            lista.style.display = "flex";
+        })
+        .catch(() => {
+            loading.style.display = "none";
+            vacio.style.display   = "block";
+        });
+}
+
+function cerrarModalEquipos() {
+    document.getElementById("modalEquiposInforme").classList.remove("visible");
+}
+
+function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function onGenerarInforme() {
     if (!detalleAnalisisId) return;
+    abrirModalEquipos();
+}
+
+async function ejecutarGeneracionInforme(equipoIds) {
+    cerrarModalEquipos();
 
     const btn = document.getElementById("btnGenerarInforme");
-    const textoOriginal = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Generando...`;
+    const textoOriginal = btn ? btn.innerHTML : "";
+    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Generando...`; }
 
     try {
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/generar-informe`, {
-            method: "POST"
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ equipoIds: equipoIds || [] })
         });
 
         if (!resp.ok) {
@@ -1977,7 +2031,6 @@ async function onGenerarInforme() {
             throw new Error(err.message || `Error HTTP ${resp.status}`);
         }
 
-        // Descarga el PDF directamente en el navegador
         const blob = await resp.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -1996,10 +2049,25 @@ async function onGenerarInforme() {
         console.error("Error generando informe:", err);
         mostrarToast(`Error al generar el informe: ${err.message}`, true);
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = textoOriginal;
+        if (btn) { btn.disabled = false; btn.innerHTML = textoOriginal; }
     }
 }
+
+// Listeners del modal de equipos
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("equiposInformeClose").addEventListener("click", cerrarModalEquipos);
+    document.getElementById("equiposInformeCancelar").addEventListener("click", cerrarModalEquipos);
+
+    document.getElementById("btnGenerarSinEquipos").addEventListener("click", () => {
+        ejecutarGeneracionInforme([]);
+    });
+
+    document.getElementById("btnConfirmarEquipos").addEventListener("click", () => {
+        const ids = Array.from(document.querySelectorAll(".equipo-check:checked"))
+            .map(cb => Number(cb.value));
+        ejecutarGeneracionInforme(ids);
+    });
+});
 
 // Recalcula si el botón "Generar informe" debe estar habilitado
 // según si todos los inputs de resultado tienen valor
@@ -2016,7 +2084,7 @@ function recalcularEstadoBtnGenerarInforme() {
 // Genera el informe directamente desde la fila de la tabla (sin abrir el modal)
 window.onGenerarInformeDesdeTabla = async function(id) {
     detalleAnalisisId = id;
-    await onGenerarInforme();
+    abrirModalEquipos();
 };
 
 // ============================================================
@@ -2055,10 +2123,15 @@ async function cargarListaArchivos(analisisId) {
         }
 
         archivos.forEach(a => {
+            const esFact = a.tipo === "FACTURA";
+            const badge = esFact
+                ? `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#ede9fe;color:#6366f1;">FACTURA</span>`
+                : `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#dcfce7;color:#16a34a;">INFORME</span>`;
             const fila = document.createElement("div");
             fila.style.cssText = "display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--bg-card, #f8f9fa); border:1px solid var(--border-color, #dee2e6);";
             fila.innerHTML = `
                 <i class="bi bi-file-earmark-pdf-fill" style="color:#dc3545; font-size:15px;"></i>
+                ${badge}
                 <span style="flex:1; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
                       title="${a.nombre || ''}">${a.nombre || 'Archivo'}</span>
                 <span style="font-size:11px; color:#888;">${formatearFecha(a.createdAt)}</span>
@@ -2179,8 +2252,10 @@ async function onUploadAltaInforme() {
     btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Subiendo...`;
 
     try {
+        const tipo = document.querySelector('input[name="tipoArchivo"]:checked')?.value || "FACTURA";
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("tipo", tipo);
 
         const resp = await fetchConAuth(`${API_URL}/estudios/${altaInformeAnalisisId}/documento`, {
             method: "POST",

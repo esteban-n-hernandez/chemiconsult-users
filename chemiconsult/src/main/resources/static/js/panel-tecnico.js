@@ -6,6 +6,12 @@ function esc(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function formatFechaTabla(iso) {
+    if (!iso) return '-';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+}
+
 let TIPOS_ANALISIS = [];
 
 async function cargarGruposInforme() {
@@ -166,6 +172,40 @@ const tablas = {
             label:  document.getElementById('ef-label').value.trim(),
             codigo: document.getElementById('ef-codigo').value.trim().toUpperCase().replace(/\s+/g, '_'),
             orden:  parseInt(document.getElementById('ef-orden').value) || 0,
+        }),
+    },
+    equipos: {
+        url: `${API_URL}/equipos/todos`,
+        tbodyId: 'tablaEquiposBody',
+        filtroId: 'filtroEquipos',
+        pagId:    'paginadorEquipos',
+        colSpan:  7,
+        data: [], filtro: '', pagina: 1, porPagina: 20,
+        renderFila: r => `
+            <td>${esc(r.nombre)}${r.activo ? '' : ' <span style="color:#aaa;font-size:11px">(inactivo)</span>'}</td>
+            <td>${esc(r.marca || '-')}</td>
+            <td>${esc(r.modelo || '-')}</td>
+            <td>${esc(r.nroSerie || '-')}</td>
+            <td>${esc(r.certificacion || '-')}</td>
+            <td>${r.vencimiento ? formatFechaTabla(r.vencimiento) : '-'}</td>`,
+        textoVacio: 'No hay equipos registrados.',
+        textoBuscar: r => `${r.nombre} ${r.marca || ''} ${r.modelo || ''} ${r.nroSerie || ''} ${r.certificacion || ''}`,
+        editUrl: id => `${API_URL}/equipos/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombre" value="${esc(r.nombre)}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-marca" value="${esc(r.marca || '')}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-modelo" value="${esc(r.modelo || '')}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-nroSerie" value="${esc(r.nroSerie || '')}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-certificacion" value="${esc(r.certificacion || '')}" style="width:100%"></td>
+            <td><input type="date" class="unidad-inline-input" id="ef-vencimiento" value="${r.vencimiento || ''}"></td>`,
+        buildPutBody: r => ({
+            nombre:        document.getElementById('ef-nombre').value.trim(),
+            marca:         document.getElementById('ef-marca').value.trim() || null,
+            modelo:        document.getElementById('ef-modelo').value.trim() || null,
+            nroSerie:      document.getElementById('ef-nroSerie').value.trim() || null,
+            certificacion: document.getElementById('ef-certificacion').value.trim() || null,
+            vencimiento:   document.getElementById('ef-vencimiento').value || null,
+            activo:        r.activo,
         }),
     },
 };
@@ -495,6 +535,33 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('Error guardando grupo:', err);
             mostrarToast('No se pudo guardar el grupo.', 'danger');
+        }
+    });
+
+    document.getElementById('formEquipo').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const body = {
+            nombre:        document.getElementById('equipoNombre').value.trim(),
+            marca:         document.getElementById('equipoMarca').value.trim() || null,
+            modelo:        document.getElementById('equipoModelo').value.trim() || null,
+            nroSerie:      document.getElementById('equipoNroSerie').value.trim() || null,
+            certificacion: document.getElementById('equipoCertificacion').value.trim() || null,
+            vencimiento:   document.getElementById('equipoVencimiento').value || null,
+        };
+        try {
+            const res = await fetch(`${API_URL}/equipos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            cargarTabla('equipos');
+            mostrarToast('Equipo guardado.');
+        } catch (err) {
+            console.error('Error guardando equipo:', err);
+            mostrarToast('No se pudo guardar el equipo.', 'danger');
         }
     });
 });

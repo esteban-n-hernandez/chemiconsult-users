@@ -32,4 +32,7 @@ public class AnalisisArchivoDE {
 
     @Column(name = "CREATED_AT")
     private LocalDate createdAt;
+
+    @Column(name = "TIPO", length = 20)
+    private String tipo;
 }

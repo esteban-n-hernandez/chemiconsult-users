@@ -124,7 +124,17 @@
 
         <div class="paginacion-wrapper">
             <span id="pag-info">Mostrando 0 de 0 registros</span>
-            <div class="paginacion-btns" id="paginacion-btns"></div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gris);">
+                    <span>Filas:</span>
+                    <select id="selectPorPagina" class="filtro-fecha-input" style="width:60px;cursor:pointer;">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+                <div class="paginacion-btns" id="paginacion-btns"></div>
+            </div>
         </div>
 
         <div class="estudios-notice">

@@ -208,6 +208,18 @@
     color: var(--color-text-secondary);
 }
 
+/* ── Botón factura ── */
+.btn-factura {
+    border-color: #c4b5fd;
+    color: #6366f1;
+}
+
+.btn-factura:hover {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+}
+
 /* ── Ordenamiento de columnas ── */
 .th-sortable {
     cursor: pointer;

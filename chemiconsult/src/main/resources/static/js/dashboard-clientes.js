@@ -40,7 +40,7 @@ const token = localStorage.getItem("token");
 let todasLasMuestras = [];
 let datosFiltrados   = [];
 let paginaActual     = 1;
-const POR_PAGINA     = 10;
+let POR_PAGINA       = 5;
 let sortCol = "codigo";
 let sortDir = "desc";
 
@@ -60,13 +60,15 @@ async function cargarEstudios() {
             codigo:    e.nroProtocolo || `ID-${e.id}`,
             tipo:      e.tipoMuestraNombre || e.tipo || "—",
             fechaRaw:  e.fechaIngreso || e.createdDate || "",
-            fecha:     e.fechaIngreso
-                ? new Date(e.fechaIngreso + "T00:00:00").toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
-                : e.createdDate
-                    ? new Date(e.createdDate).toLocaleDateString("es-AR", { day:"2-digit", month:"short", year:"numeric" })
-                    : "—",
-            estado:   e.estado || "—",
-            informe:  e.estado === "COMPLETO"  // solo COMPLETO tiene PDF disponible
+            fecha:     (() => {
+                const iso = (e.fechaIngreso || e.createdDate || "").split("T")[0];
+                if (!iso) return "—";
+                const [y, m, d] = iso.split("-");
+                return `${d}/${m}/${y}`;
+            })(),
+            estado:      e.estado || "—",
+            informe:     e.estado === "COMPLETO",
+            tieneFactura: !!e.tieneFactura
         }));
 
         // KPIs
@@ -111,17 +113,22 @@ function badgeHTML(estado) {
 }
 
 function btnInformeHTML(muestra) {
-    if (muestra.informe) {
-        return `<button class="btn-descargar" onclick="abrirInformes(${muestra.id}, '${muestra.codigo}')">
-                    <i class="bi bi-eye"></i> Ver informe
-                </button>`;
-    }
     if (muestra.estado === "CANCELADO") {
         return `<span style="color:var(--color-text-tertiary);font-size:13px;">—</span>`;
     }
-    return `<button class="btn-descargar disabled" disabled>
-                <i class="bi bi-clock"></i> En proceso
-            </button>`;
+    const btnInforme = muestra.informe
+        ? `<button class="btn-descargar" onclick="abrirArchivos(${muestra.id}, '${muestra.codigo}', 'INFORME')" title="Ver informe">
+               <i class="bi bi-file-earmark-text"></i> Informe
+           </button>`
+        : `<button class="btn-descargar disabled" disabled title="Informe no disponible">
+               <i class="bi bi-clock"></i> Informe
+           </button>`;
+    const btnFactura = muestra.tieneFactura
+        ? `<button class="btn-descargar btn-factura" onclick="abrirArchivos(${muestra.id}, '${muestra.codigo}', 'FACTURA')" title="Ver factura">
+               <i class="bi bi-receipt"></i> Factura
+           </button>`
+        : "";
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;">${btnInforme}${btnFactura}</div>`;
 }
 
 function renderTabla() {
@@ -190,10 +197,10 @@ function renderTabla() {
 const pdfIframe  = document.getElementById("pdfIframe");
 const pdfLoading = document.getElementById("pdfLoading");
 
-async function abrirInformes(estudioId, protocolo) {
-    document.getElementById("pdfModalTitulo").textContent = `Informe ${protocolo}`;
+async function abrirArchivos(estudioId, protocolo, tipo) {
+    const labelTipo = tipo === "FACTURA" ? "Factura" : "Informe";
+    document.getElementById("pdfModalTitulo").textContent = `${labelTipo} — ${protocolo}`;
 
-    // Reset estado visual
     pdfLoading.style.display = "flex";
     pdfLoading.innerHTML     = `<div class="spinner"></div><span>Cargando...</span>`;
     pdfIframe.style.display  = "none";
@@ -208,11 +215,12 @@ async function abrirInformes(estudioId, protocolo) {
             headers: { "Authorization": `Bearer ${token}` }
         });
         if (!res.ok) throw new Error();
-        const archivos = await res.json();
+        const todos = await res.json();
+        const archivos = todos.filter(a => !a.tipo || a.tipo === tipo);
 
         if (archivos.length === 0) {
             pdfLoading.innerHTML = `<i class="bi bi-exclamation-circle" style="font-size:32px;color:#ef4444;"></i>
-                                    <span style="color:#ef4444;">No hay archivos disponibles.</span>`;
+                                    <span style="color:#ef4444;">No hay ${labelTipo.toLowerCase()}s disponibles.</span>`;
             return;
         }
 
@@ -224,25 +232,29 @@ async function abrirInformes(estudioId, protocolo) {
             archivos.forEach((a, i) => {
                 const btn = document.createElement("button");
                 btn.className = "btn-archivo-nav" + (i === 0 ? " activo" : "");
-                btn.textContent = a.nombre || `Archivo ${i + 1}`;
+                btn.textContent = a.nombre || `${labelTipo} ${i + 1}`;
                 btn.dataset.archivoId = a.id;
                 btn.onclick = () => {
                     document.querySelectorAll(".btn-archivo-nav").forEach(b => b.classList.remove("activo"));
                     btn.classList.add("activo");
-                    cargarArchivoEnModal(estudioId, a.id, a.nombre || `Archivo ${i + 1}`, protocolo);
+                    cargarArchivoEnModal(estudioId, a.id, a.nombre || `${labelTipo} ${i + 1}`, protocolo);
                 };
                 btns.appendChild(btn);
             });
         }
 
-        // Cargar el primer archivo automáticamente
         const primero = archivos[0];
-        cargarArchivoEnModal(estudioId, primero.id, primero.nombre || "Archivo", protocolo);
+        cargarArchivoEnModal(estudioId, primero.id, primero.nombre || labelTipo, protocolo);
 
     } catch {
         pdfLoading.innerHTML = `<i class="bi bi-exclamation-circle" style="font-size:32px;color:#ef4444;"></i>
-                                <span style="color:#ef4444;">No se pudo cargar el informe.</span>`;
+                                <span style="color:#ef4444;">No se pudo cargar el archivo.</span>`;
     }
+}
+
+// Alias para compatibilidad con llamadas existentes
+function abrirInformes(estudioId, protocolo) {
+    return abrirArchivos(estudioId, protocolo, 'INFORME');
 }
 
 function cargarArchivoEnModal(estudioId, archivoId, nombre, protocolo) {
@@ -327,6 +339,12 @@ function aplicarFiltros() {
     renderTabla();
     actualizarIconosOrden();
 }
+
+document.getElementById("selectPorPagina").addEventListener("change", function () {
+    POR_PAGINA = parseInt(this.value, 10);
+    paginaActual = 1;
+    renderTabla();
+});
 
 document.getElementById("buscadorProtocolo").addEventListener("input", aplicarFiltros);
 document.getElementById("filtroDesde").addEventListener("change", aplicarFiltros);
