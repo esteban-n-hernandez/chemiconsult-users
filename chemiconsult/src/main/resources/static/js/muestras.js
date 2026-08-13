@@ -1341,6 +1341,10 @@ function renderizarTablaMuestras(lista) {
                         onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
                     <i class="bi bi-paperclip"></i>
                 </button>` : ''}
+                <button class="btn-accion btn-accion-word" title="Descargar Word (.docx)"
+                        onclick="descargarWord(${m.id}, '${protocolo}')">
+                    <i class="bi bi-file-earmark-word"></i>
+                </button>
                 ${!esCancelado ? `
                 <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
                         onclick="abrirModalCancelar(${m.id}, '${codigo}')">
@@ -2292,3 +2296,89 @@ if (document.readyState === "loading") {
 } else {
     init();
 }
+// ──────────────────────────────────────────
+// EXPORTACIÓN WORD
+// ──────────────────────────────────────────
+
+window.descargarWord = async function(id, protocolo) {
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${id}/export`);
+        if (!resp.ok) throw new Error("Error al generar el archivo");
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `muestra-${protocolo || id}.docx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo descargar el archivo Word.");
+    }
+};
+
+function parseFechaExport(ddmmyyyy) {
+    if (!ddmmyyyy || ddmmyyyy.length !== 10) return null;
+    const [d, m, y] = ddmmyyyy.split("/");
+    if (!d || !m || !y || y.length !== 4) return null;
+    return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+}
+
+function mascaraFecha(input) {
+    input.addEventListener("input", function() {
+        let v = this.value.replace(/\D/g, "").substring(0, 8);
+        if (v.length >= 3) v = v.substring(0,2) + "/" + v.substring(2);
+        if (v.length >= 6) v = v.substring(0,5) + "/" + v.substring(5);
+        this.value = v;
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const desde = document.getElementById("exportDesde");
+    const hasta = document.getElementById("exportHasta");
+    if (desde) mascaraFecha(desde);
+    if (hasta) mascaraFecha(hasta);
+});
+
+window.exportarRango = async function() {
+    const desdeRaw = document.getElementById("exportDesde").value;
+    const hastaRaw = document.getElementById("exportHasta").value;
+    const desde = parseFechaExport(desdeRaw);
+    const hasta  = parseFechaExport(hastaRaw);
+
+    if (!desde || !hasta) {
+        alert("Ingresá las fechas en formato dd/mm/aaaa.");
+        return;
+    }
+    if (desde > hasta) {
+        alert("La fecha de inicio no puede ser mayor que la fecha fin.");
+        return;
+    }
+
+    const btn = document.querySelector(".btn-export-word");
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Generando...`;
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/export?desde=${desde}&hasta=${hasta}`);
+        if (resp.status === 404) {
+            alert("No hay muestras en ese rango de fechas.");
+            return;
+        }
+        if (!resp.ok) throw new Error("Error al generar el ZIP");
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `export_${desde}_${hasta}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo generar la exportación.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+};

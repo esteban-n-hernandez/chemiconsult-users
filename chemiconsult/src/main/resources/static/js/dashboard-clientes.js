@@ -322,11 +322,31 @@ function actualizarIconosOrden() {
     });
 }
 
+// ── Máscara y parseo de fechas dd/mm/aaaa ──
+function mascaraFechaCliente(input) {
+    input.addEventListener("input", function () {
+        let v = this.value.replace(/\D/g, "").substring(0, 8);
+        if (v.length >= 3) v = v.substring(0, 2) + "/" + v.substring(2);
+        if (v.length >= 6) v = v.substring(0, 5) + "/" + v.substring(5);
+        this.value = v;
+    });
+}
+
+function parseFechaFiltro(ddmmyyyy) {
+    if (!ddmmyyyy || ddmmyyyy.length !== 10) return null;
+    const [d, m, y] = ddmmyyyy.split("/");
+    if (!d || !m || !y || y.length !== 4) return null;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+}
+
+mascaraFechaCliente(document.getElementById("filtroDesde"));
+mascaraFechaCliente(document.getElementById("filtroHasta"));
+
 // ── Filtros ──
 function aplicarFiltros() {
-    const texto  = document.getElementById("buscadorProtocolo").value.trim().toLowerCase();
-    const desde  = document.getElementById("filtroDesde").value;
-    const hasta  = document.getElementById("filtroHasta").value;
+    const texto = document.getElementById("buscadorProtocolo").value.trim().toLowerCase();
+    const desde = parseFechaFiltro(document.getElementById("filtroDesde").value);
+    const hasta = parseFechaFiltro(document.getElementById("filtroHasta").value);
 
     datosFiltrados = todasLasMuestras.filter(m => {
         if (texto && !m.codigo.toLowerCase().includes(texto)) return false;
@@ -347,8 +367,8 @@ document.getElementById("selectPorPagina").addEventListener("change", function (
 });
 
 document.getElementById("buscadorProtocolo").addEventListener("input", aplicarFiltros);
-document.getElementById("filtroDesde").addEventListener("change", aplicarFiltros);
-document.getElementById("filtroHasta").addEventListener("change", aplicarFiltros);
+document.getElementById("filtroDesde").addEventListener("input", aplicarFiltros);
+document.getElementById("filtroHasta").addEventListener("input", aplicarFiltros);
 document.getElementById("btnLimpiarFecha").addEventListener("click", () => {
     document.getElementById("filtroDesde").value = "";
     document.getElementById("filtroHasta").value = "";

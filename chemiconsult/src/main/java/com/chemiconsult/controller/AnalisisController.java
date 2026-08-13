@@ -6,6 +6,7 @@ import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.repository.AnalisisArchivoRepository;
 import com.chemiconsult.repository.AnalisisRepository;
 import com.chemiconsult.service.AnalisisService;
+import com.chemiconsult.service.ExportWordService;
 import com.chemiconsult.service.InformeService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.AnalisisArchivoTO;
@@ -15,6 +16,7 @@ import com.chemiconsult.to.ResultadoParametroTO;
 import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,10 +25,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Log4j2
 @RestController
@@ -38,6 +43,7 @@ public class AnalisisController {
     private final AnalisisRepository analisisRepository;
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final InformeService informeService;
+    private final ExportWordService exportWordService;
     private final String BUCKET = "chemiconsult-bucket";
 
     @GetMapping
@@ -267,16 +273,74 @@ public class AnalisisController {
                 .body(pdf);
     }
 
+    /** Descarga un único .docx con los datos completos de una muestra. */
+    @GetMapping("/{id}/export")
+    public ResponseEntity<byte[]> exportarMuestra(@PathVariable Long id) {
+        AnalisisDetalleTO detalle = analisisService.getEstudioDetalle(id);
+        try {
+            byte[] docx = exportWordService.generarDocx(detalle);
+            String nombre = "muestra-" + nvlProtocolo(detalle) + ".docx";
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombre + "\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                    .body(docx);
+        } catch (Exception e) {
+            log.error("Error exportando muestra {} a Word", id, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al generar el archivo Word");
+        }
+    }
+
+    /** Descarga un .zip con un .docx por cada muestra en el rango de fechas indicado. */
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportarRango(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<AnalisisDE> muestras = analisisRepository.findAllByFechaIngresoBetweenOrderByFechaIngresoAsc(desde, hasta);
+        if (muestras.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay muestras en ese rango de fechas");
+        }
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zip = new ZipOutputStream(baos)) {
+
+            for (AnalisisDE m : muestras) {
+                AnalisisDetalleTO detalle = analisisService.getEstudioDetalle(m.getId());
+                byte[] docx = exportWordService.generarDocx(detalle);
+                String nombre = "muestra-" + nvlProtocolo(detalle) + ".docx";
+                zip.putNextEntry(new ZipEntry(nombre));
+                zip.write(docx);
+                zip.closeEntry();
+            }
+            zip.finish();
+
+            String zipNombre = "export_" + desde + "_" + hasta + ".zip";
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipNombre + "\"")
+                    .contentType(MediaType.parseMediaType("application/zip"))
+                    .body(baos.toByteArray());
+        } catch (Exception e) {
+            log.error("Error exportando rango {} - {} a Word", desde, hasta, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al generar el archivo ZIP");
+        }
+    }
+
+    private String nvlProtocolo(AnalisisDetalleTO d) {
+        return (d.getNroProtocolo() != null && !d.getNroProtocolo().isBlank())
+                ? d.getNroProtocolo().replaceAll("[^a-zA-Z0-9\\-_]", "_")
+                : String.valueOf(d.getId());
+    }
+
     @Autowired
     public AnalisisController(AnalisisService analisisService,
                               SupabaseBucketService supabaseBucketService,
                               AnalisisRepository analisisRepository,
                               AnalisisArchivoRepository analisisArchivoRepository,
-                              InformeService informeService) {
+                              InformeService informeService,
+                              ExportWordService exportWordService) {
         this.analisisService = analisisService;
         this.supabaseBucketService = supabaseBucketService;
         this.analisisRepository = analisisRepository;
         this.analisisArchivoRepository = analisisArchivoRepository;
         this.informeService = informeService;
+        this.exportWordService = exportWordService;
     }
 }

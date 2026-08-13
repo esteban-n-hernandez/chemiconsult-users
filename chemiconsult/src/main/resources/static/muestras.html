@@ -99,6 +99,22 @@
                 </div>
             </div>
 
+            <!-- Barra exportación Word -->
+            <div class="export-word-bar">
+                <span class="export-word-label">
+                    <i class="bi bi-file-earmark-word"></i> Exportar a Word
+                </span>
+                <div class="export-word-campos">
+                    <label class="export-word-lbl">Desde</label>
+                    <input type="text" id="exportDesde" class="export-word-date" placeholder="dd/mm/aaaa" maxlength="10">
+                    <label class="export-word-lbl">Hasta</label>
+                    <input type="text" id="exportHasta" class="export-word-date" placeholder="dd/mm/aaaa" maxlength="10">
+                    <button class="btn-export-word" onclick="exportarRango()">
+                        <i class="bi bi-download"></i> Exportar rango (.zip)
+                    </button>
+                </div>
+            </div>
+
             <table class="tabla-muestras" id="tablaMuestras">
                 <thead>
                 <tr>
