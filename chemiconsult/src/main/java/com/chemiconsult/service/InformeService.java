@@ -2,10 +2,12 @@ package com.chemiconsult.service;
 
 import com.chemiconsult.entity.AnalisisArchivoDE;
 import com.chemiconsult.entity.AnalisisDE;
+import com.chemiconsult.entity.EquipoDE;
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.mapper.EstudiosMapper;
 import com.chemiconsult.repository.AnalisisArchivoRepository;
 import com.chemiconsult.repository.AnalisisRepository;
+import com.chemiconsult.service.EquipoService;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.LimiteAplicableTO;
@@ -73,22 +75,25 @@ public class InformeService {
     private final SupabaseBucketService supabaseBucketService;
     private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
     private final GrupoInformeService grupoInformeService;
+    private final EquipoService equipoService;
 
     @Autowired
     public InformeService(AnalisisRepository analisisRepository,
                           AnalisisArchivoRepository analisisArchivoRepository,
                           SupabaseBucketService supabaseBucketService,
                           com.chemiconsult.mapper.EstudiosMapper estudiosMapper,
-                          GrupoInformeService grupoInformeService) {
+                          GrupoInformeService grupoInformeService,
+                          EquipoService equipoService) {
         this.analisisRepository = analisisRepository;
         this.analisisArchivoRepository = analisisArchivoRepository;
         this.supabaseBucketService = supabaseBucketService;
         this.estudiosMapper = estudiosMapper;
         this.grupoInformeService = grupoInformeService;
+        this.equipoService = equipoService;
     }
 
     @Transactional
-    public byte[] generarYPublicar(Long analisisId) {
+    public byte[] generarYPublicar(Long analisisId, List<Long> equipoIds) {
         AnalisisDE analisis = analisisRepository.findById(analisisId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Muestra no encontrada"));
 
@@ -105,9 +110,11 @@ public class InformeService {
                     "Los siguientes parámetros no tienen resultado cargado: " + String.join(", ", sinResultado));
         }
 
+        List<EquipoDE> equipos = equipoService.findAllById(equipoIds);
+
         byte[] pdfBytes;
         try {
-            pdfBytes = buildPdf(detalle);
+            pdfBytes = buildPdf(detalle, equipos);
         } catch (Exception e) {
             log.error("Error generando PDF para analisis {}", analisisId, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al generar el informe: " + e.getMessage());
@@ -118,11 +125,14 @@ public class InformeService {
         String path = analisisId + "/" + nombreArchivo;
         supabaseBucketService.subirArchivoBytes(BUCKET, path, pdfBytes);
 
-        AnalisisArchivoDE archivo = new AnalisisArchivoDE();
+        AnalisisArchivoDE archivo = analisisArchivoRepository
+                .findByAnalisisIdAndArchivoUrl(analisisId, path)
+                .orElse(new AnalisisArchivoDE());
         archivo.setAnalisis(analisis);
         archivo.setArchivoUrl(path);
         archivo.setNombre(nombreArchivo);
         archivo.setCreatedAt(LocalDate.now());
+        archivo.setTipo("INFORME");
         analisisArchivoRepository.save(archivo);
 
         analisis.setEstado(EstadoMuestraEnum.COMPLETO);
@@ -136,7 +146,7 @@ public class InformeService {
     // PDF construction
     // ----------------------------------------------------------------
 
-    private byte[] buildPdf(AnalisisDetalleTO d) throws Exception {
+    private byte[] buildPdf(AnalisisDetalleTO d, List<EquipoDE> equipos) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document doc = new Document(PageSize.A4, 50, 50, 110, 72);
         PdfWriter writer = PdfWriter.getInstance(doc, baos);
@@ -145,13 +155,13 @@ public class InformeService {
         writer.setPageEvent(new HeaderFooterEvento(logoBytes));
 
         doc.open();
-        addContenido(doc, d);
+        addContenido(doc, d, equipos);
         doc.close();
 
         return baos.toByteArray();
     }
 
-    private void addContenido(Document doc, AnalisisDetalleTO d) throws Exception {
+    private void addContenido(Document doc, AnalisisDetalleTO d, List<EquipoDE> equipos) throws Exception {
         Font fTitulo = new Font(Font.HELVETICA, 14, Font.BOLD | Font.UNDERLINE);
         Font fLabel = new Font(Font.HELVETICA, 10, Font.BOLD);
         Font fValor = new Font(Font.HELVETICA, 10, Font.NORMAL);
@@ -229,6 +239,9 @@ public class InformeService {
 
         // Nota arsénico (solo cuando el resultado supera 0,01 mg/l)
         addNotaArsenico(doc, d, fNota);
+
+        // Equipos/instrumentos utilizados (solo si se seleccionaron)
+        addEquipos(doc, equipos, fSeccion, fLabel, fValor);
 
         // Firma
         addFirma(doc);
@@ -574,6 +587,46 @@ public class InformeService {
         p.setSpacingBefore(6);
         p.setSpacingAfter(20);
         doc.add(p);
+    }
+
+    private void addEquipos(Document doc, List<EquipoDE> equipos,
+                             Font fSeccion, Font fLabel, Font fValor) throws DocumentException {
+        if (equipos == null || equipos.isEmpty()) return;
+
+        doc.add(buildSeparator(1f, new Color(26, 107, 58)));
+
+        Paragraph titulo = new Paragraph("Equipos / Instrumentos utilizados", fSeccion);
+        titulo.setAlignment(Element.ALIGN_CENTER);
+        titulo.setSpacingBefore(8);
+        titulo.setSpacingAfter(6);
+        doc.add(titulo);
+
+        PdfPTable tabla = new PdfPTable(6);
+        tabla.setWidthPercentage(100);
+        tabla.setWidths(new float[]{20f, 14f, 14f, 14f, 24f, 14f});
+        tabla.setSpacingAfter(8);
+        tabla.setHeaderRows(1);
+
+        Font fHeader = new Font(Font.HELVETICA, 9, Font.BOLD);
+        Color headerBg = new Color(226, 239, 217);
+        addHeaderCell(tabla, "Equipo / Instrumento", fHeader, headerBg);
+        addHeaderCell(tabla, "Marca", fHeader, headerBg);
+        addHeaderCell(tabla, "Modelo", fHeader, headerBg);
+        addHeaderCell(tabla, "N° Serie", fHeader, headerBg);
+        addHeaderCell(tabla, "Certificación", fHeader, headerBg);
+        addHeaderCell(tabla, "Vencimiento", fHeader, headerBg);
+
+        Font fData = new Font(Font.HELVETICA, 9, Font.NORMAL);
+        for (EquipoDE eq : equipos) {
+            addDataCell(tabla, nvl(eq.getNombre()), fData, Element.ALIGN_LEFT);
+            addDataCell(tabla, nvl(eq.getMarca()), fData, Element.ALIGN_CENTER);
+            addDataCell(tabla, nvl(eq.getModelo()), fData, Element.ALIGN_CENTER);
+            addDataCell(tabla, nvl(eq.getNroSerie()), fData, Element.ALIGN_CENTER);
+            addDataCell(tabla, nvl(eq.getCertificacion()), fData, Element.ALIGN_LEFT);
+            addDataCell(tabla, eq.getVencimiento() != null ? eq.getVencimiento().format(FMT) : "-", fData, Element.ALIGN_CENTER);
+        }
+
+        doc.add(tabla);
     }
 
     private void addFirma(Document doc) throws Exception {

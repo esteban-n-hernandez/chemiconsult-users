@@ -29,4 +29,5 @@ public class EstudioTO {
     private List<Long> resolucionDestinoIds;
     private String observaciones;
     private List<Long> parametrosIds;
+    private Boolean tieneFactura;
 }

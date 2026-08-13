@@ -10,4 +10,7 @@ public interface AnalisisArchivoRepository extends JpaRepository<AnalisisArchivo
     List<AnalisisArchivoDE> findAllByAnalisisIdOrderByCreatedAtAsc(Long analisisId);
     Optional<AnalisisArchivoDE> findByIdAndAnalisisId(Long id, Long analisisId);
     void deleteAllByAnalisisId(Long analisisId);
+    boolean existsByAnalisisIdAndTipo(Long analisisId, String tipo);
+    List<AnalisisArchivoDE> findAllByAnalisisIdInAndTipo(Iterable<Long> analisisIds, String tipo);
+    Optional<AnalisisArchivoDE> findByAnalisisIdAndArchivoUrl(Long analisisId, String archivoUrl);
 }

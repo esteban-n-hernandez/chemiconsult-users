@@ -35,6 +35,7 @@ public class AnalisisService {
     private final MetodologiaRepository metodologiaRepository;
     private final ParametroMetodologiaRepository parametroMetodologiaRepository;
     private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
+    private final AnalisisArchivoRepository analisisArchivoRepository;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -58,19 +59,34 @@ public class AnalisisService {
             analisisRepository.saveAll(vencidas);
             log.info("Marcadas {} muestra(s) como DEMORADA por fecha de entrega vencida.", vencidas.size());
         }
-        return all.stream()
+        List<EstudioTO> tos = all.stream()
                 .map(estudiosMapper::mapEntityToEstudioTO)
-                .toList();
+                .collect(Collectors.toList());
+        poblarTieneFactura(tos);
+        return tos;
     }
 
     public List<EstudioTO> getEstudiosByID(Long userId) {
         ClienteDE cliente = clienteRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new RuntimeException("No se encontró un cliente asociado a este usuario"));
 
-        return analisisRepository.findAllByCliente(cliente)
+        List<EstudioTO> tos = analisisRepository.findAllByCliente(cliente)
                 .stream()
                 .map(estudiosMapper::mapEntityToEstudioTO)
-                .toList();
+                .collect(Collectors.toList());
+        poblarTieneFactura(tos);
+        return tos;
+    }
+
+    private void poblarTieneFactura(List<EstudioTO> tos) {
+        if (tos.isEmpty()) return;
+        List<Long> ids = tos.stream().map(EstudioTO::getId).toList();
+        Set<Long> conFactura = analisisArchivoRepository
+                .findAllByAnalisisIdInAndTipo(ids, "FACTURA")
+                .stream()
+                .map(a -> a.getAnalisis().getId())
+                .collect(Collectors.toSet());
+        tos.forEach(t -> t.setTieneFactura(conFactura.contains(t.getId())));
     }
 
     public Optional<AnalisisDE> getEstudio(Long id) {
@@ -478,7 +494,8 @@ public class AnalisisService {
                            BrevoEmailService brevoEmailService,
                            MetodologiaRepository metodologiaRepository,
                            ParametroMetodologiaRepository parametroMetodologiaRepository,
-                           com.chemiconsult.mapper.EstudiosMapper estudiosMapper) {
+                           com.chemiconsult.mapper.EstudiosMapper estudiosMapper,
+                           AnalisisArchivoRepository analisisArchivoRepository) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -492,5 +509,6 @@ public class AnalisisService {
         this.metodologiaRepository = metodologiaRepository;
         this.parametroMetodologiaRepository = parametroMetodologiaRepository;
         this.estudiosMapper = estudiosMapper;
+        this.analisisArchivoRepository = analisisArchivoRepository;
     }
 }

@@ -9,4 +9,5 @@ public class AnalisisArchivoTO {
     private Long id;
     private String nombre;
     private String createdAt;
+    private String tipo;
 }
