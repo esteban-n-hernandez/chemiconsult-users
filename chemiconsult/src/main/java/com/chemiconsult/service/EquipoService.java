@@ -50,8 +50,7 @@ public class EquipoService {
     public void eliminar(Long id) {
         EquipoDE e = repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        e.setActivo(false);
-        repo.save(e);
+        repo.delete(e);
     }
 
     private void mapToEntity(EquipoTO to, EquipoDE e) {

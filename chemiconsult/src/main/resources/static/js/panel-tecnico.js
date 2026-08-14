@@ -993,6 +993,7 @@ async function eliminar(nombre, id) {
         tiposmuestra:  `${API_URL}/tipos-muestra/${id}`,
         categoriasDoc: `${API_URL}/categorias-documento/${id}`,
         gruposInforme: `${API_URL}/grupos-informe/${id}`,
+        equipos: `${API_URL}/equipos/${id}`,
     };
 
     const token = localStorage.getItem('token');
