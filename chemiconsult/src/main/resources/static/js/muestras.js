@@ -388,7 +388,7 @@ function vincularEventos() {
     document.getElementById("btnGenerarInforme").addEventListener("click", onGenerarInforme);
 
     // — Desbloquear edición de resultados cuando COMPLETO —
-    document.getElementById("btnEditarResultados").addEventListener("click", () => {
+    document.getElementById("btnEditarResultados").addEventListener("click", async () => {
         modoEdicionCompleto = true;
         document.querySelectorAll("#detalleParametros .param-resultado-input").forEach(el => {
             el.removeAttribute("readonly");
@@ -397,6 +397,22 @@ function vincularEventos() {
             el.style.cursor = "";
         });
         document.getElementById("btnEditarResultados").style.display = "none";
+        
+        // Cambiar estado a COMPLETO_SIN_INFORME cuando se edita
+        try {
+            const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/estado`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ estado: "COMPLETO_SIN_INFORME" })
+            });
+            if (resp.ok) {
+                // Recargar detalle para reflejar cambio de estado
+                const detalle = await obtenerDetalleMuestra(detalleAnalisisId);
+                renderizarDetalleMuestra(detalle);
+            }
+        } catch (err) {
+            console.error("Error cambiando estado:", err);
+        }
     });
 
     // Live re-evaluation de badges y auto-guardado
