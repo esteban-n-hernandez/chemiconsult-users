@@ -467,6 +467,25 @@ function vincularEventos() {
                 }
             }
             
+            // Actualizar estilos de las filas de límites
+            paramCard.querySelectorAll(".param-limite-row").forEach((limitRow, idx) => {
+                const badge = badges[idx];
+                if (badge) {
+                    const esCumple = badge.classList.contains("badge-cumple-si");
+                    const esNoCumple = badge.classList.contains("badge-cumple-no");
+                    
+                    if (esNoCumple) {
+                        // Aplicar borde rojo
+                        limitRow.style.borderLeft = "3px solid #dc3545";
+                        limitRow.style.paddingLeft = "8px";
+                    } else {
+                        // Remover borde rojo
+                        limitRow.style.borderLeft = "";
+                        limitRow.style.paddingLeft = "";
+                    }
+                }
+            });
+            
             recalcularEstadoBtnGenerarInforme();
         }
         if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-metodologia-select")) {
