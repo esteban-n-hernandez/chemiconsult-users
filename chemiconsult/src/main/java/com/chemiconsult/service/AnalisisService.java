@@ -393,6 +393,20 @@ public class AnalisisService {
     }
 
     @Transactional
+    public void invalidarInforme(Long analisisId) {
+        AnalisisDE analisis = analisisRepository.findById(analisisId)
+                .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
+        if (analisis.getArchivos() != null) {
+            analisis.getArchivos().stream()
+                    .filter(a -> "INFORME".equalsIgnoreCase(a.getTipo()))
+                    .forEach(a -> a.setDesactualizado(true));
+        }
+        recalcularEstadoDesdeCondiciones(analisis);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
+    }
+
+    @Transactional
     public void recalcularEstadoDesdeCondiciones(Long analisisId) {
         AnalisisDE analisis = analisisRepository.findById(analisisId)
                 .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
@@ -410,7 +424,8 @@ public class AnalisisService {
                 .allMatch(ap -> ap.getValorResultado() != null && !ap.getValorResultado().trim().isEmpty());
 
         boolean tieneInforme = analisis.getArchivos() != null && analisis.getArchivos().stream()
-                .anyMatch(a -> a == null || a.getTipo() == null || "INFORME".equalsIgnoreCase(a.getTipo()));
+                .filter(a -> a != null && "INFORME".equalsIgnoreCase(a.getTipo()))
+                .anyMatch(a -> !Boolean.TRUE.equals(a.getDesactualizado()));
 
         if (!todosResultadosCargados) {
             analisis.setEstado(EstadoMuestraEnum.EN_PROCESO);

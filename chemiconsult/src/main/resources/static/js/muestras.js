@@ -398,20 +398,18 @@ function vincularEventos() {
         });
         document.getElementById("btnEditarResultados").style.display = "none";
         
-        // Cambiar estado a COMPLETO_SIN_INFORME cuando se edita
+        // Marcar informe como desactualizado (cambia estado a COMPLETO_SIN_INFORME)
         try {
-            const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/estado`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ estado: "COMPLETO_SIN_INFORME" })
+            const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/invalidar-informe`, {
+                method: "POST"
             });
             if (resp.ok) {
-                // Recargar detalle para reflejar cambio de estado
                 const detalle = await obtenerDetalleMuestra(detalleAnalisisId);
                 renderizarDetalleMuestra(detalle);
+                await cargarMuestrasActivas();
             }
         } catch (err) {
-            console.error("Error cambiando estado:", err);
+            console.error("Error invalidando informe:", err);
         }
     });
 
@@ -490,15 +488,11 @@ function vincularEventos() {
                     const esCumple = badge.classList.contains("badge-cumple-si");
                     const esNoCumple = badge.classList.contains("badge-cumple-no");
                     
-                    if (esNoCumple) {
-                        // Aplicar borde rojo
-                        limitRow.style.borderLeft = "3px solid #dc3545";
-                        limitRow.style.paddingLeft = "8px";
-                    } else {
-                        // Remover borde rojo
-                        limitRow.style.borderLeft = "";
-                        limitRow.style.paddingLeft = "";
-                    }
+                    const bordeColor = esCumple    ? '#22c55e'
+                                    : esNoCumple ? '#dc3545'
+                                    :              '#d1d5db';
+                    limitRow.style.borderLeft  = `3px solid ${bordeColor}`;
+                    limitRow.style.paddingLeft = "8px";
                 }
             });
             
@@ -669,12 +663,13 @@ window.abrirEdicionMuestra = async function(id) {
         document.querySelectorAll(".check-parametro").forEach(cb => {
             if (!paramIdsEnMuestra.has(parseInt(cb.value))) {
                 cb.checked = false;
+                cb.closest(".param-select-card")?.classList.remove("selected");
             }
         });
 
         // Agregar manualmente los parámetros que no vinieron de ningún destino
         const idsYaEnLista = new Set(
-            Array.from(document.querySelectorAll(".parametro-item-row"))
+            Array.from(document.querySelectorAll(".param-select-card"))
                 .map(el => parseInt(el.dataset.parametroId))
         );
         for (const p of (detalle.parametros || [])) {
@@ -687,7 +682,7 @@ window.abrirEdicionMuestra = async function(id) {
             }
         }
 
-        if (document.querySelectorAll(".parametro-item-row").length > 0) {
+        if (document.querySelectorAll(".param-select-card").length > 0) {
             document.getElementById("parametrosVacio").style.display = "none";
         }
 
@@ -999,13 +994,14 @@ function recalcularParametrosSeleccionados() {
     const panelVacio = document.getElementById("parametrosVacio");
 
     // Conservamos los parámetros agregados a mano (buscador individual) que no vinieron de un destino
-    const idsManuales = Array.from(contenedorLista.querySelectorAll(".parametro-item-row"))
+    const idsManuales = Array.from(contenedorLista.querySelectorAll(".param-select-card"))
         .filter(fila => fila.dataset.origen === "manual")
         .map(fila => fila.dataset.parametroId);
 
     contenedorLista.innerHTML = "";
 
     const parametrosUnicos   = new Map(); // id -> parametro
+    const paramDestinoIds    = new Map(); // id -> Set<destinoId>
     const paramDestinoLabels = new Map(); // id -> string[]
 
     destinosSeleccionados.forEach(destinoId => {
@@ -1013,7 +1009,9 @@ function recalcularParametrosSeleccionados() {
         const label      = destinosNombresCache.get(destinoId) || String(destinoId);
         parametros.forEach(p => {
             parametrosUnicos.set(p.id, p);
+            if (!paramDestinoIds.has(p.id))    paramDestinoIds.set(p.id, new Set());
             if (!paramDestinoLabels.has(p.id)) paramDestinoLabels.set(p.id, []);
+            paramDestinoIds.get(p.id).add(destinoId);
             paramDestinoLabels.get(p.id).push(label);
         });
     });
@@ -1028,9 +1026,36 @@ function recalcularParametrosSeleccionados() {
     }
 
     panelVacio.style.display = "none";
-    [...parametrosUnicos.values()]
-        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
-        .forEach(p => agregarParametroALaLista(p, "norma", paramDestinoLabels.get(p.id) || []));
+
+    const usarSecciones = destinosSeleccionados.size >= 2;
+
+    if (!usarSecciones) {
+        [...parametrosUnicos.values()]
+            .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+            .forEach(p => agregarParametroALaLista(p, "norma", paramDestinoLabels.get(p.id) || []));
+    } else {
+        const sortNombre = (a, b) => a.nombre.localeCompare(b.nombre, "es");
+
+        const compartidos = [...parametrosUnicos.values()]
+            .filter(p => paramDestinoIds.get(p.id).size >= 2)
+            .sort(sortNombre);
+
+        if (compartidos.length > 0) {
+            const bodyComun = appendParamSectionHeader(contenedorLista, "En común", "bi-layers-fill");
+            compartidos.forEach(p => agregarParametroALaLista(p, "norma", paramDestinoLabels.get(p.id) || [], bodyComun));
+        }
+
+        destinosSeleccionados.forEach(destinoId => {
+            const label      = destinosNombresCache.get(destinoId) || String(destinoId);
+            const exclusivos = (parametrosPorDestinoCache.get(destinoId) || [])
+                .filter(p => paramDestinoIds.get(p.id).size === 1)
+                .sort(sortNombre);
+            if (exclusivos.length > 0) {
+                const bodyEx = appendParamSectionHeader(contenedorLista, label, "bi-file-earmark-text");
+                exclusivos.forEach(p => agregarParametroALaLista(p, "norma", [label], bodyEx));
+            }
+        });
+    }
 
     // Reponer los agregados manualmente (si el usuario ya había buscado alguno antes)
     idsManuales.forEach(id => {
@@ -1039,6 +1064,36 @@ function recalcularParametrosSeleccionados() {
             agregarParametroALaLista(param, "manual");
         }
     });
+}
+
+function appendParamSectionHeader(container, label, iconClass) {
+    const section = document.createElement("div");
+    section.className = "param-section";
+
+    const header = document.createElement("div");
+    header.className = "param-section-divider";
+    header.innerHTML = `<i class="bi ${iconClass}"></i>`;
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = label;
+    header.appendChild(labelSpan);
+    const chevron = document.createElement("i");
+    chevron.className = "bi bi-chevron-up param-section-chevron";
+    header.appendChild(chevron);
+
+    const body = document.createElement("div");
+    body.className = "param-section-body";
+
+    header.addEventListener("click", () => {
+        const open = body.style.display !== "none";
+        body.style.display = open ? "none" : "";
+        chevron.classList.toggle("bi-chevron-up",   !open);
+        chevron.classList.toggle("bi-chevron-down",  open);
+    });
+
+    section.appendChild(header);
+    section.appendChild(body);
+    container.appendChild(section);
+    return body;
 }
 
 
@@ -1108,11 +1163,11 @@ function cerrarPanelBuscador() {
 // ============================================================
 // 7. AGREGAR PARÁMETRO A LA LISTA VISUAL
 // ============================================================
-function agregarParametroALaLista(parametro, origen = "manual", destinoLabels = []) {
-    const contenedorLista = document.getElementById("parametrosLista");
+function agregarParametroALaLista(parametro, origen = "manual", destinoLabels = [], targetContainer = null) {
+    const contenedorLista = targetContainer || document.getElementById("parametrosLista");
     document.getElementById("parametrosVacio").style.display = "none";
 
-    if (contenedorLista.querySelector(`[data-parametro-id="${parametro.id}"]`)) {
+    if (document.getElementById("parametrosLista").querySelector(`[data-parametro-id="${parametro.id}"]`)) {
         return;
     }
 
@@ -1397,7 +1452,6 @@ function renderizarTablaMuestras(lista) {
         const protocolo     = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
         const avanzarMap = {
             PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
-            EN_PROCESO: { label: "Marcar completo", icono: "bi-check2-circle" },
             DEMORADA:   { label: "Reactivar",        icono: "bi-arrow-counterclockwise" },
         };
         const avanzar = avanzarMap[m.estado];
@@ -1422,11 +1476,6 @@ function renderizarTablaMuestras(lista) {
                 <button class="btn-accion" title="Editar datos"
                         onclick="abrirEdicionMuestra(${m.id})">
                     <i class="bi bi-pencil"></i>
-                </button>` : ''}
-                ${puedeGenerar ? `
-                <button class="btn-accion btn-accion-verde" title="Generar informe PDF"
-                        onclick="onGenerarInformeDesdeTabla(${m.id})">
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
                 </button>` : ''}
                 ${puedeAdjuntar ? `
                 <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
@@ -1704,6 +1753,10 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
     estadoEl.className = "";
     estadoEl.innerHTML = badgeHTML(d.estado);
 
+    // Banner informe desactualizado
+    const bannerInforme = document.getElementById("bannerInformeDesactualizado");
+    if (bannerInforme) bannerInforme.style.display = d.informeDesactualizado ? "flex" : "none";
+
     document.getElementById("detalleCliente").textContent = d.cliente || "—";
     document.getElementById("detalleMatrizTipo").textContent = d.matrizNombre || "—";
     document.getElementById("detallePuntoMuestreo").textContent = d.puntoMuestreo || "—";
@@ -1779,10 +1832,10 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
                     badgeText = "No cumple";
                 }
                  
-                // Aplicar indicador sutil si no cumple (solo border-left, sin fondo)
-                const limitRowStyle = l.cumple === false 
-                    ? 'style="border-left:3px solid #dc3545;padding-left:8px;margin-bottom:6px;padding:8px;border-radius:3px;"'
-                    : 'style="margin-bottom:6px;padding:8px;border-radius:3px;"';
+                const limitRowBorder = l.cumple === true  ? '#22c55e'
+                                    : l.cumple === false ? '#dc3545'
+                                    :                      '#d1d5db';
+                const limitRowStyle = `style="border-left:3px solid ${limitRowBorder};padding-left:8px;margin-bottom:6px;padding:8px;border-radius:3px;"`;
                  
                 return `
                     <div class="param-limite-row" ${limitRowStyle}>
@@ -2266,9 +2319,12 @@ async function cargarListaArchivos(analisisId) {
 
         archivos.forEach(a => {
             const esFact = a.tipo === "FACTURA";
+            const esDesact = !esFact && a.desactualizado;
             const badge = esFact
                 ? `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#ede9fe;color:#6366f1;">FACTURA</span>`
-                : `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#dcfce7;color:#16a34a;">INFORME</span>`;
+                : esDesact
+                    ? `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#fef9c3;color:#854d0e;">INFORME DESACTUALIZADO</span>`
+                    : `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#dcfce7;color:#16a34a;">INFORME</span>`;
             const fila = document.createElement("div");
             fila.style.cssText = "display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--bg-card, #f8f9fa); border:1px solid var(--border-color, #dee2e6);";
             fila.innerHTML = `

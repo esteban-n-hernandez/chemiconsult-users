@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía del Sistema — Laboratorio Chemiconsult</title>
+<script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO"></script>
+<style>
+/* ── Tokens ─────────────────────────────────────── */
+:root {
+  --bg:          #F4F7FC;
+  --surface:     #FFFFFF;
+  --surface-alt: #EBF0FA;
+  --border:      #D4DAF0;
+  --text:        #1C2033;
+  --text-2:      #5C6285;
+  --accent:      #2B65CC;
+  --accent-bg:   #E8EEFA;
+  --accent-dark: #1A449A;
+  --success:     #1A7B50;
+  --success-bg:  #E6F5ED;
+  --warning:     #B55A00;
+  --warning-bg:  #FEF0E0;
+  --danger:      #A51E24;
+  --danger-bg:   #FAEAEA;
+  --info:        #1460A3;
+  --info-bg:     #E5EFF9;
+  --sidebar-w:   252px;
+  --radius:      6px;
+  --shadow:      0 1px 3px rgba(28,32,51,.10), 0 0 0 1px rgba(28,32,51,.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:          #0D1018;
+    --surface:     #141827;
+    --surface-alt: #1A1E2E;
+    --border:      #252B40;
+    --text:        #E2E7F5;
+    --text-2:      #848DB8;
+    --accent:      #4D83E0;
+    --accent-bg:   #1A2540;
+    --accent-dark: #6B9FED;
+    --success:     #2DA568;
+    --success-bg:  #0D2A1C;
+    --warning:     #E07020;
+    --warning-bg:  #2A1A08;
+    --danger:      #E04248;
+    --danger-bg:   #280D10;
+    --info:        #4A88D0;
+    --info-bg:     #0D1E30;
+    --shadow:      0 1px 4px rgba(0,0,0,.40);
+  }
+}
+
+:root[data-theme="light"] {
+  --bg:#F4F7FC; --surface:#FFFFFF; --surface-alt:#EBF0FA; --border:#D4DAF0;
+  --text:#1C2033; --text-2:#5C6285; --accent:#2B65CC; --accent-bg:#E8EEFA;
+  --accent-dark:#1A449A; --success:#1A7B50; --success-bg:#E6F5ED;
+  --warning:#B55A00; --warning-bg:#FEF0E0; --danger:#A51E24; --danger-bg:#FAEAEA;
+  --info:#1460A3; --info-bg:#E5EFF9;
+}
+:root[data-theme="dark"] {
+  --bg:#0D1018; --surface:#141827; --surface-alt:#1A1E2E; --border:#252B40;
+  --text:#E2E7F5; --text-2:#848DB8; --accent:#4D83E0; --accent-bg:#1A2540;
+  --accent-dark:#6B9FED; --success:#2DA568; --success-bg:#0D2A1C;
+  --warning:#E07020; --warning-bg:#2A1A08; --danger:#E04248; --danger-bg:#280D10;
+  --info:#4A88D0; --info-bg:#0D1E30;
+}
+
+/* ── Reset ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ────────────────────────────────────── */
+#sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-brand .lab-label {
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  display: block;
+  margin-bottom: 2px;
+}
+.sidebar-brand .lab-name {
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.sidebar-nav { padding: 12px 0; flex: 1; }
+
+.nav-group-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  padding: 10px 20px 4px;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px;
+  font-size: .875rem;
+  color: var(--text-2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+}
+.sidebar-nav a .icon { font-size: 1rem; width: 18px; text-align: center; }
+
+.sidebar-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  font-size: .75rem;
+  color: var(--text-2);
+}
+
+/* Theme toggle */
+#theme-toggle {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  font-size: .75rem;
+  color: var(--text-2);
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 8px;
+  transition: background .15s;
+}
+#theme-toggle:hover { background: var(--accent-bg); color: var(--accent); }
+
+/* ── Main content ───────────────────────────────── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 48px 52px;
+  max-width: 940px;
+}
+
+/* ── Section ────────────────────────────────────── */
+.section {
+  margin-bottom: 72px;
+}
+
+.section-eyebrow {
+  font-size: .70rem;
+  font-weight: 700;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.section-title {
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  text-wrap: balance;
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin-bottom: 20px;
+}
+
+.section-lead {
+  font-size: 1.025rem;
+  color: var(--text-2);
+  max-width: 680px;
+  margin-bottom: 28px;
+  line-height: 1.7;
+}
+
+h3 {
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 32px 0 12px;
+}
+
+h4 {
+  font-size: .9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-2);
+  margin: 24px 0 10px;
+}
+
+p { margin-bottom: 12px; font-size: .95rem; }
+p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 20px; font-size: .95rem; }
+li { margin-bottom: 5px; }
+
+/* ── Hero ───────────────────────────────────────── */
+#hero {
+  margin-bottom: 60px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border);
+}
+.hero-title {
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  text-wrap: balance;
+  margin-bottom: 14px;
+}
+.hero-sub {
+  font-size: 1.1rem;
+  color: var(--text-2);
+  max-width: 560px;
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+.hero-meta {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.hero-meta-item {
+  font-size: .8rem;
+  color: var(--text-2);
+}
+.hero-meta-item strong {
+  display: block;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1px;
+}
+
+/* ── Badges / Chips ─────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.badge-blue    { background: var(--accent-bg);   color: var(--accent); }
+.badge-green   { background: var(--success-bg);  color: var(--success); }
+.badge-orange  { background: var(--warning-bg);  color: var(--warning); }
+.badge-red     { background: var(--danger-bg);   color: var(--danger); }
+.badge-grey    { background: var(--surface-alt); color: var(--text-2); }
+
+/* ── Role cards ─────────────────────────────────── */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.role-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.role-card .role-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.role-card .role-name {
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.role-card .role-code {
+  font-family: 'Consolas', 'SF Mono', monospace;
+  font-size: .72rem;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+.role-card p { font-size: .82rem; color: var(--text-2); margin: 0; }
+
+/* ── Workflow steps ─────────────────────────────── */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 20px 0;
+  position: relative;
+}
+.flow-item {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+.flow-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.flow-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.flow-connector {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+  min-height: 16px;
+  margin: 4px 0;
+}
+.flow-item:last-child .flow-connector { display: none; }
+.flow-body {
+  padding: 4px 0 20px;
+  flex: 1;
+}
+.flow-body strong { font-size: .95rem; display: block; margin-bottom: 2px; }
+.flow-body p { font-size: .875rem; color: var(--text-2); margin: 0; }
+
+/* ── Status flow ────────────────────────────────── */
+.status-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+.status-flow .arrow {
+  color: var(--text-2);
+  font-size: .8rem;
+}
+
+/* ── Callout boxes ──────────────────────────────── */
+.callout {
+  border-left: 3px solid;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 16px;
+  margin: 20px 0;
+  font-size: .9rem;
+}
+.callout-info    { border-color: var(--info);    background: var(--info-bg);    color: var(--info); }
+.callout-warn    { border-color: var(--warning);  background: var(--warning-bg); color: var(--warning); }
+.callout-success { border-color: var(--success);  background: var(--success-bg); color: var(--success); }
+.callout-danger  { border-color: var(--danger);   background: var(--danger-bg);  color: var(--danger); }
+.callout p { margin: 0; color: inherit; font-size: inherit; }
+.callout strong { display: block; font-weight: 700; margin-bottom: 3px; }
+
+/* ── Tables ─────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+th {
+  background: var(--surface-alt);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-alt); }
+
+/* ── Code / monospace ───────────────────────────── */
+code {
+  font-family: 'Consolas', 'SF Mono', 'Menlo', monospace;
+  font-size: .85em;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--accent-dark);
+}
+:root[data-theme="dark"] code { color: var(--accent); }
+@media (prefers-color-scheme: dark) { code { color: var(--accent); } }
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'Consolas', 'SF Mono', 'Menlo', monospace;
+  font-size: .85rem;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 16px 0;
+}
+
+/* ── Module summary cards ───────────────────────── */
+.module-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.mod-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.mod-card .mod-icon { font-size: 1.25rem; margin-bottom: 8px; }
+.mod-card .mod-name { font-weight: 700; font-size: .9rem; margin-bottom: 4px; }
+.mod-card .mod-desc { font-size: .8rem; color: var(--text-2); line-height: 1.5; }
+
+/* ── Divider ────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+
+/* ── Env table ──────────────────────────────────── */
+.env-key {
+  font-family: 'Consolas', 'SF Mono', monospace;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  #sidebar { transform: translateX(-100%); transition: transform .25s; }
+  #sidebar.open { transform: translateX(0); --sidebar-w: 252px; }
+  #main { margin-left: 0; padding: 24px 20px; }
+  .hero-title { font-size: 2rem; }
+  #menu-btn {
+    display: flex !important;
+    position: fixed; top: 12px; left: 12px; z-index: 200;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 6px 10px; cursor: pointer;
+    font-size: .85rem; color: var(--text-2); gap: 6px; align-items: center;
+    box-shadow: var(--shadow);
+  }
+}
+
+#menu-btn { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+
+</head>
+<body>
+<!-- Mobile menu button -->
+<button id="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Abrir menú">
+  ☰ Menú
+</button>
+
+<!-- Sidebar -->
+<nav id="sidebar" role="navigation" aria-label="Módulos">
+  <div class="sidebar-brand">
+    <span class="lab-label">Sistema de gestión</span>
+    <span class="lab-name">Laboratorio<br>Chemiconsult</span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group-label">General</div>
+    <a href="#intro"><span class="icon">📋</span> Introducción</a>
+    <a href="#acceso"><span class="icon">🔐</span> Acceso y roles</a>
+    <a href="#login-flow"><span class="icon">🔑</span> Flujo de login</a>
+    <a href="#dashboard"><span class="icon">📊</span> Dashboard</a>
+
+    <div class="nav-group-label">Módulos</div>
+    <a href="#muestras"><span class="icon">🧪</span> Muestras</a>
+    <a href="#cola"><span class="icon">⚗️</span> Cola de análisis</a>
+    <a href="#informes"><span class="icon">📄</span> Informes PDF</a>
+    <a href="#clientes"><span class="icon">👥</span> Clientes</a>
+    <a href="#agenda"><span class="icon">📅</span> Agenda</a>
+    <a href="#panel-tecnico"><span class="icon">⚙️</span> Panel técnico</a>
+    <a href="#presupuesto"><span class="icon">💼</span> Presupuesto</a>
+    <a href="#documentos"><span class="icon">🗂️</span> Documentos</a>
+    <a href="#stock"><span class="icon">🧴</span> Stock</a>
+    <a href="#tareas-modulo"><span class="icon">✅</span> Tareas</a>
+    <a href="#usuarios-modulo"><span class="icon">🛡️</span> Usuarios</a>
+    <a href="#chat"><span class="icon">💬</span> Chat</a>
+
+    <div class="nav-group-label">Referencia técnica</div>
+    <a href="#arquitectura"><span class="icon">🏗️</span> Arquitectura</a>
+    <a href="#variables"><span class="icon">🔑</span> Variables de entorno</a>
+    <a href="#deploy"><span class="icon">🚀</span> Deploy</a>
+  </div>
+  <div class="sidebar-footer">
+    <button id="theme-toggle" onclick="toggleTheme()">☀ / ☾ Cambiar tema</button>
+    Chemiconsult · Uso interno
+  </div>
+</nav>
+
+<!-- Main -->
+<main id="main">
+
+  <!-- Hero -->
+  <div id="hero">
+    <div class="hero-title">Sistema de Gestión<br>Laboratorio Chemiconsult</div>
+    <p class="hero-sub">Documentación completa del sistema de gestión interno. Cubre el flujo operativo de cada módulo, la configuración técnica y el proceso de deploy.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><strong>Stack</strong>Java 21 · Spring Boot 3.5 · PostgreSQL</div>
+      <div class="hero-meta-item"><strong>Frontend</strong>Vanilla JS · Bootstrap 5</div>
+      <div class="hero-meta-item"><strong>Deploy</strong>Fly.io (São Paulo)</div>
+      <div class="hero-meta-item"><strong>Storage</strong>Supabase Storage</div>
+      <div class="hero-meta-item"><strong>Email</strong>Brevo API</div>
+    </div>
+  </div>
+
+  <!-- ══ INTRODUCCIÓN ══════════════════════════════════ -->
+  <section class="section" id="intro">
+    <div class="section-eyebrow">Introducción</div>
+    <h2 class="section-title">¿Qué hace este sistema?</h2>
+    <p class="section-lead">Chemiconsult es un sistema de gestión integral para el laboratorio de análisis ambientales y químicos. Cubre todo el ciclo: desde la recepción de muestras hasta la entrega del informe firmado al cliente.</p>
+
+    <div class="module-summary">
+      <div class="mod-card"><div class="mod-icon">🧪</div><div class="mod-name">Muestras</div><div class="mod-desc">Registro, seguimiento y resultados de estudios de análisis</div></div>
+      <div class="mod-card"><div class="mod-icon">⚗️</div><div class="mod-name">Cola de análisis</div><div class="mod-desc">Asignación y avance de parámetros por analista</div></div>
+      <div class="mod-card"><div class="mod-icon">👥</div><div class="mod-name">Clientes</div><div class="mod-desc">CRM: personas físicas, empresas, sucursales, contactos</div></div>
+      <div class="mod-card"><div class="mod-icon">📅</div><div class="mod-name">Agenda</div><div class="mod-desc">Muestreos, visitas técnicas, vencimientos y compras</div></div>
+      <div class="mod-card"><div class="mod-icon">⚙️</div><div class="mod-name">Panel técnico</div><div class="mod-desc">Matrices, resoluciones, parámetros y límites reglamentarios</div></div>
+      <div class="mod-card"><div class="mod-icon">💼</div><div class="mod-name">Presupuesto</div><div class="mod-desc">Generación y seguimiento de cotizaciones con PDF</div></div>
+      <div class="mod-card"><div class="mod-icon">🗂️</div><div class="mod-name">Documentos</div><div class="mod-desc">Gestión de archivos internos con vencimientos</div></div>
+      <div class="mod-card"><div class="mod-icon">🧴</div><div class="mod-name">Stock</div><div class="mod-desc">Inventario de reactivos, materiales y equipamiento</div></div>
+      <div class="mod-card"><div class="mod-icon">✅</div><div class="mod-name">Tareas</div><div class="mod-desc">Tablero kanban de tareas internas del equipo</div></div>
+      <div class="mod-card"><div class="mod-icon">🛡️</div><div class="mod-name">Usuarios</div><div class="mod-desc">Alta de empleados y clientes, permisos por módulo</div></div>
+      <div class="mod-card"><div class="mod-icon">💬</div><div class="mod-name">Chat</div><div class="mod-desc">Mensajería 1 a 1 y canal grupal interno</div></div>
+      <div class="mod-card"><div class="mod-icon">📄</div><div class="mod-name">Informes PDF</div><div class="mod-desc">Generación de informes firmados con logo y resoluciones</div></div>
+    </div>
+  </section>
+
+  <!-- ══ ACCESO Y ROLES ════════════════════════════════ -->
+  <section class="section" id="acceso">
+    <div class="section-eyebrow">Seguridad</div>
+    <h2 class="section-title">Acceso y roles</h2>
+    <p class="section-lead">El sistema usa autenticación JWT con tres roles. Cada empleado puede tener acceso solo a los módulos que le estén habilitados.</p>
+
+    <h3>Roles</h3>
+    <div class="role-grid">
+      <div class="role-card">
+        <div class="role-icon">🛡️</div>
+        <div class="role-name">Administrador</div>
+        <div class="role-code">ROLE_ADMIN</div>
+        <p>Acceso total al sistema. Puede crear usuarios, asignar roles y módulos.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">🔬</div>
+        <div class="role-name">Empleado</div>
+        <div class="role-code">ROLE_EMPLEADO</div>
+        <p>Accede solo a los módulos que el admin le habilitó. No puede gestionar usuarios.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">🏢</div>
+        <div class="role-name">Cliente</div>
+        <div class="role-code">ROLE_CLIENTE</div>
+        <p>Ve únicamente su propio dashboard con sus análisis y puede descargar resultados.</p>
+      </div>
+    </div>
+
+    <h3>Sesión y seguridad</h3>
+    <ul>
+      <li>El JWT expira en <strong>1 hora</strong> (3 600 000 ms). Si una sesión queda inactiva, el usuario debe volver a ingresar.</li>
+      <li>Las contraseñas se almacenan con <strong>BCrypt</strong>, nunca en texto plano.</li>
+      <li>El endpoint <code>/login</code> devuelve el token, el rol y la lista de módulos habilitados.</li>
+      <li>La ruta <code>/actuator/health</code> es pública para los checks de Fly.io.</li>
+    </ul>
+
+    <h3>Módulos habilitables por empleado</h3>
+    <p>Un admin puede habilitar o deshabilitar módulos específicos para cada empleado. Los módulos disponibles son:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Clave</th><th>Módulo</th></tr></thead>
+        <tbody>
+          <tr><td><code>MUESTRAS</code></td><td>Gestión de estudios y análisis</td></tr>
+          <tr><td><code>COLA_ANALISIS</code></td><td>Cola de trabajo del analista</td></tr>
+          <tr><td><code>CLIENTES</code></td><td>CRM de clientes</td></tr>
+          <tr><td><code>AGENDA</code></td><td>Agenda de eventos</td></tr>
+          <tr><td><code>PANEL_TECNICO</code></td><td>Configuración técnica (matrices, resoluciones)</td></tr>
+          <tr><td><code>PRESUPUESTO</code></td><td>Generación de presupuestos</td></tr>
+          <tr><td><code>DOCUMENTOS</code></td><td>Gestión documental</td></tr>
+          <tr><td><code>STOCK</code></td><td>Inventario de materiales</td></tr>
+          <tr><td><code>TAREAS</code></td><td>Tablero de tareas</td></tr>
+          <tr><td><code>USUARIOS</code></td><td>Alta y gestión de usuarios</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ FLUJO DE LOGIN ══════════════════════════════ -->
+  <section class="section" id="login-flow">
+    <div class="section-eyebrow">Seguridad</div>
+    <h2 class="section-title">Flujo de login y autenticación JWT</h2>
+    <p class="section-lead">El sistema usa autenticación stateless: no hay sesión en el servidor. Cada request lleva el token JWT en el header. Hay dos flujos distintos: el login inicial y la validación por request.</p>
+
+    <h3>Clases involucradas</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Clase</th><th>Paquete</th><th>Responsabilidad</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>AuthController</code></td>
+            <td><code>controller</code></td>
+            <td>Endpoint <code>POST /login</code>. Orquesta el login y devuelve el token + datos del usuario.</td>
+          </tr>
+          <tr>
+            <td><code>JwtUserDetailsService</code></td>
+            <td><code>service</code></td>
+            <td>Implementa <code>UserDetailsService</code> de Spring. Busca el usuario por email (o username) y construye el objeto <code>UserDetails</code> con su rol.</td>
+          </tr>
+          <tr>
+            <td><code>JwtUtil</code></td>
+            <td><code>security</code></td>
+            <td>Genera y valida tokens JWT. Extrae claims (subject = email, userID). Firma con HMAC-SHA usando la clave de <code>JWT_SECRET</code>.</td>
+          </tr>
+          <tr>
+            <td><code>JwtRequestFilter</code></td>
+            <td><code>security</code></td>
+            <td>Filtro que se ejecuta en <strong>cada request</strong>. Extrae el Bearer token, lo valida y setea la autenticación en el <code>SecurityContextHolder</code>.</td>
+          </tr>
+          <tr>
+            <td><code>SecurityConfig</code></td>
+            <td><code>configuration</code></td>
+            <td>Configura Spring Security: rutas públicas, STATELESS session, CORS, HSTS, y registra el <code>JwtRequestFilter</code> antes del filtro estándar de Spring.</td>
+          </tr>
+          <tr>
+            <td><code>DaoAuthenticationProvider</code></td>
+            <td>Spring Security</td>
+            <td>Delega a <code>JwtUserDetailsService</code> para cargar el usuario y compara la contraseña con BCrypt.</td>
+          </tr>
+          <tr>
+            <td><code>JwtAuthenticationEntryPoint</code></td>
+            <td><code>security</code></td>
+            <td>Si un request protegido llega sin token o con token inválido, devuelve <code>401 Unauthorized</code>.</td>
+          </tr>
+          <tr>
+            <td><code>UserRepository</code></td>
+            <td><code>repository</code></td>
+            <td>Acceso a la tabla <code>CHEMI_USERS</code>. Búsqueda por email o username.</td>
+          </tr>
+          <tr>
+            <td><code>UserService</code></td>
+            <td><code>service</code></td>
+            <td>Devuelve los módulos habilitados del usuario (<code>getModulosForUser</code>), que se incluyen en la respuesta del login.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Flujo 1: login inicial (<code>POST /login</code>)</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Request del frontend</strong>
+          <p>El frontend envía <code>POST /login</code> con <code>email</code> y <code>password</code> como <code>@RequestParam</code> (form params, no JSON).</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>AuthController.login()</code></strong>
+          <p>Crea un <code>UsernamePasswordAuthenticationToken</code> con email y password, y lo pasa al <code>AuthenticationManager</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>DaoAuthenticationProvider</code></strong>
+          <p>Llama a <code>JwtUserDetailsService.loadUserByUsername(email)</code> para obtener el usuario de la BD. Compara la contraseña ingresada con el hash BCrypt almacenado. Si no coincide, lanza <code>BadCredentialsException</code> → 401.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>JwtUserDetailsService.loadUserByUsername()</code></strong>
+          <p>Busca en <code>CHEMI_USERS</code> por email (y si no lo encuentra, por username). Construye un <code>UserDetails</code> con el email como principal y el rol como <code>GrantedAuthority</code>. Si el rol no tiene prefijo <code>ROLE_</code>, lo agrega automáticamente.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">5</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>JwtUtil.generateToken()</code></strong>
+          <p>Genera el JWT con: <code>subject</code> = email, claim <code>userID</code> = ID numérico del usuario, <code>issuedAt</code> = ahora, <code>expiration</code> = ahora + 1 hora. Firmado con HMAC-SHA256 usando la clave <code>JWT_SECRET</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">6</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>UserService.getModulosForUser()</code></strong>
+          <p>Consulta <code>USER_MODULOS</code> para obtener los módulos habilitados para ese usuario.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">7</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Respuesta <code>200 OK</code></strong>
+          <p>El controller devuelve un <code>AuthResponse</code> con: <code>token</code>, <code>role</code>, <code>userId</code>, <code>username</code> y <code>modulos</code>. El frontend guarda el token (típicamente en localStorage) y lo envía en cada request siguiente.</p>
+        </div>
+      </div>
+    </div>
+
+    <h4>Payload del JWT</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Claim</th><th>Valor</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><code>sub</code></td><td>email del usuario</td><td>Identifica al usuario. Se usa como "username" en todo el contexto de Spring Security.</td></tr>
+          <tr><td><code>userID</code></td><td>Long (ID de BD)</td><td>Claim custom. Los controllers lo usan para queries directas sin llamar a la BD solo para obtener el ID.</td></tr>
+          <tr><td><code>iat</code></td><td>timestamp</td><td>Fecha/hora de emisión.</td></tr>
+          <tr><td><code>exp</code></td><td>timestamp</td><td>Expira 1 hora después de <code>iat</code> (configurable con <code>jwt.expiration</code> en ms).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Flujo 2: validación por request (requests protegidos)</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Request con <code>Authorization: Bearer &lt;token&gt;</code></strong>
+          <p>Cualquier llamada a la API (ej: <code>GET /api/estudios</code>) debe incluir el header. Los requests <code>OPTIONS</code> (preflight CORS) se dejan pasar directamente sin validación.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>JwtRequestFilter.doFilterInternal()</code></strong>
+          <p>Se ejecuta antes que cualquier controller. Si la ruta es pública (ej: <code>/login</code>, <code>/css/</code>, <code>.html</code>), deja pasar sin validar. De lo contrario, extrae el token del header.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>JwtUtil.extractUsername()</code></strong>
+          <p>Parsea el JWT y extrae el <code>sub</code> (email). Si el token está mal firmado o expirado, la excepción se captura silenciosamente y <code>username</code> queda en <code>null</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>JwtUserDetailsService.loadUserByUsername()</code></strong>
+          <p>Si se extrajo un username y el <code>SecurityContextHolder</code> no tiene autenticación previa, carga el <code>UserDetails</code> desde la BD para validar que el usuario sigue existiendo.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">5</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>JwtUtil.validateToken()</code></strong>
+          <p>Verifica que el email del token coincida con el del <code>UserDetails</code> y que el token no esté expirado.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">6</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>SecurityContextHolder</code></strong>
+          <p>Si el token es válido, crea un <code>UsernamePasswordAuthenticationToken</code> con el <code>UserDetails</code> y sus authorities, y lo setea en el contexto. Desde aquí, los controllers pueden usar <code>@AuthenticationPrincipal</code> o <code>Authentication</code> para obtener el usuario actual.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">7</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Continúa al controller</strong>
+          <p>El request llega al controller correspondiente con la identidad ya resuelta. Si el token era inválido o faltaba, Spring Security retorna <code>401 Unauthorized</code> via <code>JwtAuthenticationEntryPoint</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Refresh de token</h3>
+    <p>El endpoint <code>POST /api/auth/refresh</code> genera un nuevo token para la sesión activa. Requiere el token actual válido (el usuario ya debe estar autenticado). Útil para extender la sesión sin forzar un nuevo login.</p>
+
+    <h3>Rutas públicas configuradas</h3>
+    <p>Las rutas que no requieren JWT están definidas en dos lugares que deben mantenerse sincronizados:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Clase</th><th>Listado</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>SecurityConfig</code></td>
+            <td><code>POST /login</code>, <code>/actuator/health</code>, <code>OPTIONS /**</code>, archivos estáticos (<code>/*.html</code>, <code>/js/**</code>, <code>/css/**</code>, <code>/img/**</code>, <code>/fonts/**</code>)</td>
+          </tr>
+          <tr>
+            <td><code>JwtRequestFilter</code></td>
+            <td><code>/login</code>, <code>/authenticate</code>, <code>/api/auth</code>, <code>/actuator/health</code>, <code>/js/</code>, <code>/css/</code>, <code>/img/</code>, <code>/fonts/</code>, extensiones <code>.html .css .js .png .svg .ico .woff</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout-warn">
+      <strong>Duplicidad de rutas públicas</strong>
+      <p>Si agregás una nueva ruta pública, tenés que agregarla en los dos lugares: en <code>SecurityConfig.securityFilterChain()</code> y en las listas estáticas de <code>JwtRequestFilter</code>. Si solo la ponés en uno, puede fallar dependiendo del orden de los filtros.</p>
+    </div>
+
+    <h3>CORS</h3>
+    <p>La configuración CORS está centralizada en <code>SecurityConfig.corsConfigurationSource()</code>. Los orígenes permitidos se leen de la variable <code>ALLOWED_ORIGINS</code> (separados por coma). En desarrollo local el default es <code>http://localhost:8080,http://localhost:63343</code>.</p>
+    <p>Los requests <code>OPTIONS</code> (preflight del navegador) se permiten incondicionalmente para que no sean bloqueados antes de que CORS los procese.</p>
+
+    <h3>Headers de seguridad</h3>
+    <ul>
+      <li><code>X-Frame-Options: DENY</code> — previene clickjacking (la app no puede embeberse en un iframe)</li>
+      <li><code>Strict-Transport-Security</code> — fuerza HTTPS con <code>includeSubDomains</code> por 1 año</li>
+    </ul>
+  </section>
+
+  <!-- ══ DASHBOARD ════════════════════════════════════ -->
+  <section class="section" id="dashboard">
+    <div class="section-eyebrow">Inicio</div>
+    <h2 class="section-title">Dashboard</h2>
+    <p class="section-lead">Hay dos dashboards según el rol del usuario logueado.</p>
+
+    <h3>Dashboard de empleado / admin</h3>
+    <p>Muestra un resumen del estado operativo del laboratorio:</p>
+    <ul>
+      <li>Cantidad de estudios por estado (PENDIENTE, EN_PROCESO, COMPLETO, DEMORADO, CANCELADO)</li>
+      <li>Actividad reciente del día</li>
+      <li>Acceso rápido a los módulos habilitados</li>
+    </ul>
+
+    <h3>Dashboard de cliente</h3>
+    <p>El cliente ve solo sus propios análisis. Puede:</p>
+    <ul>
+      <li>Ver el listado de sus estudios con fechas y estado</li>
+      <li>Descargar el resultado (PDF de informe) cuando el estudio está completado</li>
+      <li>No tiene acceso a ningún otro módulo</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <strong>Estado DEMORADO</strong>
+      <p>Si la fecha de entrega de un estudio ya pasó y sigue en estado PENDIENTE o EN_PROCESO, el sistema lo marca automáticamente como <span class="badge badge-orange">DEMORADO</span> cuando se consulta el listado general (<code>GET /api/estudios/all</code>).</p>
+    </div>
+  </section>
+
+  <!-- ══ MUESTRAS ══════════════════════════════════════ -->
+  <section class="section" id="muestras">
+    <div class="section-eyebrow">Módulo principal</div>
+    <h2 class="section-title">Muestras y análisis</h2>
+    <p class="section-lead">Es el corazón del sistema. Registra cada estudio de análisis, asigna los parámetros a analizar con sus resoluciones y límites reglamentarios, y hace seguimiento desde el ingreso hasta la entrega del informe.</p>
+
+    <h3>Estados de un estudio</h3>
+    <div class="status-flow">
+      <span class="badge badge-grey">PENDIENTE</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-blue">EN_PROCESO</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-green">COMPLETO</span>
+    </div>
+    <p>También puede tener estado:</p>
+    <ul>
+      <li><span class="badge badge-orange">DEMORADO</span> — asignado automáticamente si pasó la fecha de entrega</li>
+      <li><span class="badge badge-red">CANCELADO</span> — cancelado manualmente, puede incluir motivo</li>
+    </ul>
+
+    <h3>Flujo de creación de un estudio</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Crear el estudio</strong>
+          <p>Se define: cliente, tipo de análisis, matriz, punto de muestreo, tipo de muestra, fecha de ingreso y fecha de entrega estimada. Se puede asociar a una sucursal del cliente.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Asignar parámetros y resoluciones</strong>
+          <p>Se seleccionan los parámetros a analizar y las resoluciones reglamentarias aplicables (ej: Res 336/06, CAA). El sistema guarda un snapshot de los límites reglamentarios en ese momento.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Análisis por los técnicos</strong>
+          <p>Cada analista ve los parámetros asignados en su <em>Cola de análisis</em> y va cargando resultados. El sistema manda email automático cuando se crea el estudio.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Cargar resultados</strong>
+          <p>Cada parámetro tiene un campo de valor numérico o textual, metodología usada y observaciones. Se guarda en <code>ANALISIS_PARAMETRO</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">5</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Generar informe PDF</strong>
+          <p>Desde el estudio se puede generar el informe oficial con logo, resultados, comparación con límites reglamentarios, conclusión automática y nota de arsénico si corresponde.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">6</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Archivar el PDF en Supabase</strong>
+          <p>Los archivos se suben al bucket de Supabase Storage. El cliente puede descargarlo desde su dashboard cuando el estado sea COMPLETO.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Número de protocolo</h3>
+    <p>El número de protocolo se asigna automáticamente usando el numerador <code>NUMERO_PROTOCOLO</code>. Es un contador global con lock pesimista que garantiza que no se dupliquen aunque haya acceso concurrente. Se puede ver y ajustar manualmente desde el módulo <a href="#panel-tecnico">Panel técnico → Numeradores</a>.</p>
+
+    <h3>Archivos adjuntos</h3>
+    <p>Un estudio puede tener múltiples PDFs adjuntos (muestras físicas digitalizadas, informes previos, etc.). Se suben a Supabase Storage y quedan asociados al <code>analisis_id</code>.</p>
+
+    <div class="callout callout-warn">
+      <strong>Importante: snapshot de límites</strong>
+      <p>Al asignar parámetros a un estudio, el sistema copia los límites reglamentarios actuales en la tabla <code>ANALISIS_PARAM_LIMITE</code>. Si después modificás los límites en el Panel Técnico, los estudios ya creados NO se ven afectados.</p>
+    </div>
+  </section>
+
+  <!-- ══ COLA ══════════════════════════════════════════ -->
+  <section class="section" id="cola">
+    <div class="section-eyebrow">Analistas</div>
+    <h2 class="section-title">Cola de análisis</h2>
+    <p class="section-lead">Cada analista ve su propia cola: los parámetros que le fueron asignados en todos los estudios activos. Puede avanzar el estado de cada uno a medida que trabaja.</p>
+
+    <h3>Estados de un ítem en la cola</h3>
+    <div class="status-flow">
+      <span class="badge badge-grey">PENDIENTE</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-blue">EN_CURSO</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-green">ANALIZADO</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-orange">REVISADO</span>
+    </div>
+
+    <h3>Vistas disponibles</h3>
+    <ul>
+      <li><strong>Mi cola</strong> — parámetros asignados al usuario logueado, de todos sus estudios activos</li>
+      <li><strong>Mi cola (todos)</strong> — ídem pero incluye también los que no están en estado activo</li>
+      <li><strong>Cola global</strong> — vista admin: la cola completa de todos los analistas</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <strong>Email automático</strong>
+      <p>Cuando se crea un nuevo estudio y se asignan parámetros, el sistema manda automáticamente un email a cada analista responsable mediante Brevo. El email indica el nombre del estudio y los parámetros asignados.</p>
+    </div>
+  </section>
+
+  <!-- ══ INFORMES ══════════════════════════════════════ -->
+  <section class="section" id="informes">
+    <div class="section-eyebrow">Documentación oficial</div>
+    <h2 class="section-title">Generación de informes PDF</h2>
+    <p class="section-lead">El sistema genera informes PDF con el formato oficial del laboratorio: logo, datos del cliente, resultados de cada parámetro comparados con los límites reglamentarios, y una conclusión automática.</p>
+
+    <h3>Contenido del informe</h3>
+    <ul>
+      <li>Encabezado con logo de Chemiconsult y datos del laboratorio</li>
+      <li>Datos del cliente y punto de muestreo</li>
+      <li>Número de protocolo y fechas</li>
+      <li>Tabla de resultados por parámetro (valor, unidad, metodología, límites, si cumple)</li>
+      <li>Si hay más de una resolución aplicable, se muestran superíndices para identificar cada una</li>
+      <li>Conclusión automática (si todos los parámetros cumplen o cuáles no)</li>
+      <li>Nota especial de arsénico si corresponde (límite CAA)</li>
+      <li>Pie de página con certificaciones</li>
+    </ul>
+
+    <h3>Grupos de informe</h3>
+    <p>Los parámetros se organizan en grupos dentro del informe (ej: "Físicoquímicos", "Microbiológicos"). Estos grupos se configuran desde <code>GET/POST /api/grupos-informe</code> con un código, etiqueta y orden de aparición.</p>
+
+    <h3>Flujo de generación</h3>
+    <ol>
+      <li>Ir al estudio terminado</li>
+      <li>Hacer <code>POST /api/estudios/{id}/generar-informe</code></li>
+      <li>El sistema genera el PDF con OpenPDF y lo sube automáticamente a Supabase</li>
+      <li>El archivo queda disponible para descarga desde el estudio y desde el dashboard del cliente</li>
+    </ol>
+
+    <div class="callout callout-warn">
+      <strong>Parámetro tipoAnalisis</strong>
+      <p>Cada parámetro tiene un <code>tipoAnalisis</code> (ej: FISICOQUIMICO, MICROBIOLOGICO). El informe usa este campo para agrupar los resultados en secciones separadas.</p>
+    </div>
+  </section>
+
+  <!-- ══ CLIENTES ══════════════════════════════════════ -->
+  <section class="section" id="clientes">
+    <div class="section-eyebrow">CRM</div>
+    <h2 class="section-title">Clientes</h2>
+    <p class="section-lead">Gestión completa de clientes: personas físicas y empresas. Cada cliente puede tener sucursales, contactos y, opcionalmente, una cuenta de usuario para acceder al sistema.</p>
+
+    <h3>Tipos de cliente</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Campos principales</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-blue">PERSONA_FISICA</span></td>
+            <td>nombre, apellido, DNI, CUIL, email, teléfono, celular, dirección, localidad, provincia</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-orange">EMPRESA</span></td>
+            <td>razón social, CUIT, condición IVA, email, teléfono, dirección, localidad, provincia</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Sucursales y contactos</h3>
+    <ul>
+      <li>Un cliente empresa puede tener múltiples <strong>sucursales</strong> (<code>CLIENTE_SUCURSAL</code>)</li>
+      <li>Cada cliente o sucursal puede tener <strong>contactos</strong> asociados</li>
+      <li>Al crear un estudio se puede indicar a qué sucursal pertenece la muestra</li>
+    </ul>
+
+    <h3>Vinculación con usuario</h3>
+    <p>Un cliente puede estar vinculado a una cuenta de usuario (<code>ROLE_CLIENTE</code>). Esto le permite entrar al sistema y ver sus propios análisis. La vinculación se hace con <code>PATCH /api/clientes/{id}/asignar-usuario</code>.</p>
+
+    <h3>Baja de clientes</h3>
+    <p>Los clientes no se eliminan físicamente. Se desactivan (<code>activo = false</code>) con <code>PATCH /api/clientes/{id}/desactivar</code> y se pueden reactivar. El listado estándar solo muestra activos; <code>/api/clientes/todos</code> incluye inactivos.</p>
+
+    <h3>Vista propia del cliente</h3>
+    <p>Un usuario con rol CLIENTE puede consultar <code>GET /api/clientes/mi-cliente</code> para ver su propio registro.</p>
+  </section>
+
+  <!-- ══ AGENDA ════════════════════════════════════════ -->
+  <section class="section" id="agenda">
+    <div class="section-eyebrow">Planificación</div>
+    <h2 class="section-title">Agenda</h2>
+    <p class="section-lead">Registro de todos los eventos programados del laboratorio: muestreos en campo, compras de insumos, vencimientos documentales, visitas técnicas y más.</p>
+
+    <h3>Tipos de evento</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><code>MUESTREO</code></td><td>Visita al cliente para toma de muestras</td></tr>
+          <tr><td><code>COMPRA_INSUMOS</code></td><td>Compra de reactivos o materiales</td></tr>
+          <tr><td><code>VENCIMIENTO</code></td><td>Vencimiento de un documento o certificación</td></tr>
+          <tr><td><code>DOCUMENTACION</code></td><td>Trámite o gestión documental</td></tr>
+          <tr><td><code>VISITA_TECNICA</code></td><td>Visita técnica sin toma de muestras</td></tr>
+          <tr><td><code>ANALISIS</code></td><td>Entrega de análisis / fecha límite de resultado</td></tr>
+          <tr><td><code>OTRO</code></td><td>Cualquier otro evento</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Datos de un evento</h3>
+    <ul>
+      <li>Fecha y hora</li>
+      <li>Responsable (usuario del sistema)</li>
+      <li>Cliente y sucursal asociados (opcionales)</li>
+      <li>Dirección del evento</li>
+      <li>Observaciones y documentación requerida</li>
+      <li>Estado del evento</li>
+    </ul>
+  </section>
+
+  <!-- ══ PANEL TÉCNICO ════════════════════════════════ -->
+  <section class="section" id="panel-tecnico">
+    <div class="section-eyebrow">Configuración</div>
+    <h2 class="section-title">Panel técnico</h2>
+    <p class="section-lead">Configura toda la estructura reglamentaria del laboratorio: matrices de análisis, resoluciones aplicables, parámetros, metodologías y los límites máximos/mínimos de cada norma.</p>
+
+    <h3>Estructura jerárquica</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Matriz</strong>
+          <p>Tipo de muestra a analizar (ej: Agua subterránea, Efluente industrial, Agua de red, Suelo).</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Resolución</strong>
+          <p>Norma reglamentaria asociada a una matriz (ej: Res 336/06, Res 283/19, CAA, Ley 19587). Puede o no tener destinos.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Destino</strong>
+          <p>Uso al que se destina el agua (ej: Consumo humano, Riego, Bebida de animales). Solo en resoluciones que tienen destino (<code>tieneDestino=true</code>).</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Parámetro en resolución/destino</strong>
+          <p>Cada parámetro dentro de una norma tiene: tipo de límite (MAX, MIN, RANGO, TEXTO, AUSENCIA), los valores del límite, y la metodología estándar.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Tipos de límite</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Cómo se evalúa</th></tr></thead>
+        <tbody>
+          <tr><td><code>MAX</code></td><td>El resultado debe ser ≤ al valor máximo</td></tr>
+          <tr><td><code>MIN</code></td><td>El resultado debe ser ≥ al valor mínimo</td></tr>
+          <tr><td><code>RANGO</code></td><td>El resultado debe estar entre mínimo y máximo</td></tr>
+          <tr><td><code>TEXTO</code></td><td>Se espera un resultado textual específico (ej: "Ausente")</td></tr>
+          <tr><td><code>AUSENCIA</code></td><td>El analito no debe estar presente</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Parámetros</h3>
+    <p>Cada parámetro tiene:</p>
+    <ul>
+      <li>Nombre y unidad de medida</li>
+      <li>Tipo de análisis (<code>tipoAnalisis</code>) — agrupa en el informe PDF</li>
+      <li>Responsable analista asignado por defecto</li>
+      <li>Estado activo/inactivo (soft delete)</li>
+      <li>Metodologías por matriz y tipo de análisis</li>
+    </ul>
+
+    <h3>Numeradores</h3>
+    <p>Secuencias de autoincremento para números de protocolo y presupuesto. Usan lock pesimista en base de datos para evitar duplicados bajo carga concurrente.</p>
+    <ul>
+      <li><code>NUMERO_PROTOCOLO</code> — contador de protocolos de análisis</li>
+      <li><code>NUMERO_PRESUPUESTO</code> — contador de presupuestos</li>
+    </ul>
+    <p>Para ver el próximo número sin consumirlo: <code>GET /api/numeradores/preview/{nombre}</code><br>
+    Para ajustar el valor manualmente: <code>PUT /api/numeradores/{id}</code></p>
+
+    <div class="callout callout-warn">
+      <strong>Modificar límites reglamentarios</strong>
+      <p>Editar un límite en el panel técnico NO afecta estudios ya creados. Los límites se copian al momento de crear el estudio (snapshot). Solo los estudios nuevos usarán los límites actualizados.</p>
+    </div>
+  </section>
+
+  <!-- ══ PRESUPUESTO ═══════════════════════════════════ -->
+  <section class="section" id="presupuesto">
+    <div class="section-eyebrow">Comercial</div>
+    <h2 class="section-title">Presupuesto</h2>
+    <p class="section-lead">Generación de cotizaciones para clientes con número automático, ítem por ítem, y exportación a PDF.</p>
+
+    <h3>Datos de un presupuesto</h3>
+    <ul>
+      <li>Número automático (secuencia <code>NUMERO_PRESUPUESTO</code>)</li>
+      <li>Fecha de emisión</li>
+      <li>Solicitado por / nombre del cliente</li>
+      <li>Observaciones</li>
+      <li>Estado: <span class="badge badge-grey">PENDIENTE</span> → <span class="badge badge-green">ACEPTADO</span> o <span class="badge badge-red">RECHAZADO</span></li>
+      <li>Fecha de respuesta del cliente</li>
+    </ul>
+
+    <h3>Ítems del presupuesto</h3>
+    <p>Cada ítem tiene: orden, matriz de análisis, denominación, precio unitario, cantidad de muestras y total calculado.</p>
+
+    <h3>PDF</h3>
+    <p>Con <code>GET /api/presupuesto/{id}/pdf</code> se descarga el PDF con el desglose de ítems y el total.</p>
+  </section>
+
+  <!-- ══ DOCUMENTOS ════════════════════════════════════ -->
+  <section class="section" id="documentos">
+    <div class="section-eyebrow">Archivo</div>
+    <h2 class="section-title">Documentos</h2>
+    <p class="section-lead">Repositorio de documentos internos del laboratorio: certificaciones, habilitaciones, contratos. Con seguimiento de vencimientos.</p>
+
+    <h3>Datos de un documento</h3>
+    <ul>
+      <li>Nombre y descripción</li>
+      <li>Categoría (configurable)</li>
+      <li>Fecha de vencimiento (opcional) — útil para renovaciones</li>
+      <li>Archivo PDF almacenado en Supabase Storage</li>
+      <li>Fecha de carga</li>
+    </ul>
+
+    <h3>Endpoints clave</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Qué hace</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST</code></td><td><code>/api/documentos</code></td><td>Sube un archivo y crea el registro</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/documentos/{id}/archivo</code></td><td>Descarga el PDF del documento</td></tr>
+          <tr><td><code>PUT</code></td><td><code>/api/documentos/{id}</code></td><td>Actualiza los metadatos (sin cambiar el archivo)</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/documentos/{id}</code></td><td>Elimina el registro y el archivo de Supabase</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ STOCK ═════════════════════════════════════════ -->
+  <section class="section" id="stock">
+    <div class="section-eyebrow">Inventario</div>
+    <h2 class="section-title">Stock</h2>
+    <p class="section-lead">Inventario de materiales del laboratorio: reactivos, solventes, materiales de muestreo y vidriería. Permite saber qué hay y qué nivel tiene.</p>
+
+    <h3>Datos de un ítem</h3>
+    <ul>
+      <li>Nombre y descripción</li>
+      <li>Categoría: <code>REACTIVO</code>, <code>SOLVENTE</code>, <code>MATERIAL_MUESTREO</code>, <code>VIDRIERA</code></li>
+      <li>Nivel: <span class="badge badge-green">ALTO</span> / <span class="badge badge-orange">MEDIO</span> / <span class="badge badge-red">BAJO</span></li>
+      <li>Cantidad de frascos (opcional)</li>
+      <li>Ubicación en el laboratorio</li>
+      <li>Identificación / código interno</li>
+      <li>Observaciones</li>
+    </ul>
+  </section>
+
+  <!-- ══ TAREAS ════════════════════════════════════════ -->
+  <section class="section" id="tareas">
+    <div class="section-eyebrow">Gestión interna</div>
+    <h2 class="section-title">Tareas</h2>
+    <p class="section-lead">Tablero kanban para organizar el trabajo interno del equipo. Soporta asignación a usuarios, fechas límite y archivado.</p>
+
+    <h3>Estados del tablero</h3>
+    <div class="status-flow">
+      <span class="badge badge-grey">TODO</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-blue">IN_PROGRESS</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-orange">EN_REVISION</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-green">DONE</span>
+    </div>
+
+    <h3>Funciones clave</h3>
+    <ul>
+      <li>Mover tareas entre columnas (<code>PUT /api/task/{id}/status</code>)</li>
+      <li>Archivar una tarea completada (<code>PUT /api/task/{id}/archive</code>)</li>
+      <li>Archivar todas las DONE de una vez (<code>PUT /api/task/archive-all-done</code>)</li>
+      <li>Restaurar una tarea archivada (<code>PUT /api/task/{id}/restore</code>)</li>
+      <li>Ver el archivo (<code>GET /api/task/archived</code>)</li>
+      <li>Asignar a un usuario (<code>USER_ID</code> en el body)</li>
+      <li>Fecha límite (<code>DUE_DATE</code>) con alerta visual cuando vence</li>
+    </ul>
+  </section>
+
+  <!-- ══ USUARIOS ══════════════════════════════════════ -->
+  <section class="section" id="usuarios">
+    <div class="section-eyebrow">Administración</div>
+    <h2 class="section-title">Usuarios y permisos</h2>
+    <p class="section-lead">Alta, edición y control de acceso de todos los usuarios del sistema. Solo administradores pueden gestionar usuarios.</p>
+
+    <h3>Campos de un usuario</h3>
+    <ul>
+      <li><code>USER_NAME</code> — nombre de usuario para login</li>
+      <li><code>EMAIL</code> — dirección de email</li>
+      <li><code>PASSWORD_HASH</code> — contraseña hasheada con BCrypt</li>
+      <li><code>ROLE</code> — ROLE_ADMIN / ROLE_EMPLEADO / ROLE_CLIENTE</li>
+    </ul>
+
+    <h3>Operaciones disponibles</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operación</th><th>Endpoint</th><th>Notas</th></tr></thead>
+        <tbody>
+          <tr><td>Crear empleado</td><td><code>POST /api/users</code></td><td>Solo ADMIN</td></tr>
+          <tr><td>Listar usuarios</td><td><code>GET /api/users</code></td><td>Todos los usuarios</td></tr>
+          <tr><td>Ver perfil propio</td><td><code>GET /api/users/{id}</code></td><td></td></tr>
+          <tr><td>Editar perfil</td><td><code>PUT /api/users/{id}</code></td><td></td></tr>
+          <tr><td>Cambiar contraseña</td><td><code>PUT /api/users/{id}/password</code></td><td>Requiere contraseña actual</td></tr>
+          <tr><td>Reset contraseña (admin)</td><td><code>PATCH /api/users/{id}/reset-password</code></td><td>Solo ADMIN, sin requerir la vieja</td></tr>
+          <tr><td>Asignar módulos</td><td><code>PUT /api/users/{id}/modulos</code></td><td>Lista de claves de módulos</td></tr>
+          <tr><td>Ver mis módulos</td><td><code>GET /api/users/me/modulos</code></td><td>Usado por el frontend</td></tr>
+          <tr><td>Eliminar usuario</td><td><code>DELETE /api/users/{id}</code></td><td>Solo ADMIN</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Usuarios asignables</strong>
+      <p><code>GET /api/users/asignables</code> devuelve los usuarios que pueden ser asignados como responsables en tareas y agenda. Útil para poblar los selects del frontend.</p>
+    </div>
+  </section>
+
+  <!-- ══ TAREAS ════════════════════════════════════════ -->
+  <section class="section" id="tareas-modulo">
+    <div class="section-eyebrow">Módulo · task.html</div>
+    <h2 class="section-title">Tareas</h2>
+    <p class="section-lead">Tablero kanban para gestionar el trabajo interno del equipo. Las tarjetas se mueven entre columnas arrastrándolas. Soporta asignación a usuarios, fechas límite con alerta de vencimiento, archivado y email automático al asignar.</p>
+
+    <h3>Clases involucradas</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Clase</th><th>Paquete</th><th>Responsabilidad</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>TaskController</code></td>
+            <td><code>controller</code></td>
+            <td>Endpoints REST bajo <code>/api/task</code>. Loguea cada operación con Log4j2.</td>
+          </tr>
+          <tr>
+            <td><code>TaskService</code></td>
+            <td><code>service</code></td>
+            <td>Lógica de negocio: creación, cambio de estado, archivado batch, email de asignación. Inyecta <code>BrevoEmailService</code> para notificaciones.</td>
+          </tr>
+          <tr>
+            <td><code>TaskDE</code></td>
+            <td><code>entity</code></td>
+            <td>Entidad JPA mapeada a la tabla <code>TASK</code>. Tiene relación <code>@ManyToOne</code> con <code>UserDE</code>.</td>
+          </tr>
+          <tr>
+            <td><code>TaskRepository</code></td>
+            <td><code>repository</code></td>
+            <td>Spring Data JPA con tres queries derivadas: por <code>archived=false</code>, por <code>archived=true</code> y por <code>archived=false AND status</code>.</td>
+          </tr>
+          <tr>
+            <td><code>TaskMapper</code></td>
+            <td><code>mapper</code></td>
+            <td>Conversión entre <code>TaskDE</code> y <code>TaskTO</code>. También contiene <code>applyStatus()</code> que maneja el <code>completedDate</code> automático.</td>
+          </tr>
+          <tr>
+            <td><code>TaskStatusEnum</code></td>
+            <td><code>enums</code></td>
+            <td>Los cuatro estados posibles: <code>TODO</code>, <code>IN_PROGRESS</code>, <code>EN_REVISION</code>, <code>DONE</code>.</td>
+          </tr>
+          <tr>
+            <td><code>BrevoEmailService</code></td>
+            <td><code>brevo/service</code></td>
+            <td>Envía el email HTML de asignación. Se llama desde <code>TaskService.notificarAsignacion()</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Transfer Object</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><code>Long</code></td><td>Generado por la BD.</td></tr>
+          <tr><td><code>title</code></td><td><code>String</code></td><td>Requerido.</td></tr>
+          <tr><td><code>description</code></td><td><code>String</code></td><td>Opcional. Máx 1000 caracteres.</td></tr>
+          <tr><td><code>status</code></td><td><code>String</code></td><td>Nombre del enum como string (<code>"TODO"</code>, etc.). Default <code>TODO</code>.</td></tr>
+          <tr><td><code>userId</code></td><td><code>Long</code></td><td>ID del usuario asignado. Null si no tiene asignado.</td></tr>
+          <tr><td><code>userName</code></td><td><code>String</code></td><td>Username del asignado, resuelto en el mapper. Lo usa el front para el avatar y el nombre.</td></tr>
+          <tr><td><code>dueDate</code></td><td><code>LocalDate</code></td><td>Fecha límite opcional.</td></tr>
+          <tr><td><code>completedDate</code></td><td><code>LocalDate</code></td><td>Se setea automáticamente al pasar a DONE, y se limpia si vuelve a otro estado.</td></tr>
+          <tr><td><code>archived</code></td><td><code>boolean</code></td><td>Si está en el historial o en el tablero activo.</td></tr>
+          <tr><td><code>archivedDate</code></td><td><code>LocalDate</code></td><td>Fecha de archivado. Se limpia si se restaura.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Columnas del tablero y estados</h3>
+    <div class="status-flow">
+      <span class="badge badge-grey">TODO</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-blue">IN_PROGRESS</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-orange">EN_REVISION</span>
+      <span class="arrow">→</span>
+      <span class="badge badge-green">DONE</span>
+    </div>
+    <p>El movimiento no es lineal forzado: se puede arrastrar una tarjeta a cualquier columna desde cualquier otra. La única restricción es que <strong>el estado solo cambia arrastrando</strong> — el modal de edición no muestra el selector de estado.</p>
+
+    <h3>Cambio de estado: drag & drop</h3>
+    <p>Al soltar una tarjeta en otra columna, el JS llama:</p>
+    <pre>PUT /api/task/{id}/status?status=IN_PROGRESS</pre>
+    <p>En el backend, <code>TaskMapper.applyStatus()</code> maneja el efecto secundario:</p>
+    <ul>
+      <li>Si el nuevo estado es <code>DONE</code> → setea <code>completedDate = hoy</code></li>
+      <li>Si el nuevo estado es cualquier otro → limpia <code>completedDate = null</code></li>
+    </ul>
+    <p>El frontend actualiza el objeto en el array <code>tasks[]</code> en memoria con la respuesta del servidor y vuelve a renderizar el tablero, sin recargar todo.</p>
+
+    <h3>Crear una tarea</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Modal "Nueva tarea"</strong>
+          <p>Al abrir el modal, el select de asignado se pre-rellena con el usuario logueado (<code>userId</code> de localStorage). Siempre se puede cambiar.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Estado inicial seleccionable</strong>
+          <p>Al crear una tarea se puede elegir en qué columna aparece (radio buttons: Pendiente / En progreso / En revisión / Finalizada). En edición, esta sección se oculta.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>POST /api/task</code> → <code>TaskService.createTask()</code></strong>
+          <p>Si viene un <code>userId</code>, resuelve el <code>UserDE</code> desde la BD y lo setea en la entidad. Setea <code>createdDate = hoy</code>. Guarda y devuelve el <code>TaskTO</code> completo con <code>userName</code> resuelto.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Email de asignación</strong>
+          <p>Si la tarea tiene asignado, <code>notificarAsignacion()</code> manda un email HTML al usuario con asunto <em>"Nueva tarea asignada"</em>, el título y la descripción.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Editar una tarea</h3>
+    <p><code>PUT /api/task/{id}</code> actualiza título, descripción, asignado y fecha límite. El estado no se toca — eso solo cambia por drag & drop. La lógica de re-asignación:</p>
+    <ul>
+      <li>Si el <code>userId</code> nuevo es distinto al anterior → manda email <em>"Tarea reasignada a vos"</em></li>
+      <li>Si el asignado es el mismo → no manda email</li>
+      <li>Si se quita el asignado (<code>userId = null</code>) → no manda email</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <strong>userName en el TO</strong>
+      <p>El <code>TaskTO</code> incluye <code>userName</code> resuelto desde la relación <code>TaskDE.user</code>. El frontend lo usa para el avatar y el nombre en la tarjeta. Si no estuviera resuelto en el mapper, el frontend mostraría el avatar del usuario logueado en vez del asignado real.</p>
+    </div>
+
+    <h3>Archivado</h3>
+    <p>Archivar no elimina — setea <code>archived = true</code> y <code>archivedDate = hoy</code>. Las tareas archivadas no aparecen en el tablero principal (<code>findByArchivedFalse()</code>) pero sí en el modal de historial (<code>findByArchivedTrue()</code>).</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operación</th><th>Endpoint</th><th>Comportamiento</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Archivar una tarea</td>
+            <td><code>PUT /api/task/{id}/archive</code></td>
+            <td>Solo disponible desde el botón de la tarjeta cuando está en columna DONE. Setea <code>archived=true</code>, <code>archivedDate=hoy</code>.</td>
+          </tr>
+          <tr>
+            <td>Archivar todas las DONE</td>
+            <td><code>PUT /api/task/archive-all-done</code></td>
+            <td>Batch: busca todas con <code>archived=false AND status=DONE</code> y las archiva en una sola operación. Devuelve <code>204</code> (sin body).</td>
+          </tr>
+          <tr>
+            <td>Ver archivo</td>
+            <td><code>GET /api/task/archived</code></td>
+            <td>Solo se llama cuando el usuario abre el modal "Archivo" (lazy load). El frontend pagina de a 8 en memoria.</td>
+          </tr>
+          <tr>
+            <td>Restaurar</td>
+            <td><code>PUT /api/task/{id}/restore</code></td>
+            <td>Setea <code>archived=false</code>, limpia <code>archivedDate</code>. La tarea vuelve al tablero en su columna original (el status no cambia).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <strong>Restaurar desde el archivo ajusta la paginación</strong>
+      <p>Al restaurar una tarea, el JS elimina del array local y verifica si la página actual quedó vacía (si es la última y el item era el único). En ese caso decrementa <code>archivedPage</code> antes de re-renderizar para no mostrar una página vacía.</p>
+    </div>
+
+    <h3>Eliminar una tarea</h3>
+    <p><code>DELETE /api/task/{id}</code> es una <strong>eliminación física</strong>. El service verifica que exista antes de borrar (lanza excepción si no). El frontend muestra un diálogo de confirmación (<code>UI.confirmar()</code>) antes de llamar al endpoint.</p>
+
+    <h3>Filtro por usuario</h3>
+    <p>La barra de filtros se genera dinámicamente a partir del array <code>usuarios[]</code> cargado de <code>GET /api/users/asignables</code>. Hay un botón por cada usuario asignnable, más "Todos" y "Sin asignar". Al filtrar, el JS aplica/quita la clase <code>kb-hidden</code> a las tarjetas — <strong>no llama a la API</strong>. Los contadores de columna siguen mostrando el total real, no el filtrado.</p>
+
+    <h3>Badge de fecha límite</h3>
+    <p>La función <code>deadlineBadge(dueDate)</code> calcula la diferencia entre hoy y <code>dueDate</code> y muestra:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Condición</th><th>Badge</th></tr></thead>
+        <tbody>
+          <tr><td>Fecha pasada</td><td><span class="badge badge-red">Vencida · dd/mm/aa</span></td></tr>
+          <tr><td>Hoy</td><td><span class="badge badge-orange">Hoy</span></td></tr>
+          <tr><td>Mañana</td><td><span class="badge badge-orange">Mañana</span></td></tr>
+          <tr><td>Dentro de 2–7 días</td><td><span class="badge badge-blue">En N días</span></td></tr>
+          <tr><td>Más de 7 días</td><td><span class="badge badge-grey">dd/mm/aa</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Apertura automática via URL</h3>
+    <p>Si la URL tiene el parámetro <code>?nueva=1</code> (ej: desde un link en otro módulo), el tablero abre automáticamente el modal de nueva tarea al cargar la página.</p>
+
+    <h3>Flujo frontend — carga inicial</h3>
+    <ol>
+      <li><code>cargarUsuarios()</code> — <code>GET /api/users/asignables</code> — puebla el select de asignado y genera los filtros de la barra</li>
+      <li><code>loadTasks()</code> — <code>GET /api/task</code> — devuelve solo las no archivadas — guarda en <code>tasks[]</code></li>
+      <li><code>renderBoard()</code> — distribuye las tarjetas en las cuatro columnas y actualiza los contadores</li>
+      <li><code>setupDropzones()</code> — registra los listeners de drag & drop en cada columna</li>
+      <li>El modal de archivo se carga lazily solo cuando el usuario lo abre (<code>show.bs.modal</code>)</li>
+    </ol>
+  </section>
+
+  <!-- ══ USUARIOS (detalle) ═══════════════════════════ -->
+  <section class="section" id="usuarios-modulo">
+    <div class="section-eyebrow">Módulo · usuarios.html</div>
+    <h2 class="section-title">Usuarios</h2>
+    <p class="section-lead">Gestión de todos los usuarios del sistema: alta de empleados, edición de perfil, cambio de contraseña, permisos de módulos y eliminación. Accesible para roles <code>ROLE_IT</code> y <code>ROLE_EMPLEADO</code> con el módulo <code>USUARIOS</code> habilitado.</p>
+
+    <h3>Clases involucradas</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Clase</th><th>Paquete</th><th>Responsabilidad</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>UserController</code></td>
+            <td><code>controller</code></td>
+            <td>Endpoints REST bajo <code>/api/users</code>. Un método por operación.</td>
+          </tr>
+          <tr>
+            <td><code>UserService</code></td>
+            <td><code>service</code></td>
+            <td>Lógica de negocio: validaciones, hash de contraseñas, gestión de módulos. Usa <code>PasswordEncoder</code> (BCrypt) inyectado.</td>
+          </tr>
+          <tr>
+            <td><code>UserDE</code></td>
+            <td><code>entity</code></td>
+            <td>Entidad JPA mapeada a <code>CHEMI_USERS</code>. El campo <code>password</code> tiene <code>@JsonProperty(WRITE_ONLY)</code> — nunca se serializa en respuestas.</td>
+          </tr>
+          <tr>
+            <td><code>UserRepository</code></td>
+            <td><code>repository</code></td>
+            <td>Spring Data JPA. Métodos de búsqueda por email, username y por lista de roles.</td>
+          </tr>
+          <tr>
+            <td><code>UserMapper</code></td>
+            <td><code>mapper</code></td>
+            <td>Convierte entre <code>UserDE</code> y <code>UserTO</code>. Nunca incluye el password en el TO de salida.</td>
+          </tr>
+          <tr>
+            <td><code>JwtUserDetailsService</code></td>
+            <td><code>service</code></td>
+            <td>Comparte la búsqueda por email/username con <code>UserRepository</code>. Lo usa tanto el login como el filtro JWT.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Transfer Objects</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>TO</th><th>Campos</th><th>Cuándo se usa</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>UserTO</code></td>
+            <td><code>id, username, email, rol, modulos</code></td>
+            <td>Respuesta de todos los endpoints GET y POST. Nunca incluye password.</td>
+          </tr>
+          <tr>
+            <td><code>UserCreateTO</code></td>
+            <td><code>username, email, password, rol</code></td>
+            <td>Body de <code>POST /api/users</code> (crear empleado). Incluye password en texto plano — el service lo hashea antes de guardar.</td>
+          </tr>
+          <tr>
+            <td><code>UserPerfilTO</code></td>
+            <td><code>username, email</code></td>
+            <td>Body de <code>PUT /api/users/{id}</code>. Solo edita nombre y email — nunca toca el password.</td>
+          </tr>
+          <tr>
+            <td><code>CambiarPasswordTO</code></td>
+            <td><code>passwordActual, passwordNueva</code></td>
+            <td>Body de <code>PUT /api/users/{id}/password</code>. Requiere la contraseña actual para verificar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Pantalla: tabla de usuarios</h3>
+    <p>Al cargar la página, <code>usuarios.js</code> llama a <code>GET /api/users</code> y guarda todos los usuarios en memoria (<code>todosLosUsuarios</code>). El filtrado y la paginación ocurren <strong>en el cliente</strong>, sin llamadas adicionales a la API.</p>
+
+    <div class="callout callout-info">
+      <strong><code>getUsers()</code> excluye los clientes</strong>
+      <p>El service filtra explícitamente los usuarios con <code>ROLE_CLIENTE</code> antes de devolver la lista. Los usuarios clientes no aparecen en la pantalla de gestión de empleados. Para verlos hay que ir al módulo Clientes.</p>
+    </div>
+
+    <h3>Operación: crear usuario</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Validación en el frontend</strong>
+          <p>El JS valida: nombre no vacío, email no vacío, contraseña de al menos 6 caracteres, y que las dos contraseñas coincidan. Si algo falla, muestra el error inline sin llamar a la API.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>POST /api/users</code> → <code>UserController.createEmpleado()</code></strong>
+          <p>Recibe el <code>UserCreateTO</code> con todos los campos incluyendo la contraseña en texto plano.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>UserService.createEmpleado()</code></strong>
+          <p>Verifica que no exista otro usuario con el mismo email (<code>existsByEmail</code>). Valida longitud de contraseña (≥ 6). Hashea la contraseña con BCrypt. Setea <code>createdDate = hoy</code>. Guarda en <code>CHEMI_USERS</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Respuesta <code>201 Created</code></strong>
+          <p>Devuelve el <code>UserTO</code> del usuario creado (sin password). El frontend recarga la lista completa y muestra un toast de éxito.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Operación: editar perfil</h3>
+    <p>El modal de edición oculta los campos de contraseña — solo permite cambiar <code>username</code> y <code>email</code>. En el backend, <code>UserService.updatePerfil()</code> verifica que el nuevo username no esté ya en uso por otro usuario antes de guardar. El rol <strong>no se puede cambiar</strong> desde la edición de perfil.</p>
+
+    <div class="callout callout-warn">
+      <strong>El rol no se actualiza en PUT /{id}</strong>
+      <p><code>UserPerfilTO</code> solo tiene <code>username</code> y <code>email</code>. No hay endpoint para cambiar el rol de un usuario existente — habría que hacerlo directamente en la base de datos o agregar un endpoint nuevo.</p>
+    </div>
+
+    <h3>Operación: restablecer contraseña (admin)</h3>
+    <p><code>PATCH /api/users/{id}/reset-password</code> permite a un admin poner una contraseña nueva sin conocer la actual. Valida longitud ≥ 6, hashea con BCrypt y actualiza <code>UPDATE_DATE</code>. El usuario afectado no recibe notificación automática (no hay email de reset).</p>
+
+    <h3>Operación: cambio de contraseña propio</h3>
+    <p><code>PUT /api/users/{id}/password</code> es para que el propio usuario cambie su contraseña. Requiere la contraseña actual (<code>passwordActual</code>) y la valida con <code>passwordEncoder.matches()</code> antes de aplicar el cambio.</p>
+
+    <h3>Operación: permisos de módulos</h3>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Abrir modal de permisos</strong>
+          <p>El botón de permisos solo aparece para empleados — los IT no lo tienen porque reciben todos los módulos automáticamente.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Lista de módulos con checkboxes</strong>
+          <p>El modal genera un checkbox por cada clave de <code>MODULOS_LABELS</code> en el JS. Los módulos ya habilitados aparecen marcados (leídos del cache local, no hay llamada extra a la API).</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>PUT /api/users/{id}/modulos</code> → <code>UserService.setModulos()</code></strong>
+          <p>Recibe un <code>Set&lt;ModuloEnum&gt;</code>. Limpia los módulos actuales y reemplaza con el conjunto nuevo. Actualiza <code>UPDATE_DATE</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">4</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Cache local actualizado sin refetch</strong>
+          <p>Tras guardar, el JS actualiza el objeto en <code>todosLosUsuarios</code> directamente (<code>u.modulos = modulos</code>) sin recargar desde la API. La lista se mantiene actualizada.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>ROLE_IT siempre tiene todos los módulos</strong>
+      <p><code>UserService.getModulosForUser()</code> retorna <code>EnumSet.allOf(ModuloEnum.class)</code> para cualquier usuario con rol <code>ROLE_IT</code> o <code>IT</code>, sin consultar <code>USER_MODULOS</code>. Por eso el botón de permisos no aparece para IT en el frontend.</p>
+    </div>
+
+    <h3>Módulos disponibles (<code>ModuloEnum</code>)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Enum</th><th>Label en UI</th></tr></thead>
+        <tbody>
+          <tr><td><code>DASHBOARD</code></td><td>Dashboard</td></tr>
+          <tr><td><code>TAREAS</code></td><td>Tareas</td></tr>
+          <tr><td><code>MUESTRAS</code></td><td>Muestras</td></tr>
+          <tr><td><code>COLA_ANALISIS</code></td><td>Parámetros a Analizar</td></tr>
+          <tr><td><code>CLIENTES</code></td><td>Clientes</td></tr>
+          <tr><td><code>AGENDA</code></td><td>Agenda</td></tr>
+          <tr><td><code>PANEL_TECNICO</code></td><td>Panel Técnico</td></tr>
+          <tr><td><code>PRESUPUESTO</code></td><td>Presupuestos</td></tr>
+          <tr><td><code>STOCK</code></td><td>Stock</td></tr>
+          <tr><td><code>DOCUMENTOS</code></td><td>Documentos</td></tr>
+          <tr><td><code>FACTURACION</code></td><td>Facturación</td></tr>
+          <tr><td><code>USUARIOS</code></td><td>Usuarios</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>El módulo <code>FACTURACION</code> existe en el enum pero no tiene pantalla implementada todavía.</p>
+
+    <h3>Operación: eliminar usuario</h3>
+    <p><code>DELETE /api/users/{id}</code> llama a <code>userRepository.deleteById(id)</code> — es una <strong>eliminación física</strong>, no hay soft delete. El registro se borra de <code>CHEMI_USERS</code> permanentemente.</p>
+
+    <div class="callout callout-danger">
+      <strong>Eliminar un usuario cliente puede generar inconsistencias</strong>
+      <p>Si el usuario eliminado está vinculado a un registro de <code>CLIENTES</code> (via <code>user_id</code>), el cliente queda con <code>user_id = null</code> pero el registro de cliente persiste. El frontend ya advierte esto en el modal de confirmación. Si necesitás eliminar un cliente, hacelo desde el módulo Clientes (desactivar, no eliminar).</p>
+    </div>
+
+    <h3>Usuarios asignables</h3>
+    <p><code>GET /api/users/asignables</code> devuelve solo los usuarios con roles <code>ROLE_EMPLEADO</code>, <code>ROLE_IT</code>, <code>EMPLEADO</code> o <code>IT</code>. Lo usan los dropdowns de "responsable" en Agenda y Tareas. Los clientes y admins no aparecen en esos selects.</p>
+
+    <h3>Flujo frontend — carga y filtrado</h3>
+    <ol>
+      <li><code>cargarUsuarios()</code> — <code>GET /api/users</code>, guarda en <code>todosLosUsuarios[]</code></li>
+      <li><code>buscarUsuarios()</code> — filtra en memoria por texto (nombre o email) y por rol, guarda en <code>usuariosFiltrados[]</code></li>
+      <li><code>renderTabla()</code> — pagina <code>usuariosFiltrados</code> y construye el HTML de la tabla</li>
+      <li><code>renderPaginacion()</code> — genera los botones de página según el total filtrado</li>
+    </ol>
+    <p>El tamaño de página es configurable (5/10/15/20) desde el select del footer. El cambio de página o de tamaño vuelve a llamar solo a <code>renderTabla()</code>, sin ir a la API.</p>
+  </section>
+
+  <!-- ══ CHAT ══════════════════════════════════════════ -->
+  <section class="section" id="chat">
+    <div class="section-eyebrow">Comunicación</div>
+    <h2 class="section-title">Chat</h2>
+    <p class="section-lead">Mensajería interna entre miembros del equipo. Soporta conversaciones 1 a 1 y un canal grupal compartido por todos.</p>
+
+    <h3>Mensajes 1 a 1</h3>
+    <ul>
+      <li>Enviar un mensaje a otro usuario: <code>POST /api/mensajes</code></li>
+      <li>Ver conversaciones activas: <code>GET /api/mensajes/conversaciones</code></li>
+      <li>Historial con un usuario (paginado): <code>GET /api/mensajes/conversacion/{otroId}</code></li>
+      <li>Marcar como leídos: <code>PUT /api/mensajes/leer/{emisorId}</code></li>
+      <li>Contador de no leídos: <code>GET /api/mensajes/no-leidos</code></li>
+      <li>Último mensaje leído: <code>GET /api/mensajes/ultimo-leido/{receptorId}</code></li>
+    </ul>
+
+    <h3>Canal grupal</h3>
+    <ul>
+      <li>Mensajes del grupo: <code>GET /api/mensajes/grupo</code></li>
+      <li>Publicar en el grupo: <code>POST /api/mensajes/grupo</code></li>
+    </ul>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══ ARQUITECTURA ══════════════════════════════════ -->
+  <section class="section" id="arquitectura">
+    <div class="section-eyebrow">Referencia técnica</div>
+    <h2 class="section-title">Arquitectura del sistema</h2>
+    <p class="section-lead">El sistema es un monolito Spring Boot que sirve tanto la API REST como el frontend estático.</p>
+
+    <h3>Estructura del código</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Paquete</th><th>Contenido</th></tr></thead>
+        <tbody>
+          <tr><td><code>controller/</code></td><td>20+ controllers REST. Un controller por módulo.</td></tr>
+          <tr><td><code>service/</code></td><td>Lógica de negocio. Un service por módulo.</td></tr>
+          <tr><td><code>entity/</code></td><td>30+ entidades JPA con sufijo <code>DE</code> (Data Entity).</td></tr>
+          <tr><td><code>to/</code></td><td>Transfer Objects / DTOs con sufijo <code>TO</code>.</td></tr>
+          <tr><td><code>mapper/</code></td><td>Conversión entre entidades y TOs.</td></tr>
+          <tr><td><code>repository/</code></td><td>Interfaces Spring Data JPA.</td></tr>
+          <tr><td><code>security/</code></td><td>Filtro JWT, generación/validación de tokens, entry point.</td></tr>
+          <tr><td><code>configuration/</code></td><td>SecurityConfig (filter chain, CORS). Rutas públicas.</td></tr>
+          <tr><td><code>supabase/service/</code></td><td>Cliente HTTP para Supabase Storage (upload/download/delete).</td></tr>
+          <tr><td><code>brevo/service/</code></td><td>Envío de emails transaccionales via Brevo API.</td></tr>
+          <tr><td><code>enums/</code></td><td>14 enumeraciones del dominio.</td></tr>
+          <tr><td><code>exception/</code></td><td>Manejador global de excepciones.</td></tr>
+          <tr><td><code>resources/static/</code></td><td>Frontend: HTML, JS, CSS. Servido directamente por Spring.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Integraciones externas</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Servicio</th><th>Para qué</th><th>Cómo</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Supabase Storage</strong></td>
+            <td>Almacenamiento de PDFs (análisis, presupuestos, documentos)</td>
+            <td>REST API con service role key. Bucket separado por tipo.</td>
+          </tr>
+          <tr>
+            <td><strong>Brevo</strong></td>
+            <td>Emails transaccionales a analistas al asignar un nuevo estudio</td>
+            <td>API REST via WebClient (reactivo). Email HTML.</td>
+          </tr>
+          <tr>
+            <td><strong>PostgreSQL</strong></td>
+            <td>Base de datos principal</td>
+            <td>Spring Data JPA + Hibernate. Pool HikariCP (máx 5 conexiones).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Esquema de base de datos</h3>
+    <p>Las migraciones se aplican automáticamente al iniciar (<code>ddl-auto=update</code> + <code>data.sql</code>). El archivo <code>data.sql</code> contiene tanto la definición de estructuras como los datos semilla iniciales. Para producción hay un archivo adicional <code>seed_produccion.sql</code> con los datos maestros (parámetros, resoluciones, matrices).</p>
+
+    <div class="callout callout-warn">
+      <strong>Hikari pool en producción</strong>
+      <p>El pool está limitado a 5 conexiones máximas. Fly.io usa la instancia mínima (1 CPU, 1 GB RAM). Si hay errores de conexión en picos de carga, este es el primer parámetro a revisar.</p>
+    </div>
+  </section>
+
+  <!-- ══ VARIABLES DE ENTORNO ══════════════════════════ -->
+  <section class="section" id="variables">
+    <div class="section-eyebrow">Configuración</div>
+    <h2 class="section-title">Variables de entorno</h2>
+    <p class="section-lead">Todas las credenciales y URLs se inyectan por variables de entorno. Nunca se hardcodean en el código.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Descripción</th><th>Ejemplo / Default</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="env-key">DB_URL</td>
+            <td>URL JDBC de la base de datos PostgreSQL</td>
+            <td><code>jdbc:postgresql://host:5432/chemiconsult</code></td>
+          </tr>
+          <tr>
+            <td class="env-key">DB_USERNAME</td>
+            <td>Usuario de la base de datos</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="env-key">DB_PASSWORD</td>
+            <td>Contraseña de la base de datos</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="env-key">JWT_SECRET</td>
+            <td>Clave secreta para firmar los tokens JWT. Debe ser larga (≥ 256 bits)</td>
+            <td>Generar con <code>openssl rand -hex 64</code></td>
+          </tr>
+          <tr>
+            <td class="env-key">SUPABASE_URL</td>
+            <td>URL del proyecto Supabase (sin ruta)</td>
+            <td><code>https://xxxx.supabase.co</code></td>
+          </tr>
+          <tr>
+            <td class="env-key">SUPABASE_SERVICE_ROLE_KEY</td>
+            <td>Service role key de Supabase (para subir/bajar archivos)</td>
+            <td>Desde Settings → API en el proyecto Supabase</td>
+          </tr>
+          <tr>
+            <td class="env-key">BREVO_API_KEY</td>
+            <td>API key de Brevo para envío de emails</td>
+            <td>Desde dashboard.brevo.com</td>
+          </tr>
+          <tr>
+            <td class="env-key">BREVO_SENDER_EMAIL</td>
+            <td>Email remitente de los mails automáticos</td>
+            <td><code>belu.chemiconsult@gmail.com</code></td>
+          </tr>
+          <tr>
+            <td class="env-key">BREVO_SENDER_NAME</td>
+            <td>Nombre del remitente</td>
+            <td><code>Chemiconsult</code></td>
+          </tr>
+          <tr>
+            <td class="env-key">ALLOWED_ORIGINS</td>
+            <td>Orígenes permitidos para CORS (separados por coma)</td>
+            <td><code>https://tudominio.com</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Desarrollo local</h3>
+    <p>Para correr localmente, crear <code>application-local.properties</code> con los valores de desarrollo. Activar con el perfil <code>local</code>:</p>
+    <pre>./mvnw spring-boot:run -Dspring-boot.run.profiles=local</pre>
+  </section>
+
+  <!-- ══ DEPLOY ════════════════════════════════════════ -->
+  <section class="section" id="deploy">
+    <div class="section-eyebrow">Operaciones</div>
+    <h2 class="section-title">Deploy en Fly.io</h2>
+    <p class="section-lead">El sistema está desplegado en Fly.io, región São Paulo (<code>gru</code>). El deploy es via Docker: el Dockerfile hace un build de Maven y luego copia el JAR a una imagen JDK 21.</p>
+
+    <h3>Infraestructura</h3>
+    <ul>
+      <li><strong>App:</strong> <code>chemiconsult-api</code></li>
+      <li><strong>Región:</strong> <code>gru</code> (São Paulo)</li>
+      <li><strong>Recursos:</strong> 1 CPU compartida · 1 GB RAM</li>
+      <li><strong>Puerto:</strong> 8080 (interno) · HTTPS forzado (externo)</li>
+      <li><strong>Auto-stop:</strong> la máquina se apaga si no hay tráfico (auto_stop = "stop"). Se enciende automáticamente al primer request.</li>
+      <li><strong>Mínimo en ejecución:</strong> 1 máquina</li>
+    </ul>
+
+    <h3>Comandos de deploy</h3>
+    <pre># Instalar Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# Login
+fly auth login
+
+# Deploy (desde el directorio con fly.toml)
+fly deploy
+
+# Ver logs
+fly logs
+
+# SSH a la máquina
+fly ssh console
+
+# Ver estado de la app
+fly status</pre>
+
+    <h3>Variables de entorno en Fly.io</h3>
+    <pre># Establecer un secreto
+fly secrets set JWT_SECRET=mi_clave_secreta
+
+# Establecer varios a la vez
+fly secrets set DB_URL=jdbc:... DB_USERNAME=usuario DB_PASSWORD=clave
+
+# Ver secretos (solo nombres, no valores)
+fly secrets list</pre>
+
+    <h3>Health check</h3>
+    <p>El endpoint <code>GET /actuator/health</code> es público y lo usa Fly.io para verificar que la app está levantada. También muestra el estado de la conexión a la base de datos (<code>db: UP/DOWN</code>).</p>
+
+    <div class="callout callout-success">
+      <strong>Tip: primer request lento</strong>
+      <p>Si la app estuvo sin tráfico, el primer request puede demorar ~5-10 segundos mientras la máquina arranca. Es comportamiento normal con <code>auto_stop_machines = "stop"</code>. Si esto molesta, se puede cambiar a <code>"suspend"</code> para arranques más rápidos.</p>
+    </div>
+
+    <h3>Build de Maven (Dockerfile)</h3>
+    <p>El Dockerfile es un build en dos etapas:</p>
+    <ol>
+      <li>Stage 1: imagen Maven → <code>mvn clean package -DskipTests</code></li>
+      <li>Stage 2: imagen JDK 21 slim → copia el JAR y define <code>ENTRYPOINT</code></li>
+    </ol>
+    <p>El perfil de Spring activo en producción es <code>prod</code>, que carga <code>application-prod.properties</code>.</p>
+  </section>
+
+</main>
+
+<script>
+/* ── Theme toggle ───────────────────────────────── */
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const isDark = current === 'dark' || (!current && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('chemi-theme', isDark ? 'light' : 'dark');
+}
+(function() {
+  const saved = localStorage.getItem('chemi-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ── Active nav highlight on scroll ─────────────── */
+(function() {
+  const sections = document.querySelectorAll('section[id], div[id="hero"]');
+  const links = document.querySelectorAll('.sidebar-nav a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar-nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+})();
+
+/* ── Close mobile sidebar on link click ─────────── */
+document.querySelectorAll('.sidebar-nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+  });
+});
+</script>
+</body></html>

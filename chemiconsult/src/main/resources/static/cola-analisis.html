@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
     <link rel="stylesheet" href="css/cola-analisis.css"/>
+    <link rel="stylesheet" href="css/modal.css"/>
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="COLA_ANALISIS"></script>
 </head>
 <body>
@@ -101,6 +102,76 @@
     <button class="mc-estado-opt repetir" data-estado="REPETIR">
         <span class="mc-estado-dot"></span> Repetir
     </button>
+</div>
+
+<!-- Modal confirmar resultado -->
+<div class="modal-overlay" id="mcModalConfirmar">
+    <div class="modal-box modal-box-detalle">
+        <div class="modal-loading-overlay d-none" id="mcModalLoading">
+            <div class="tube-loader">
+                <div class="tube-cap"></div>
+                <div class="tube-body"><div class="tube-liquid"></div></div>
+            </div>
+            <p class="modal-loading-label">Cargando datos…</p>
+        </div>
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-patch-check-fill"></i></div>
+            <div class="mh-info">
+                <p class="mh-eyebrow">Confirmar análisis</p>
+                <h5 id="mcModalParamNombre">—</h5>
+            </div>
+            <button class="modal-close" id="mcModalCerrar"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="mc-modal-info-grid">
+                <div class="mc-modal-info-item">
+                    <span class="mc-modal-info-label">N° Protocolo</span>
+                    <span class="mc-modal-info-val mc-modal-info-mono" id="mcModalProto">—</span>
+                </div>
+                <div class="mc-modal-info-item">
+                    <span class="mc-modal-info-label">Cliente</span>
+                    <span class="mc-modal-info-val" id="mcModalCliente">—</span>
+                </div>
+                <div class="mc-modal-info-item">
+                    <span class="mc-modal-info-label">Punto de muestreo</span>
+                    <span class="mc-modal-info-val" id="mcModalPunto">—</span>
+                </div>
+                <div class="mc-modal-info-item">
+                    <span class="mc-modal-info-label">Unidad</span>
+                    <span class="mc-modal-info-val" id="mcModalUnidad">—</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Metodología</label>
+                <select id="mcModalMetodo" class="form-control-custom">
+                    <option value="">Sin metodología</option>
+                </select>
+            </div>
+            <div class="form-group" id="mcModalLimitesWrap">
+                <label>Límites aplicables</label>
+                <div id="mcModalLimites" class="mc-modal-limites-container">
+                    <span class="mc-modal-limites-empty">—</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Resultado
+                    <span id="mcModalUnidadInline" class="mc-modal-unidad-inline"></span>
+                </label>
+                <input type="text" id="mcModalResultado" class="form-control-custom" placeholder="Ingresá el valor…"/>
+            </div>
+            <div class="form-group">
+                <label>Observación <span class="task-opt">(opcional)</span></label>
+                <input type="text" id="mcModalObservacion" class="form-control-custom" placeholder="Sin observaciones…"/>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancelar" id="mcModalCancelarBtn">Cancelar</button>
+            <button class="btn-guardar" id="mcModalGuardarBtn">
+                <i class="bi bi-patch-check-fill"></i> Confirmar
+            </button>
+        </div>
+    </div>
 </div>
 
 <script src="js/sidebar.js"></script>

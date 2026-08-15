@@ -35,4 +35,7 @@ public class AnalisisArchivoDE {
 
     @Column(name = "TIPO", length = 20)
     private String tipo;
+
+    @Column(name = "DESACTUALIZADO")
+    private Boolean desactualizado;
 }

@@ -133,6 +133,7 @@ public class InformeService {
         archivo.setNombre(nombreArchivo);
         archivo.setCreatedAt(LocalDate.now());
         archivo.setTipo("INFORME");
+        archivo.setDesactualizado(false);
         analisisArchivoRepository.save(archivo);
 
         analisis.setEstado(EstadoMuestraEnum.COMPLETO);

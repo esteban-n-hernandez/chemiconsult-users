@@ -91,6 +91,10 @@ public class EstudiosMapper {
                                 .map(ard -> ard.getResolucionDestino().getId())
                                 .toList())
                 .parametros(parametros)
+                .informeDesactualizado(entity.getArchivos() != null && entity.getArchivos().stream()
+                        .anyMatch(a -> a != null
+                                && "INFORME".equalsIgnoreCase(a.getTipo())
+                                && Boolean.TRUE.equals(a.getDesactualizado())))
                 .build();
     }
 

@@ -149,8 +149,16 @@ public class AnalisisController {
                         .nombre(a.getNombre())
                         .createdAt(a.getCreatedAt() != null ? a.getCreatedAt().toString() : null)
                         .tipo(a.getTipo())
+                        .desactualizado(a.getDesactualizado())
                         .build())
                 .toList();
+    }
+
+    /** Marca el informe de una muestra como desactualizado (estado pasa a COMPLETO_SIN_INFORME). */
+    @PostMapping("/{id}/invalidar-informe")
+    public ResponseEntity<Void> invalidarInforme(@PathVariable Long id) {
+        analisisService.invalidarInforme(id);
+        return ResponseEntity.ok().build();
     }
 
     /** Descarga un archivo específico por su id. */
@@ -218,20 +226,19 @@ public class AnalisisController {
             @PathVariable Long id,
             @PathVariable Long archivoId) {
 
-        AnalisisArchivoDE archivo = analisisArchivoRepository.findByIdAndAnalisisId(archivoId, id)
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        AnalisisArchivoDE archivo = analisis.getArchivos().stream()
+                .filter(a -> a.getId().equals(archivoId))
+                .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         supabaseBucketService.eliminarArchivo(BUCKET, archivo.getArchivoUrl());
-        analisisArchivoRepository.delete(archivo);
-        analisisArchivoRepository.flush();
-
-        List<AnalisisArchivoDE> restantes = analisisArchivoRepository.findAllByAnalisisIdOrderByCreatedAtAsc(id);
-        analisisRepository.findById(id).ifPresent(analisis -> {
-            analisis.setArchivos(restantes);
-            analisisService.recalcularEstadoDesdeCondiciones(analisis);
-            analisis.setUpdateDate(LocalDate.now());
-            analisisRepository.save(analisis);
-        });
+        analisis.getArchivos().remove(archivo);
+        analisisService.recalcularEstadoDesdeCondiciones(analisis);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
 
         return ResponseEntity.noContent().build();
     }

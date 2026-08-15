@@ -311,6 +311,13 @@
             if (!dropActivoBtn) return;
             const id          = dropActivoBtn.dataset.id;
             const nuevoEstado = opt.dataset.estado;
+
+            if (nuevoEstado === 'CONFIRMADO') {
+                cerrarEstadoDrop();
+                await abrirModalConfirmar(id);
+                return;
+            }
+
             await cambiarEstado(id, nuevoEstado);
             // After re-render, reposition dropdown on the new button (if still visible)
             const newBtn = document.querySelector(`.mc-estado-btn[data-id="${id}"]`);
@@ -381,6 +388,195 @@
     });
 
     $('mcRefresh').addEventListener('click', cargar);
+
+    // ── Modal de confirmación de resultado ────────────────────────────────
+
+    let modalAnalisisParametroId = null;
+    let modalAnalisisId          = null;
+    let modalParametroId         = null;
+
+    async function abrirModalConfirmar(analisisParametroId) {
+        let targetMuestra = null;
+        let targetParam   = null;
+        for (const p of datosOriginales) {
+            const m = p.muestras.find(m => String(m.analisisParametroId) === String(analisisParametroId));
+            if (m) { targetMuestra = m; targetParam = p; break; }
+        }
+        if (!targetMuestra || !targetParam) return;
+
+        modalAnalisisParametroId = analisisParametroId;
+        modalAnalisisId          = targetMuestra.analisisId;
+        modalParametroId         = targetParam.parametroId;
+
+        $('mcModalParamNombre').textContent = targetParam.parametroNombre || '—';
+        $('mcModalProto').textContent       = targetMuestra.nroProtocolo  || '—';
+        $('mcModalCliente').textContent     = targetMuestra.clienteNombre || '—';
+        $('mcModalPunto').textContent       = targetMuestra.puntoMuestreo || '—';
+        $('mcModalUnidad').textContent      = targetParam.unidad          || '—';
+
+        const unidadInline = $('mcModalUnidadInline');
+        if (targetParam.unidad) {
+            unidadInline.textContent = `(${targetParam.unidad})`;
+            unidadInline.style.display = '';
+        } else {
+            unidadInline.style.display = 'none';
+        }
+
+        $('mcModalResultado').value    = '';
+        $('mcModalObservacion').value  = '';
+        $('mcModalMetodo').innerHTML   = '<option value="">Cargando…</option>';
+        $('mcModalLimites').innerHTML  = '<span class="mc-modal-limites-empty">Cargando…</span>';
+        $('mcModalGuardarBtn').disabled = false;
+        $('mcModalGuardarBtn').innerHTML = '<i class="bi bi-patch-check-fill"></i> Confirmar';
+
+        $('mcModalLoading').classList.remove('d-none');
+        $('mcModalConfirmar').classList.add('visible');
+
+        try {
+            const detalleRes = await fetch(`/api/estudios/${modalAnalisisId}/detalle`, { headers: FETCH_HDR() });
+            if (!detalleRes.ok) throw new Error(`Error ${detalleRes.status} al cargar el detalle`);
+            const detalle = await detalleRes.json();
+
+            const paramDet = (detalle.parametros || []).find(p => String(p.id) === String(modalParametroId));
+
+            $('mcModalResultado').value   = paramDet?.valorResultado || '';
+            $('mcModalObservacion').value = paramDet?.observacion    || '';
+
+            renderModalLimites(paramDet?.limites || []);
+
+            const matrizId = detalle.matrizId || '';
+            const metodUrl = `/api/parametros/${modalParametroId}/metodologias${matrizId ? `?matrizId=${matrizId}` : ''}`;
+            const metodRes = await fetch(metodUrl, { headers: FETCH_HDR() });
+            if (metodRes.ok) {
+                const metodologias = await metodRes.json();
+                renderModalMetodologias(metodologias, paramDet?.metodologiaId);
+            } else {
+                const sel = $('mcModalMetodo');
+                sel.innerHTML = '<option value="">Sin metodología</option>';
+                if (paramDet?.metodologiaId) {
+                    const opt = document.createElement('option');
+                    opt.value       = paramDet.metodologiaId;
+                    opt.textContent = paramDet.metodologiaNombre || String(paramDet.metodologiaId);
+                    opt.selected    = true;
+                    sel.appendChild(opt);
+                }
+            }
+        } catch (e) {
+            $('mcModalLimites').innerHTML = `<span class="mc-modal-limites-empty" style="color:var(--rojo,#ef4444)">Error: ${esc(e.message)}</span>`;
+            $('mcModalMetodo').innerHTML  = '<option value="">Error al cargar</option>';
+        } finally {
+            $('mcModalLoading').classList.add('d-none');
+        }
+    }
+
+    function renderModalLimites(limites) {
+        const container = $('mcModalLimites');
+        if (!limites || limites.length === 0) {
+            container.innerHTML = '<span class="mc-modal-limites-empty">Sin límites definidos para esta muestra</span>';
+            return;
+        }
+        container.innerHTML = `
+            <table class="mc-limites-tabla">
+                <thead>
+                    <tr>
+                        <th class="limite-indicador-cell"></th>
+                        <th>Normativa</th>
+                        <th>Tipo</th>
+                        <th>Mínimo</th>
+                        <th>Máximo</th>
+                        <th>Valor límite</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${limites.map(l => `
+                        <tr data-min="${l.limiteMin ?? ''}" data-max="${l.limiteMax ?? ''}">
+                            <td class="limite-indicador-cell"><span class="limite-indicador"></span></td>
+                            <td>${esc(l.origenNombre || '—')}</td>
+                            <td>${esc(l.tipoLimite   || '—')}</td>
+                            <td>${esc(l.limiteMin    || '—')}</td>
+                            <td>${esc(l.limiteMax    || '—')}</td>
+                            <td>${esc(l.limiteTexto  || '—')}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>`;
+        validarLimitesModal();
+    }
+
+    function validarLimitesModal() {
+        const rawVal = $('mcModalResultado').value.trim();
+        const valor  = parseFloat(rawVal.replace(',', '.'));
+        const rows   = $('mcModalLimites')?.querySelectorAll('tbody tr[data-min]') || [];
+        rows.forEach(tr => {
+            const dot    = tr.querySelector('.limite-indicador');
+            if (!dot) return;
+            const minStr = tr.dataset.min;
+            const maxStr = tr.dataset.max;
+            const hasMin = minStr !== '';
+            const hasMax = maxStr !== '';
+            if (!hasMin && !hasMax) { dot.className = 'limite-indicador'; return; }
+            if (rawVal === '' || isNaN(valor)) { dot.className = 'limite-indicador'; return; }
+            const min    = hasMin ? parseFloat(minStr.replace(',', '.')) : -Infinity;
+            const max    = hasMax ? parseFloat(maxStr.replace(',', '.')) : Infinity;
+            dot.className = `limite-indicador ${valor >= min && valor <= max ? 'cumple' : 'no-cumple'}`;
+        });
+    }
+
+    function renderModalMetodologias(metodologias, currentId) {
+        const sel = $('mcModalMetodo');
+        sel.innerHTML = '<option value="">Sin metodología</option>';
+        (metodologias || []).forEach(m => {
+            const opt = document.createElement('option');
+            opt.value       = m.id;
+            opt.textContent = m.nombre || m.name || String(m.id);
+            if (String(m.id) === String(currentId)) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    function cerrarModalConfirmar() {
+        $('mcModalConfirmar').classList.remove('visible');
+        modalAnalisisParametroId = null;
+        modalAnalisisId          = null;
+        modalParametroId         = null;
+    }
+
+    async function guardarModalConfirmar() {
+        const valorResultado = $('mcModalResultado').value.trim();
+        const observacion    = $('mcModalObservacion').value.trim();
+        const metodVal       = $('mcModalMetodo').value;
+        const metodologiaId  = metodVal ? Number(metodVal) : null;
+
+        const btn = $('mcModalGuardarBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando…';
+
+        try {
+            const res = await fetch(`/api/estudios/${modalAnalisisId}/resultados`, {
+                method:  'PUT',
+                headers: FETCH_HDR(),
+                body:    JSON.stringify([{ parametroId: modalParametroId, valorResultado, observacion, metodologiaId }]),
+            });
+            if (!res.ok) throw new Error(`Error ${res.status} al guardar el resultado`);
+
+            await cambiarEstado(modalAnalisisParametroId, 'CONFIRMADO');
+            cerrarModalConfirmar();
+        } catch (e) {
+            alert('Error: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-patch-check-fill"></i> Confirmar';
+        }
+    }
+
+    $('mcModalCerrar').addEventListener('click', cerrarModalConfirmar);
+    $('mcModalCancelarBtn').addEventListener('click', cerrarModalConfirmar);
+    $('mcModalGuardarBtn').addEventListener('click', guardarModalConfirmar);
+    $('mcModalResultado').addEventListener('input', validarLimitesModal);
+    $('mcModalConfirmar').addEventListener('click', e => {
+        if (e.target === $('mcModalConfirmar')) cerrarModalConfirmar();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && $('mcModalConfirmar').classList.contains('visible')) cerrarModalConfirmar();
+    });
 
     // ── Inicio ─────────────────────────────────────────────────────────────
 

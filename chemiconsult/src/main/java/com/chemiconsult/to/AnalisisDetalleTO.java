@@ -26,4 +26,5 @@ public class AnalisisDetalleTO {
     private List<String> resolucionesAplicadas;
     private List<Long> resolucionDestinoIds;
     private List<ParametroResultadoTO> parametros;
+    private boolean informeDesactualizado;
 }

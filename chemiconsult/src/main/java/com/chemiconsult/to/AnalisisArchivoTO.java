@@ -10,4 +10,5 @@ public class AnalisisArchivoTO {
     private String nombre;
     private String createdAt;
     private String tipo;
+    private Boolean desactualizado;
 }
