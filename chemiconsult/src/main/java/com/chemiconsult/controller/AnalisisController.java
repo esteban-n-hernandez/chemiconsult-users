@@ -125,6 +125,16 @@ public class AnalisisController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/{id}/observaciones")
+    @Transactional
+    public ResponseEntity<Void> guardarObservaciones(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        String observaciones = (String) body.get("observaciones");
+        analisisService.guardarObservaciones(id, observaciones);
+        return ResponseEntity.ok().build();
+    }
+
     // ── ARCHIVOS ────────────────────────────────────────────────────────────────
 
     /** Lista todos los archivos asociados a una muestra. */
@@ -184,7 +194,12 @@ public class AnalisisController {
         archivo.setTipo(tipo.toUpperCase());
         analisisArchivoRepository.save(archivo);
 
-        analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+        if (analisis.getArchivos() == null) {
+            analisis.setArchivos(new java.util.ArrayList<>());
+        }
+        analisis.getArchivos().add(archivo);
+
+        analisisService.recalcularEstadoDesdeCondiciones(analisis);
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
 
@@ -211,17 +226,12 @@ public class AnalisisController {
         analisisArchivoRepository.flush();
 
         List<AnalisisArchivoDE> restantes = analisisArchivoRepository.findAllByAnalisisIdOrderByCreatedAtAsc(id);
-        boolean quedanInformes = restantes.stream()
-                .anyMatch(a -> "INFORME".equalsIgnoreCase(a.getTipo()) || a.getTipo() == null);
-        if (!quedanInformes) {
-            analisisRepository.findById(id).ifPresent(analisis -> {
-                if (analisis.getEstado() == EstadoMuestraEnum.COMPLETO) {
-                    analisis.setEstado(EstadoMuestraEnum.COMPLETO_SIN_INFORME);
-                    analisis.setUpdateDate(LocalDate.now());
-                    analisisRepository.save(analisis);
-                }
-            });
-        }
+        analisisRepository.findById(id).ifPresent(analisis -> {
+            analisis.setArchivos(restantes);
+            analisisService.recalcularEstadoDesdeCondiciones(analisis);
+            analisis.setUpdateDate(LocalDate.now());
+            analisisRepository.save(analisis);
+        });
 
         return ResponseEntity.noContent().build();
     }

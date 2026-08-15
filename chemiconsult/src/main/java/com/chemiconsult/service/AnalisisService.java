@@ -387,8 +387,41 @@ public class AnalisisService {
             }
         }
 
+        recalcularEstadoDesdeCondiciones(analisis);
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
+    }
+
+    @Transactional
+    public void recalcularEstadoDesdeCondiciones(Long analisisId) {
+        AnalisisDE analisis = analisisRepository.findById(analisisId)
+                .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
+        recalcularEstadoDesdeCondiciones(analisis);
+        analisisRepository.save(analisis);
+    }
+
+    public void recalcularEstadoDesdeCondiciones(AnalisisDE analisis) {
+        if (analisis == null || analisis.getEstado() == EstadoMuestraEnum.CANCELADO) {
+            return;
+        }
+
+        boolean tieneParametros = analisis.getParametros() != null && !analisis.getParametros().isEmpty();
+        boolean todosResultadosCargados = tieneParametros && analisis.getParametros().stream()
+                .allMatch(ap -> ap.getValorResultado() != null && !ap.getValorResultado().trim().isEmpty());
+
+        boolean tieneInforme = analisis.getArchivos() != null && analisis.getArchivos().stream()
+                .anyMatch(a -> a == null || a.getTipo() == null || "INFORME".equalsIgnoreCase(a.getTipo()));
+
+        if (!todosResultadosCargados) {
+            analisis.setEstado(EstadoMuestraEnum.EN_PROCESO);
+            return;
+        }
+
+        if (tieneInforme) {
+            analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+        } else {
+            analisis.setEstado(EstadoMuestraEnum.COMPLETO_SIN_INFORME);
+        }
     }
 
     private Boolean evaluarCumple(String valorStr, AnalisisParametroLimiteDE limite) {
@@ -479,6 +512,15 @@ public class AnalisisService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    @Transactional
+    public void guardarObservaciones(Long analisisId, String observaciones) {
+        AnalisisDE analisis = analisisRepository.findById(analisisId)
+                .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
+        analisis.setObservaciones(observaciones);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
     }
 
     @Autowired

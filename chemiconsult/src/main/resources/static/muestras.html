@@ -8,7 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/ui.css"/>
     <link rel="stylesheet" href="css/tabla-muestras.css"/>
@@ -29,19 +30,23 @@
             font-family: inherit;
             min-height: 36px;
         }
+
         .ts-wrapper.focus .ts-control {
             border-color: var(--verde, #2e7d32);
             box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.15);
         }
+
         .ts-dropdown .option.active,
         .ts-dropdown .option:hover {
             background-color: var(--verde-suave, #edf7ee);
             color: var(--verde, #2e7d32);
         }
+
         .ts-dropdown .option.selected {
             background-color: var(--verde, #2e7d32);
             color: #fff;
         }
+
         .ts-wrapper.disabled .ts-control {
             background-color: #f3f4f6;
             cursor: not-allowed;
@@ -95,7 +100,8 @@
                 </div>
                 <div class="busqueda-filtros">
                     <input type="text" id="inputBuscarCodigo" class="input-buscar" placeholder="🔍 Buscar por código...">
-                    <input type="text" id="inputBuscarCliente" class="input-buscar" placeholder="🔍 Buscar por cliente...">
+                    <input type="text" id="inputBuscarCliente" class="input-buscar"
+                           placeholder="🔍 Buscar por cliente...">
                 </div>
             </div>
 
@@ -106,9 +112,11 @@
                 </span>
                 <div class="export-word-campos">
                     <label class="export-word-lbl">Desde</label>
-                    <input type="text" id="exportDesde" class="export-word-date" placeholder="dd/mm/aaaa" maxlength="10">
+                    <input type="text" id="exportDesde" class="export-word-date" placeholder="dd/mm/aaaa"
+                           maxlength="10">
                     <label class="export-word-lbl">Hasta</label>
-                    <input type="text" id="exportHasta" class="export-word-date" placeholder="dd/mm/aaaa" maxlength="10">
+                    <input type="text" id="exportHasta" class="export-word-date" placeholder="dd/mm/aaaa"
+                           maxlength="10">
                     <button class="btn-export-word" onclick="exportarRango()">
                         <i class="bi bi-download"></i> Exportar rango (.zip)
                     </button>
@@ -299,7 +307,8 @@
                         </div>
 
                         <!-- Buscador individual -->
-                        <div id="buscadorIndividualContainer" class="buscador-individual-panel d-none mb-3 p-2 border rounded bg-white shadow-sm position-relative">
+                        <div id="buscadorIndividualContainer"
+                             class="buscador-individual-panel d-none mb-3 p-2 border rounded bg-white shadow-sm position-relative">
                             <div class="input-group input-group-sm mb-1">
                                 <span class="input-group-text bg-white border-end-0">
                                     <i class="bi bi-search text-muted"></i>
@@ -413,10 +422,12 @@
                     <div id="detalleResoluciones" class="detalle-chips"></div>
                 </div>
 
-                <!-- Observaciones -->
+                <!-- Observaciones (Editable) -->
                 <div class="detalle-seccion" id="detalleObservacionesWrap">
                     <p class="detalle-seccion-titulo">Observaciones</p>
                     <p class="detalle-obs-text" id="detalleObservaciones">—</p>
+                    <textarea id="detalleObservacionesInput" class="form-control-custom textarea-vertical" 
+                              rows="2" placeholder="Notas adicionales..." style="margin-top:8px; display:none;"></textarea>
                 </div>
 
                 <!-- Parámetros -->
@@ -460,9 +471,11 @@
         <div class="modal-body">
             <!-- Lista de archivos existentes -->
             <div id="listaArchivosContainer" style="margin-bottom:16px;">
-                <label style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">Archivos subidos</label>
+                <label style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">Archivos
+                    subidos</label>
                 <div id="listaArchivos" style="display:flex; flex-direction:column; gap:6px; min-height:32px;">
-                    <span class="text-muted" style="font-size:13px;" id="listaArchivosVacia">Sin archivos todavía.</span>
+                    <span class="text-muted" style="font-size:13px;"
+                          id="listaArchivosVacia">Sin archivos todavía.</span>
                 </div>
             </div>
             <!-- Upload nuevo archivo -->
@@ -508,13 +521,17 @@
         </div>
         <div class="modal-body">
             <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;">
-                Seleccioná los equipos que se utilizaron en este análisis. Podés dejar todo sin marcar si no querés incluir esta sección en el informe.
+                Seleccioná los equipos que se utilizaron en este análisis. Podés dejar todo sin marcar si no querés
+                incluir esta sección en el informe.
             </p>
-            <div id="equiposInformeLoading" style="text-align:center;padding:16px 0;font-size:13px;color:var(--color-text-secondary);">
+            <div id="equiposInformeLoading"
+                 style="text-align:center;padding:16px 0;font-size:13px;color:var(--color-text-secondary);">
                 <span class="spinner-border spinner-border-sm me-2"></span> Cargando equipos...
             </div>
-            <div id="equiposInformeList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;display:none;"></div>
-            <div id="equiposInformeVacio" style="display:none;font-size:13px;color:var(--color-text-secondary);padding:8px 0;">
+            <div id="equiposInformeList"
+                 style="flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;display:none;"></div>
+            <div id="equiposInformeVacio"
+                 style="display:none;font-size:13px;color:var(--color-text-secondary);padding:8px 0;">
                 No hay equipos registrados. Podés cargarlos desde el Panel Técnico.
             </div>
         </div>
@@ -548,7 +565,8 @@
             <div class="form-group" style="margin:0">
                 <label class="form-label" style="font-size:13px;">Motivo de cancelación</label>
                 <textarea id="inputMotivoCancelacionM" class="form-control-custom textarea-vertical"
-                          rows="3" placeholder="Ej: Muestra mal tomada, cliente desistió, error de protocolo..."></textarea>
+                          rows="3"
+                          placeholder="Ej: Muestra mal tomada, cliente desistió, error de protocolo..."></textarea>
             </div>
         </div>
         <div class="modal-footer">

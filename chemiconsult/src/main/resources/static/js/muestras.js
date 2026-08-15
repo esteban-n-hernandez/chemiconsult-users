@@ -407,9 +407,56 @@ function vincularEventos() {
     // Live re-evaluation de badges y auto-guardado
     function onResultadoChange(e) {
         if (e.target.classList.contains("param-resultado-input")) {
-            e.target.closest(".param-card").querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
+            const paramCard = e.target.closest(".param-card");
+            
+            // Actualizar badges
+            paramCard.querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
                 actualizarBadge(badge, e.target.value);
             });
+            
+            // Actualizar color del input basado en cumplimiento de límites
+            const badges = paramCard.querySelectorAll(".badge-cumple");
+            let tieneNoConforme = false;
+            let todosCumplen = false;
+            
+            // Contar badges de "No cumple" vs "Cumple"
+            const noCumplen = Array.from(badges).filter(b => b.classList.contains("badge-cumple-no")).length;
+            const cumplen = Array.from(badges).filter(b => b.classList.contains("badge-cumple-si")).length;
+            
+            if (noCumplen > 0) {
+                tieneNoConforme = true;
+            } else if (cumplen > 0) {
+                todosCumplen = true;
+            }
+            
+            // Actualizar color del input
+            const input = e.target;
+            if (tieneNoConforme) {
+                input.style.color = "#dc3545";
+                input.style.fontWeight = "600";
+            } else if (todosCumplen) {
+                input.style.color = "#2e7d32";
+                input.style.fontWeight = "600";
+            } else {
+                input.style.color = "";
+                input.style.fontWeight = "";
+            }
+            
+            // Actualizar color de la norma count
+            const normaCount = paramCard.querySelector(".param-norma-count");
+            if (normaCount) {
+                if (tieneNoConforme) {
+                    normaCount.style.color = "#dc3545";
+                    normaCount.style.fontWeight = "600";
+                } else if (todosCumplen) {
+                    normaCount.style.color = "#2e7d32";
+                    normaCount.style.fontWeight = "600";
+                } else {
+                    normaCount.style.color = "";
+                    normaCount.style.fontWeight = "";
+                }
+            }
+            
             recalcularEstadoBtnGenerarInforme();
         }
         if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-obs-input") || e.target.classList.contains("param-metodologia-select")) {
@@ -1621,12 +1668,22 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
 
     // Observaciones
     const wrapObs = document.getElementById("detalleObservacionesWrap");
-    if (d.observaciones) {
-        document.getElementById("detalleObservaciones").textContent = d.observaciones;
-        wrapObs.style.display = "";
+    const obsInput = document.getElementById("detalleObservacionesInput");
+    const obsText = document.getElementById("detalleObservaciones");
+    
+    // Mostrar textarea siempre editable (excepto cuando está cancelado)
+    obsText.style.display = "none";
+    obsInput.style.display = "";
+    obsInput.value = d.observaciones || "";
+    obsInput.readOnly = esCancelado;
+    if (esCancelado) {
+        obsInput.style.opacity = ".6";
+        obsInput.style.cursor = "default";
     } else {
-        wrapObs.style.display = "none";
+        obsInput.style.opacity = "";
+        obsInput.style.cursor = "";
     }
+    wrapObs.style.display = "";
 
     // Normativas (chips)
     const contResoluciones = document.getElementById("detalleResoluciones");
@@ -1656,6 +1713,10 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
         card.className = "param-card";
 
         let limitesHtml = "";
+        // Determinar si cumple con todos los límites
+        const tieneNoConforme = p.limites && p.limites.some(l => l.cumple === false);
+        const todosCumplen = p.limites && p.limites.length > 0 && p.limites.every(l => l.cumple !== false);
+         
         if (!p.limites || p.limites.length === 0) {
             limitesHtml = `<div class="param-card-limites"><span style="color:var(--color-text-tertiary);font-size:12px">Sin límite normativo asociado</span></div>`;
         } else {
@@ -1672,8 +1733,14 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
                     badgeClass = "badge-cumple badge-cumple-no";
                     badgeText = "No cumple";
                 }
+                 
+                // Aplicar indicador sutil si no cumple (solo border-left, sin fondo)
+                const limitRowStyle = l.cumple === false 
+                    ? 'style="border-left:3px solid #dc3545;padding-left:8px;margin-bottom:6px;padding:8px;border-radius:3px;"'
+                    : 'style="margin-bottom:6px;padding:8px;border-radius:3px;"';
+                 
                 return `
-                    <div class="param-limite-row">
+                    <div class="param-limite-row" ${limitRowStyle}>
                         <span class="param-limite-origen">${l.origenNombre}</span>
                         <span class="param-limite-valor">${textoLimite}</span>
                         <span class="${badgeClass}"
@@ -1690,13 +1757,23 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
         const soloAusencia = p.limites && p.limites.length > 0 && p.limites.every(l => esLimiteAusencia(l));
         const val = p.valorResultado || "";
         const bloqueado = esCancelado || esCompleto;
+         
+        // Aplicar color al input según cumplimiento
+        const inputStyle = tieneNoConforme 
+            ? 'style="color:#dc3545;font-weight:600;"'
+            : todosCumplen
+            ? 'style="color:#2e7d32;font-weight:600;"'
+            : '';
+         
         const inputResultado = soloAusencia
             ? `<input class="param-resultado-input" type="text" data-parametro-id="${p.id}" data-ausencia="true"
                    value="${val}" placeholder="Valor o Ausente..."
-                   ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`
+                   ${inputStyle}
+                   ${bloqueado ? 'readonly style="opacity:.6;cursor:default' + (tieneNoConforme ? ';color:#dc3545;font-weight:600' : todosCumplen ? ';color:#2e7d32;font-weight:600' : '') + '"' : ''}>`
             : `<input class="param-resultado-input" type="text" data-parametro-id="${p.id}"
                    value="${val}" placeholder="Resultado..."
-                   ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}>`;
+                   ${inputStyle}
+                   ${bloqueado ? 'readonly style="opacity:.6;cursor:default' + (tieneNoConforme ? ';color:#dc3545;font-weight:600' : todosCumplen ? ';color:#2e7d32;font-weight:600' : '') + '"' : ''}>`;
 
         const btnAusente = soloAusencia && !bloqueado
             ? `<button type="button" class="btn-ausente" data-parametro-id="${p.id}">Ausente</button>`
@@ -1730,14 +1807,10 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
                     ${inputResultado}
                     ${btnAusente}
                     <span class="param-resultado-unidad">${p.unidad || ""}</span>
-                    ${hayLimites ? `<span class="param-norma-count">${nLimites} norma${nLimites !== 1 ? 's' : ''}</span>` : ''}
+                    ${hayLimites ? `<span class="param-norma-count" style="color:${tieneNoConforme ? '#dc3545' : '#2e7d32'}; font-weight:600;">${nLimites} norma${nLimites !== 1 ? 's' : ''}</span>` : ''}
                 </div>
             </div>
-            ${hayLimites ? `<button class="param-toggle" type="button" aria-expanded="false" data-count="${nLimites}">
-                <i class="bi bi-chevron-down param-toggle-icon"></i>
-                <span>Ver normativas (${nLimites})</span>
-            </button>` : ''}
-            <div class="param-colapsable"${hayLimites ? ' style="display:none"' : ''}>
+            <div class="param-colapsable">
                 <div class="param-obs-wrap">
                     <input
                         class="param-obs-input"
@@ -2011,9 +2084,34 @@ function escHtml(s) {
     return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function onGenerarInforme() {
+async function onGenerarInforme() {
     if (!detalleAnalisisId) return;
-    abrirModalEquipos();
+    
+    // Obtener observaciones del campo en el modal de detalle
+    const obsInput = document.getElementById("detalleObservacionesInput");
+    const nuevasObservaciones = obsInput ? obsInput.value.trim() : "";
+    
+    try {
+        // Guardar observaciones en la BD
+        const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/observaciones`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ observaciones: nuevasObservaciones || null })
+        });
+        
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Error HTTP ${resp.status}`);
+        }
+        
+        // Cerrar modal de detalle y abrir modal de equipos
+        cerrarModalDetalle();
+        abrirModalEquipos();
+        
+    } catch (err) {
+        console.error("Error guardando observaciones:", err);
+        mostrarToast(`Error al guardar observaciones: ${err.message}`, true);
+    }
 }
 
 async function ejecutarGeneracionInforme(equipoIds) {
@@ -2059,6 +2157,7 @@ async function ejecutarGeneracionInforme(equipoIds) {
 
 // Listeners del modal de equipos
 document.addEventListener("DOMContentLoaded", () => {
+    // Listeners del modal de equipos
     document.getElementById("equiposInformeClose").addEventListener("click", cerrarModalEquipos);
     document.getElementById("equiposInformeCancelar").addEventListener("click", cerrarModalEquipos);
 
@@ -2088,7 +2187,7 @@ function recalcularEstadoBtnGenerarInforme() {
 // Genera el informe directamente desde la fila de la tabla (sin abrir el modal)
 window.onGenerarInformeDesdeTabla = async function(id) {
     detalleAnalisisId = id;
-    abrirModalEquipos();
+    abrirModalResumen();
 };
 
 // ============================================================

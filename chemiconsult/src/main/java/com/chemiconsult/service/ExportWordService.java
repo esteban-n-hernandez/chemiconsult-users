@@ -19,6 +19,7 @@ public class ExportWordService {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String COLOR_VERDE = "1A6B3A";
+    private static final String COLOR_ROJO = "C00000";
     private static final String COLOR_HEADER_BG = "E2EFD9";
 
     public byte[] generarDocx(AnalisisDetalleTO d) throws Exception {
@@ -159,13 +160,21 @@ public class ExportWordService {
         for (ParametroResultadoTO param : params) {
             XWPFTableRow row = tabla.createRow();
             while (row.getTableCells().size() < numCols) row.addNewTableCell();
-            celdaTabla(row, 0, nvl(param.getNombre()), ParagraphAlignment.LEFT);
-            celdaTabla(row, 1, nvl(param.getValorResultado()), ParagraphAlignment.CENTER);
-            celdaTabla(row, 2, nvl(param.getUnidad()), ParagraphAlignment.CENTER);
+            
+            // Determinar si el parámetro cumple con todos los límites
+            boolean tieneNoConforme = param.getLimites() != null && 
+                    param.getLimites().stream().anyMatch(l -> l.getCumple() != null && !l.getCumple());
+            String colorResultado = tieneNoConforme ? COLOR_ROJO : null;
+            
+            celdaTabla(row, 0, nvl(param.getNombre()), ParagraphAlignment.LEFT, null);
+            celdaTabla(row, 1, nvl(param.getValorResultado()), ParagraphAlignment.CENTER, colorResultado);
+            celdaTabla(row, 2, nvl(param.getUnidad()), ParagraphAlignment.CENTER, null);
             for (int i = 0; i < resoluciones.size(); i++) {
-                celdaTabla(row, 3 + i, findLimite(param.getLimites(), resoluciones.get(i)), ParagraphAlignment.CENTER);
+                LimiteAplicableTO limite = findLimiteObj(param.getLimites(), resoluciones.get(i));
+                String colorLimite = (limite != null && limite.getCumple() != null && !limite.getCumple()) ? COLOR_ROJO : null;
+                celdaTabla(row, 3 + i, findLimite(param.getLimites(), resoluciones.get(i)), ParagraphAlignment.CENTER, colorLimite);
             }
-            celdaTabla(row, 3 + resoluciones.size(), nvl(param.getMetodologiaNombre()), ParagraphAlignment.LEFT);
+            celdaTabla(row, 3 + resoluciones.size(), nvl(param.getMetodologiaNombre()), ParagraphAlignment.LEFT, null);
         }
 
         espacio(doc);
@@ -241,6 +250,14 @@ public class ExportWordService {
                 .orElse("—");
     }
 
+    private LimiteAplicableTO findLimiteObj(List<LimiteAplicableTO> limites, String origen) {
+        if (limites == null) return null;
+        return limites.stream()
+                .filter(l -> origen.equals(l.getOrigenNombre()))
+                .findFirst()
+                .orElse(null);
+    }
+
     private String formatLimite(LimiteAplicableTO l) {
         if (l.getTipoLimite() == null) return "—";
         return switch (l.getTipoLimite()) {
@@ -308,6 +325,10 @@ public class ExportWordService {
     }
 
     private void celdaTabla(XWPFTableRow row, int idx, String texto, ParagraphAlignment align) {
+        celdaTabla(row, idx, texto, align, null);
+    }
+
+    private void celdaTabla(XWPFTableRow row, int idx, String texto, ParagraphAlignment align, String color) {
         while (row.getTableCells().size() <= idx) row.addNewTableCell();
         XWPFTableCell cell = row.getCell(idx);
         XWPFParagraph p = cell.getParagraphArray(0);
@@ -315,6 +336,10 @@ public class ExportWordService {
         XWPFRun r = p.createRun();
         r.setText(texto);
         r.setFontSize(9);
+        if (color != null) {
+            r.setColor(color);
+            r.setBold(true);
+        }
     }
 
     private String nvl(String s) {
