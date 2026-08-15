@@ -396,11 +396,6 @@ function vincularEventos() {
             el.style.opacity = "";
             el.style.cursor = "";
         });
-        document.querySelectorAll("#detalleParametros .param-obs-input").forEach(el => {
-            el.removeAttribute("readonly");
-            el.style.opacity = "";
-            el.style.cursor = "";
-        });
         document.getElementById("btnEditarResultados").style.display = "none";
     });
 
@@ -459,7 +454,7 @@ function vincularEventos() {
             
             recalcularEstadoBtnGenerarInforme();
         }
-        if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-obs-input") || e.target.classList.contains("param-metodologia-select")) {
+        if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-metodologia-select")) {
             dispararAutoGuardar();
         }
     }
@@ -1811,16 +1806,6 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
                 </div>
             </div>
             <div class="param-colapsable">
-                <div class="param-obs-wrap">
-                    <input
-                        class="param-obs-input"
-                        type="text"
-                        id="obs-param-${p.id}"
-                        value="${p.observacion || ''}"
-                        placeholder="Observación..."
-                        ${bloqueado ? 'readonly style="opacity:.6;cursor:default"' : ''}
-                    >
-                </div>
                 ${limitesHtml}
             </div>
         `;
@@ -1989,7 +1974,6 @@ async function autoGuardar() {
         const resultados = [];
         inputs.forEach(input => {
             const parametroId = parseInt(input.dataset.parametroId);
-            const obsInput = document.getElementById(`obs-param-${parametroId}`);
             const rawVal = input.value.trim();
             const selectMetod = document.querySelector(`.param-metodologia-select[data-parametro-id="${parametroId}"]`);
             const hiddenMetod = document.querySelector(`.param-metodologia-hidden[data-parametro-id="${parametroId}"]`);
@@ -1997,7 +1981,6 @@ async function autoGuardar() {
             resultados.push({
                 parametroId,
                 valorResultado: rawVal !== "" ? rawVal : null,
-                observacion: obsInput ? (obsInput.value.trim() || null) : null,
                 metodologiaId: metodRaw ? (parseInt(metodRaw) || null) : null,
             });
         });
