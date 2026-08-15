@@ -452,6 +452,21 @@ function vincularEventos() {
                 }
             }
             
+            // Actualizar color de la metodología
+            const metodo = paramCard.querySelector(".param-card-metodo");
+            if (metodo) {
+                if (tieneNoConforme) {
+                    metodo.style.color = "#dc3545";
+                    metodo.style.fontWeight = "600";
+                } else if (todosCumplen) {
+                    metodo.style.color = "#2e7d32";
+                    metodo.style.fontWeight = "600";
+                } else {
+                    metodo.style.color = "";
+                    metodo.style.fontWeight = "";
+                }
+            }
+            
             recalcularEstadoBtnGenerarInforme();
         }
         if (e.target.classList.contains("param-resultado-input") || e.target.classList.contains("param-metodologia-select")) {
@@ -1779,11 +1794,17 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
 
         const opcMetod = metodCatalog.get(p.id) || [];
         let metodoHtml;
+        const metodoStyle = tieneNoConforme 
+            ? 'style="color:#dc3545;font-weight:600;"'
+            : todosCumplen
+            ? 'style="color:#2e7d32;font-weight:600;"'
+            : '';
+        
         if (opcMetod.length === 0 || bloqueado) {
-            metodoHtml = `<div class="param-card-metodo">${p.metodologiaNombre || "Sin metodología"}</div>`;
+            metodoHtml = `<div class="param-card-metodo" ${metodoStyle}>${p.metodologiaNombre || "Sin metodología"}</div>`;
         } else if (opcMetod.length === 1) {
             // Una sola metodología: muestra como texto y pre-selecciona con hidden input
-            metodoHtml = `<div class="param-card-metodo">${esc(opcMetod[0].nombre)}</div>
+            metodoHtml = `<div class="param-card-metodo" ${metodoStyle}>${esc(opcMetod[0].nombre)}</div>
                 <input type="hidden" class="param-metodologia-hidden" data-parametro-id="${p.id}" value="${opcMetod[0].id}">`;
         } else {
             metodoHtml = `<select class="param-metodologia-select" data-parametro-id="${p.id}">
