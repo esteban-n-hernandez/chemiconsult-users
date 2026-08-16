@@ -208,6 +208,37 @@ const tablas = {
             activo:        r.activo,
         }),
     },
+    precios: {
+        url: `${API_URL}/precios`,
+        tbodyId: 'tablaPreciosBody',
+        filtroId: 'filtroPrecios',
+        pagId:    'paginadorPrecios',
+        colSpan:  6,
+        checkable: true,
+        selected: new Set(),
+        data: [], filtro: '', pagina: 1, porPagina: 10,
+        renderFila: r => `
+            <td>${esc(r.nombreServicio)}</td>
+            <td>${esc(r.descripcion || '-')}</td>
+            <td>$ ${(r.precio ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td>${r.precioConImpuesto != null ? '$ ' + r.precioConImpuesto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span class="text-muted-pt">—</span>'}</td>`,
+        textoVacio: 'No hay servicios registrados.',
+        textoBuscar: r => `${r.nombreServicio} ${r.descripcion || ''}`,
+        editUrl: id => `${API_URL}/precios/${id}`,
+        renderFilaEdit: r => `
+            <td><input class="unidad-inline-input" id="ef-nombreServicio" value="${esc(r.nombreServicio)}" style="width:100%"></td>
+            <td><input class="unidad-inline-input" id="ef-desc" value="${esc(r.descripcion || '')}" placeholder="Descripción opcional" style="width:100%"></td>
+            <td><input type="number" class="unidad-inline-input" id="ef-precio" value="${r.precio ?? ''}" min="0" step="0.01" style="width:100%"></td>
+            <td><input type="number" class="unidad-inline-input" id="ef-precioImpuesto" value="${r.precioConImpuesto ?? ''}" min="0" step="0.01" placeholder="—" style="width:100%"></td>`,
+        buildPutBody: r => ({
+            nombreServicio:   document.getElementById('ef-nombreServicio').value.trim(),
+            descripcion:      document.getElementById('ef-desc').value.trim() || null,
+            precio:           parseFloat(document.getElementById('ef-precio').value) || 0,
+            precioConImpuesto: document.getElementById('ef-precioImpuesto').value !== ''
+                               ? parseFloat(document.getElementById('ef-precioImpuesto').value)
+                               : null,
+        }),
+    },
 };
 
 // ── Carga inicial ──
@@ -319,6 +350,7 @@ function renderTabla(nombre) {
     } else {
         tbody.innerHTML = pagina.map(r => `
             <tr data-id="${r.id}">
+                ${t.checkable ? `<td style="width:36px;text-align:center;"><input type="checkbox" class="row-check" data-id="${r.id}" ${t.selected.has(r.id) ? 'checked' : ''} onchange="_toggleCheck('${nombre}',${r.id},this.checked)"></td>` : ''}
                 ${t.renderFila(r)}
                 <td>
                     <div class="tabla-acciones">
@@ -331,6 +363,8 @@ function renderTabla(nombre) {
                 </td>
             </tr>`).join('');
     }
+
+    if (t.checkable) _sincronizarCheckAll(nombre, pagina);
 
     renderPaginador(nombre, filtrados.length, totalPaginas);
 }
@@ -564,6 +598,34 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarToast('No se pudo guardar el equipo.', 'danger');
         }
     });
+
+    document.getElementById('precioPrecio').addEventListener('input', recalcularFormImpuesto);
+
+    document.getElementById('formPrecio').addEventListener('submit', async e => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const impuestoRaw = document.getElementById('precioPrecioImpuesto').value;
+        const body = {
+            nombreServicio:   document.getElementById('precioNombre').value.trim(),
+            descripcion:      document.getElementById('precioDescripcion').value.trim() || null,
+            precio:           parseFloat(document.getElementById('precioPrecio').value) || 0,
+            precioConImpuesto: impuestoRaw !== '' ? parseFloat(impuestoRaw) : null,
+        };
+        try {
+            const res = await fetch(`${API_URL}/precios`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            e.target.reset();
+            cargarTabla('precios');
+            mostrarToast('Servicio guardado.');
+        } catch (err) {
+            console.error('Error guardando precio:', err);
+            mostrarToast('No se pudo guardar el servicio.', 'danger');
+        }
+    });
 });
 
 async function cargarMatrices() {
@@ -597,6 +659,127 @@ async function cargarMatrices() {
         }
     } catch (err) {
         console.error('Error cargando matrices:', err);
+    }
+}
+
+// ── Selección de filas en tabla de precios ──
+function _toggleCheck(tablaNombre, id, checked) {
+    const t = tablas[tablaNombre];
+    checked ? t.selected.add(id) : t.selected.delete(id);
+    const pagina = [...document.querySelectorAll(`#${t.tbodyId} .row-check`)].map(cb => parseInt(cb.dataset.id));
+    _sincronizarCheckAll(tablaNombre, pagina.map(pid => ({ id: pid })));
+    _actualizarBotonesAjuste();
+}
+
+function _sincronizarCheckAll(tablaNombre, pagina) {
+    const t = tablas[tablaNombre];
+    const checkAll = document.getElementById('checkAllPrecios');
+    if (!checkAll || pagina.length === 0) return;
+    const allChecked = pagina.every(r => t.selected.has(r.id));
+    const someChecked = pagina.some(r => t.selected.has(r.id));
+    checkAll.checked = allChecked;
+    checkAll.indeterminate = !allChecked && someChecked;
+}
+
+function toggleSelectAllPrecios(checked) {
+    const t = tablas.precios;
+    if (checked) t.data.forEach(r => t.selected.add(r.id));
+    else t.selected.clear();
+    renderTabla('precios');
+    _actualizarBotonesAjuste();
+}
+
+function _actualizarBotonesAjuste() {
+    const n = tablas.precios.selected.size;
+    const sufijo = n === 0 ? 'todos' : `${n} seleccionado${n > 1 ? 's' : ''}`;
+    const contador = document.getElementById('seleccionContador');
+    if (contador) contador.textContent = n > 0 ? `${n} seleccionado${n > 1 ? 's' : ''}` : '';
+    const lblFactor = document.getElementById('lblFactorBtn');
+    if (lblFactor) lblFactor.textContent = `Aplicar a ${sufijo}`;
+    const lblImp = document.getElementById('lblImpuestoBtn');
+    if (lblImp) lblImp.textContent = `Recalcular ${sufijo}`;
+}
+
+// ── Ajuste de precios por factor ──
+async function aplicarFactorPrecios() {
+    const factor = parseFloat(document.getElementById('factorAjuste').value);
+    if (!factor || factor <= 0) {
+        mostrarToast('El factor debe ser un número mayor que 0.', 'danger');
+        return;
+    }
+    const t = tablas.precios;
+    const ids = t.selected.size > 0 ? [...t.selected] : null;
+    const alcance = ids ? `${ids.length} servicio${ids.length > 1 ? 's' : ''} seleccionado${ids.length > 1 ? 's' : ''}` : 'todos los servicios';
+    const pct = Math.abs((factor - 1) * 100).toFixed(1);
+    const direccion = factor > 1 ? `aumentará un ${pct}%` : factor < 1 ? `reducirá un ${pct}%` : 'no cambiará';
+
+    const ok = await UI.confirmar({
+        titulo: `¿Aplicar factor ${factor}?`,
+        subtexto: `El precio de ${alcance} se ${direccion}. Esta operación no se puede deshacer.`,
+        textoConfirmar: 'Aplicar',
+        tipo: 'warning',
+    });
+    if (!ok) return;
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/precios/ajuste`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ factor, ids }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        t.selected.clear();
+        cargarTabla('precios');
+        mostrarToast(`Factor ${factor} aplicado a ${alcance}.`);
+    } catch (err) {
+        console.error('Error aplicando factor:', err);
+        mostrarToast('No se pudo aplicar el ajuste.', 'danger');
+    }
+}
+
+// ── Recalcular precio con impuesto ──
+function recalcularFormImpuesto() {
+    const precio = parseFloat(document.getElementById('precioPrecio')?.value) || 0;
+    const pct = parseFloat(document.getElementById('porcentajeImpuesto')?.value) || 0;
+    const campo = document.getElementById('precioPrecioImpuesto');
+    if (campo && precio > 0) {
+        campo.value = (Math.round(precio * (1 + pct / 100) * 100) / 100).toFixed(2);
+    }
+}
+
+async function recalcularImpuestoPrecios() {
+    const porcentaje = parseFloat(document.getElementById('porcentajeImpuesto').value);
+    if (isNaN(porcentaje) || porcentaje < 0) {
+        mostrarToast('El porcentaje de impuesto no es válido.', 'danger');
+        return;
+    }
+    const t = tablas.precios;
+    const ids = t.selected.size > 0 ? [...t.selected] : null;
+    const alcance = ids ? `${ids.length} servicio${ids.length > 1 ? 's' : ''} seleccionado${ids.length > 1 ? 's' : ''}` : 'todos los servicios';
+
+    const ok = await UI.confirmar({
+        titulo: `¿Recalcular precio c/imp. al ${porcentaje}%?`,
+        subtexto: `Se va a calcular precio c/imp. = precio s/imp. × ${(1 + porcentaje / 100).toFixed(4)} para ${alcance}.`,
+        textoConfirmar: 'Recalcular',
+        tipo: 'warning',
+    });
+    if (!ok) return;
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/precios/recalcular-impuesto`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ porcentaje, ids }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        t.selected.clear();
+        cargarTabla('precios');
+        mostrarToast(`Precio c/imp. recalculado al ${porcentaje}% para ${alcance}.`);
+    } catch (err) {
+        console.error('Error recalculando impuesto:', err);
+        mostrarToast('No se pudo recalcular el impuesto.', 'danger');
     }
 }
 
@@ -924,6 +1107,7 @@ function iniciarEdicion(tablaNombre, id) {
     if (!tr) return;
 
     tr.innerHTML = `
+        ${t.checkable ? '<td></td>' : ''}
         ${t.renderFilaEdit(r)}
         <td>
             <div class="tabla-acciones">
@@ -951,7 +1135,7 @@ async function guardarEdicionFila(tablaNombre, id) {
     if (!r) return;
 
     const body = t.buildPutBody(r);
-    if (!(body.nombre ?? body.label ?? body.codigo)?.trim()) {
+    if (!(body.nombre ?? body.label ?? body.codigo ?? body.nombreServicio)?.trim()) {
         mostrarToast('El nombre no puede estar vacío.', 'danger');
         return;
     }
@@ -982,6 +1166,7 @@ async function eliminar(nombre, id) {
         tiposmuestra:  'tipo de muestra',
         categoriasDoc: 'categoría',
         gruposInforme: 'grupo de informe',
+        precios:       'servicio',
     };
     const ok = await UI.confirmar({ titulo: `¿Eliminar esta ${labels[nombre] || 'entrada'}?`, subtexto: 'Esta acción no se puede deshacer.', textoConfirmar: 'Eliminar', tipo: 'danger' });
     if (!ok) return;
@@ -993,7 +1178,8 @@ async function eliminar(nombre, id) {
         tiposmuestra:  `${API_URL}/tipos-muestra/${id}`,
         categoriasDoc: `${API_URL}/categorias-documento/${id}`,
         gruposInforme: `${API_URL}/grupos-informe/${id}`,
-        equipos: `${API_URL}/equipos/${id}`,
+        equipos:       `${API_URL}/equipos/${id}`,
+        precios:       `${API_URL}/precios/${id}`,
     };
 
     const token = localStorage.getItem('token');

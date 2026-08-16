@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
 public class InformeService {
 
     private static final String BUCKET = "chemiconsult-bucket";
-    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FMT         = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FMT_MES_AIO = DateTimeFormatter.ofPattern("MMMM-yyyy", new java.util.Locale("es"));
 
     private static final String LAB_NOMBRE = "Laboratorio Chemiconsult";
     private static final String LAB_DIRECCION = "San Isidro, Buenos Aires";
@@ -624,7 +625,12 @@ public class InformeService {
             addDataCell(tabla, nvl(eq.getModelo()), fData, Element.ALIGN_CENTER);
             addDataCell(tabla, nvl(eq.getNroSerie()), fData, Element.ALIGN_CENTER);
             addDataCell(tabla, nvl(eq.getCertificacion()), fData, Element.ALIGN_LEFT);
-            addDataCell(tabla, eq.getVencimiento() != null ? eq.getVencimiento().format(FMT) : "-", fData, Element.ALIGN_CENTER);
+            String venc = "-";
+            if (eq.getVencimiento() != null) {
+                String raw = eq.getVencimiento().format(FMT_MES_AIO);
+                venc = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
+            }
+            addDataCell(tabla, venc, fData, Element.ALIGN_CENTER);
         }
 
         doc.add(tabla);

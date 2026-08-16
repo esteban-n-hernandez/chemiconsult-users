@@ -69,6 +69,7 @@ public class SecurityConfig {
                         // Login y health check
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/precios").permitAll()
                         // Archivos estáticos del front (la auth real la hace auth.js en el cliente)
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/*.html", "/index.html",

@@ -668,3 +668,33 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Panel de ajuste de precios */
+.ajuste-grid {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.ajuste-label {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-main);
+}
+
+.ajuste-btn {
+    width: auto !important;
+    padding: 8px 16px !important;
+    white-space: nowrap;
+}
+
+@media (max-width: 800px) {
+    .ajuste-grid {
+        grid-template-columns: auto auto 1fr;
+    }
+    .ajuste-btn {
+        grid-column: 1 / -1;
+    }
+}

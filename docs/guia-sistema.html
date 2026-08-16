@@ -1031,42 +1031,244 @@ pre {
 
   <!-- ══ CLIENTES ══════════════════════════════════════ -->
   <section class="section" id="clientes">
-    <div class="section-eyebrow">CRM</div>
+    <div class="section-eyebrow">Módulo · clientes.html</div>
     <h2 class="section-title">Clientes</h2>
-    <p class="section-lead">Gestión completa de clientes: personas físicas y empresas. Cada cliente puede tener sucursales, contactos y, opcionalmente, una cuenta de usuario para acceder al sistema.</p>
+    <p class="section-lead">CRM del laboratorio: personas físicas y empresas con sus sucursales y contactos. Cada cliente puede recibir acceso al portal con <code>ROLE_CLIENTE</code>. Las bajas son siempre lógicas — nunca se borra físicamente un cliente.</p>
 
-    <h3>Tipos de cliente</h3>
+    <h3>Clases involucradas</h3>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Tipo</th><th>Campos principales</th></tr></thead>
+        <thead><tr><th>Clase</th><th>Paquete</th><th>Responsabilidad</th></tr></thead>
         <tbody>
           <tr>
-            <td><span class="badge badge-blue">PERSONA_FISICA</span></td>
-            <td>nombre, apellido, DNI, CUIL, email, teléfono, celular, dirección, localidad, provincia</td>
+            <td><code>ClienteController</code></td>
+            <td><code>controller</code></td>
+            <td>Endpoints CRUD de clientes bajo <code>/api/clientes</code>. Incluye <code>/todos</code>, <code>/mi-cliente</code>, <code>/desactivar</code>, <code>/reactivar</code> y <code>/asignar-usuario</code>.</td>
           </tr>
           <tr>
-            <td><span class="badge badge-orange">EMPRESA</span></td>
-            <td>razón social, CUIT, condición IVA, email, teléfono, dirección, localidad, provincia</td>
+            <td><code>ClienteSucursalController</code></td>
+            <td><code>controller</code></td>
+            <td>Endpoints de sucursales bajo <code>/api/clientes</code>. GET <code>/{clienteId}/sucursales</code>, POST/PUT <code>/sucursales</code>, PATCH <code>/sucursales/{id}/desactivar</code>. Sin DELETE.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteContactoController</code></td>
+            <td><code>controller</code></td>
+            <td>Endpoints de contactos. GET por cliente o por sucursal, POST/PUT <code>/contactos</code>, PATCH <code>/contactos/{id}/desactivar</code>. Sin DELETE.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteService</code></td>
+            <td><code>service</code></td>
+            <td>Alta con validaciones de unicidad (email, CUIT, DNI). Lógica de soft delete, reactivación y flujo de asignar usuario.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteSucursalService</code></td>
+            <td><code>service</code></td>
+            <td>CRUD de sucursales. <code>getSucursalesPorCliente()</code> filtra siempre por <code>activo=true</code>. Solo desactivar, sin eliminación física.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteContactoService</code></td>
+            <td><code>service</code></td>
+            <td><code>@Transactional</code> en crear y actualizar. Maneja la vinculación M:N con sucursales mediante <code>ClienteSucursalContactoDE</code>.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteDE</code></td>
+            <td><code>entity</code></td>
+            <td>Tabla <code>CLIENTES</code>. Polymórfico: campos de persona física y empresa en la misma fila (single table). Relación <code>@OneToOne</code> nullable con <code>UserDE</code>.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteSucursalDE</code></td>
+            <td><code>entity</code></td>
+            <td>Tabla <code>CLIENTE_SUCURSAL</code>. <code>@JsonIgnore</code> en la referencia al cliente para evitar serialización circular. Tiene <code>@OneToMany contactosAsociados</code> (junction) con cascade ALL.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteContactoDE</code></td>
+            <td><code>entity</code></td>
+            <td>Tabla <code>CLIENTE_CONTACTO</code>. <code>@JsonIgnore</code> en referencia al cliente. Tiene <code>@OneToMany sucursalesAsociadas</code> (junction) con cascade ALL y orphanRemoval.</td>
+          </tr>
+          <tr>
+            <td><code>ClienteSucursalContactoDE</code></td>
+            <td><code>entity</code></td>
+            <td>Tabla junction <code>CLIENTE_SUCURSAL_CONTACTO</code>. Tiene <code>@ManyToOne</code> a sucursal y <code>@ManyToOne</code> a contacto. Representación de la relación M:N.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <h3>Sucursales y contactos</h3>
+    <h3>Modelo de datos</h3>
+    <p>La jerarquía completa de un cliente:</p>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>ClienteDE</strong> — un registro por cliente (persona o empresa), con campo <code>activo</code> y relación <code>@OneToOne</code> nullable a <code>UserDE</code>.
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>ClienteSucursalDE</strong> — cada ubicación física del cliente. Un cliente puede tener N sucursales. Solo se muestran las <code>activo=true</code>.
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>ClienteContactoDE</strong> — personas de contacto del cliente. Un contacto puede estar asociado a múltiples sucursales (M:N), modelado con <code>ClienteSucursalContactoDE</code>.
+        </div>
+      </div>
+    </div>
+
+    <h3>Tipos de cliente</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Campos únicos</th><th>Campos comunes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-blue">PERSONA_FISICA</span></td>
+            <td>nombre, apellido, DNI, CUIL, condiciónIVA</td>
+            <td rowspan="2">email, teléfono, celular, dirección, localidad, provincia (enum), condiciónIVA</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-orange">EMPRESA</span></td>
+            <td>razón social, CUIT, condiciónIVA</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>El <code>tipoCliente</code> se fija al crear el registro y <strong>no se puede cambiar en edición</strong>. En el frontend, los radio buttons se bloquean (<code>disabled</code>) al abrir el modal de edición.</p>
+
+    <h3>Validaciones en el alta</h3>
+    <p><code>ClienteService.createCliente()</code> verifica antes de persistir:</p>
     <ul>
-      <li>Un cliente empresa puede tener múltiples <strong>sucursales</strong> (<code>CLIENTE_SUCURSAL</code>)</li>
-      <li>Cada cliente o sucursal puede tener <strong>contactos</strong> asociados</li>
-      <li>Al crear un estudio se puede indicar a qué sucursal pertenece la muestra</li>
+      <li><strong>Email único</strong> (case-insensitive) — lanza excepción si ya existe otro cliente con ese email</li>
+      <li><strong>CUIT único</strong> — solo aplica a EMPRESA</li>
+      <li><strong>DNI único</strong> — solo aplica a PERSONA_FISICA</li>
     </ul>
+    <p>Si alguna validación falla, el servicio lanza una excepción que el frontend muestra en un toast de error.</p>
 
-    <h3>Vinculación con usuario</h3>
-    <p>Un cliente puede estar vinculado a una cuenta de usuario (<code>ROLE_CLIENTE</code>). Esto le permite entrar al sistema y ver sus propios análisis. La vinculación se hace con <code>PATCH /api/clientes/{id}/asignar-usuario</code>.</p>
+    <h3>Soft delete y reactivación</h3>
+    <p>Los clientes nunca se eliminan físicamente. El campo <code>activo: Boolean</code> controla la visibilidad:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Endpoint</th><th>Comportamiento</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET /api/clientes</code></td><td>Solo clientes con <code>activo=true</code></td></tr>
+          <tr><td><code>GET /api/clientes/todos</code></td><td>Todos, incluyendo inactivos (usado por el frontend de clientes.html)</td></tr>
+          <tr><td><code>PATCH /api/clientes/{id}/desactivar</code></td><td>Setea <code>activo=false</code></td></tr>
+          <tr><td><code>PATCH /api/clientes/{id}/reactivar</code></td><td>Setea <code>activo=true</code></td></tr>
+          <tr><td><code>DELETE /api/clientes/{id}</code></td><td>Eliminación física — solo para datos de prueba/error, no uso normal</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Lo mismo aplica a sucursales y contactos: solo tienen <code>PATCH /desactivar</code>, sin <code>DELETE</code>.</p>
 
-    <h3>Baja de clientes</h3>
-    <p>Los clientes no se eliminan físicamente. Se desactivan (<code>activo = false</code>) con <code>PATCH /api/clientes/{id}/desactivar</code> y se pueden reactivar. El listado estándar solo muestra activos; <code>/api/clientes/todos</code> incluye inactivos.</p>
+    <h3>Asignar acceso al sistema</h3>
+    <p>Un cliente puede recibir acceso al portal (<code>ROLE_CLIENTE</code>) para ver sus propios análisis. El flujo es:</p>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">1</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Admin hace click en "Asignar usuario"</strong> en la fila del cliente (solo visible si el cliente aún no tiene usuario y está activo).
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">2</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong>Modal pide contraseña</strong> (mínimo 6 caracteres, con confirmación). El email que se usa es el del cliente — ya está cargado en el registro.
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-line"><div class="flow-dot">3</div><div class="flow-connector"></div></div>
+        <div class="flow-body">
+          <strong><code>PATCH /api/clientes/{id}/asignar-usuario</code></strong> → <code>ClienteService.asignarUsuario()</code>. Valida que el cliente no tenga ya un usuario y que el email no esté registrado. Crea un <code>UserDE</code> con <code>ROLE_CLIENTE</code>, hashea la contraseña con BCrypt y vincula el usuario al cliente con <code>@OneToOne</code>.
+        </div>
+      </div>
+    </div>
 
-    <h3>Vista propia del cliente</h3>
-    <p>Un usuario con rol CLIENTE puede consultar <code>GET /api/clientes/mi-cliente</code> para ver su propio registro.</p>
+    <div class="callout callout-info">
+      <strong>Vista propia del cliente logueado</strong>
+      <p><code>GET /api/clientes/mi-cliente</code> usa <code>@AuthenticationPrincipal</code> para obtener el email del token JWT, busca el <code>UserDE</code> y desde ahí resuelve el <code>ClienteDE</code> via <code>findByUser_Id()</code>. Solo disponible para usuarios con <code>ROLE_CLIENTE</code>.</p>
+    </div>
+
+    <h3>Sucursales</h3>
+    <p>Cada sucursal tiene: nombre (requerido), dirección, localidad, provincia y <code>activo</code>. La API solo devuelve las activas en <code>GET /{clienteId}/sucursales</code>. En el frontend, al desactivar una sucursal el icono es un tacho de basura pero la acción llama a <code>PATCH /sucursales/{id}/desactivar</code> — no borra nada.</p>
+
+    <h3>Contactos y vinculación M:N con sucursales</h3>
+    <p>Un contacto (nombre, email, teléfono) puede estar asignado a una o varias sucursales del mismo cliente. Esto se persiste en la tabla junction <code>CLIENTE_SUCURSAL_CONTACTO</code>.</p>
+    <p>Al actualizar un contacto, el servicio usa un <strong>patrón de dos pasos</strong> dentro de <code>@Transactional</code>:</p>
+    <ol>
+      <li>Limpia todas las asociaciones actuales → <code>sucursalesAsociadas.clear()</code> + <code>flush()</code></li>
+      <li>Re-vincula las sucursales del nuevo request → llama <code>vincularSucursales()</code></li>
+    </ol>
+    <p>El flush forzado antes de re-insertar evita constraint violations en la junction table.</p>
+
+    <div class="callout callout-warn">
+      <strong>@JsonIgnore en entidades relacionadas</strong>
+      <p><code>ClienteSucursalDE</code> y <code>ClienteContactoDE</code> tienen <code>@JsonIgnore</code> en su referencia al <code>ClienteDE</code> padre. Sin ese annotation, Jackson entraría en un ciclo infinito al serializar (ClienteDE → sucursales → ClienteDE → ...) y la API devolvería un error 500 o un JSON truncado.</p>
+    </div>
+
+    <h3>Frontend — comportamiento clave</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Función</th><th>Comportamiento</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>cargarClientes()</code></td>
+            <td>Llama a <code>/api/clientes/todos</code> (con inactivos). Guarda todo en memoria en <code>todosLosClientes[]</code> y ejecuta <code>buscarClientes()</code>.</td>
+          </tr>
+          <tr>
+            <td><code>buscarClientes()</code></td>
+            <td>Filtrado 100% client-side por texto libre (nombre/email/CUIT/DNI), tipo de cliente y estado activo/inactivo. No llama a la API. Resetea a página 1.</td>
+          </tr>
+          <tr>
+            <td><code>abrirModalAlta()</code></td>
+            <td>Limpia el formulario, habilita los radio de tipo, setea <code>clienteEditandoId = null</code>.</td>
+          </tr>
+          <tr>
+            <td><code>abrirModalEditar(id)</code></td>
+            <td>Carga datos del cliente en el form, bloquea los radio de tipo (no se puede cambiar), setea <code>clienteEditandoId = id</code>.</td>
+          </tr>
+          <tr>
+            <td><code>submitCliente()</code></td>
+            <td>Si <code>clienteEditandoId</code> es null → <code>POST</code>; si tiene valor → <code>PUT /{id}</code>. Al crear con éxito, abre automáticamente el modal de sucursales con un <code>setTimeout(400ms)</code> para que el toast sea visible.</td>
+          </tr>
+          <tr>
+            <td><code>abrirModalSucursales(id)</code></td>
+            <td>Carga sucursales y contactos en paralelo (<code>Promise.all</code>). Los checkboxes de sucursales en el formulario de contacto se regeneran cada vez que se abre el form (por si se agregó una sucursal nueva).</td>
+          </tr>
+          <tr>
+            <td>Paginación</td>
+            <td>Client-side con <code>ITEMS_POR_PAGINA</code> (default 5, configurable por dropdown). Los botones de página se renderizan dinámicamente según el total filtrado.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Endpoints resumen</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/clientes</code></td><td>Solo activos</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/clientes/todos</code></td><td>Todos (activos + inactivos)</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/clientes/mi-cliente</code></td><td>El cliente del usuario logueado (ROLE_CLIENTE)</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/clientes</code></td><td>Crear cliente (201)</td></tr>
+          <tr><td><code>PUT</code></td><td><code>/api/clientes/{id}</code></td><td>Actualizar datos del cliente</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/clientes/{id}/desactivar</code></td><td>Soft delete</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/clientes/{id}/reactivar</code></td><td>Restaurar cliente inactivo</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/clientes/{id}/asignar-usuario</code></td><td>Crear acceso ROLE_CLIENTE para el cliente</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/clientes/{id}</code></td><td>Eliminación física (solo corrección de datos)</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/clientes/{id}/sucursales</code></td><td>Sucursales activas del cliente</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/clientes/sucursales</code></td><td>Nueva sucursal</td></tr>
+          <tr><td><code>PUT</code></td><td><code>/api/clientes/sucursales/{id}</code></td><td>Editar sucursal</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/clientes/sucursales/{id}/desactivar</code></td><td>Desactivar sucursal</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/clientes/{id}/contactos</code></td><td>Contactos activos del cliente</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/clientes/sucursales/{id}/contactos</code></td><td>Contactos de una sucursal específica</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/clientes/contactos</code></td><td>Nuevo contacto</td></tr>
+          <tr><td><code>PUT</code></td><td><code>/api/clientes/contactos/{id}</code></td><td>Editar contacto (con re-vinculación de sucursales)</td></tr>
+          <tr><td><code>PATCH</code></td><td><code>/api/clientes/contactos/{id}/desactivar</code></td><td>Desactivar contacto</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <!-- ══ AGENDA ════════════════════════════════════════ -->

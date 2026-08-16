@@ -60,6 +60,9 @@
         <button class="tab-btn-custom" onclick="cambiarPestaña('equipos')">
             <i class="bi bi-tools"></i> Equipos
         </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('precios')">
+            <i class="bi bi-cash-coin"></i> Precios de Servicios
+        </button>
     </div>
 
     <!-- ==========================================
@@ -444,6 +447,104 @@
                         <tbody id="tablaEquiposBody"></tbody>
                     </table>
                     <div class="tabla-paginador" id="paginadorEquipos"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PÁGINA / SECCIÓN: PRECIOS DE SERVICIOS
+         ========================================== -->
+    <div id="tab-precios" class="tab-content-panel">
+
+        <!-- Panel de ajuste -->
+        <div class="panel-custom" style="margin-bottom:16px;">
+            <div class="panel-header-custom">
+                <div class="panel-header-row">
+                    <h5><i class="bi bi-graph-up-arrow" style="color:var(--bs-warning,#ffc107)"></i> Ajuste de precios</h5>
+                    <span id="seleccionContador" class="params-hint" style="margin:0;font-size:12px;"></span>
+                </div>
+            </div>
+            <div class="panel-body-custom">
+                <div class="ajuste-grid">
+                    <span class="ajuste-label">Factor de ajuste</span>
+                    <input type="number" id="factorAjuste" class="form-control-custom"
+                           value="1.00" min="0.01" step="0.01" style="width:90px;">
+                    <span class="params-hint">Ej: <code>1.25</code> = +25% · Aplica al precio s/imp. y c/imp.</span>
+                    <button type="button" class="btn-guardar-custom ajuste-btn" onclick="aplicarFactorPrecios()">
+                        <i class="bi bi-arrow-repeat"></i> <span id="lblFactorBtn">Aplicar a todos</span>
+                    </button>
+
+                    <span class="ajuste-label">% Impuesto</span>
+                    <input type="number" id="porcentajeImpuesto" class="form-control-custom"
+                           value="21" min="0" max="999" step="0.01" style="width:90px;"
+                           oninput="recalcularFormImpuesto()">
+                    <span class="params-hint">Auto-calcula el precio c/imp. en el formulario de alta y en bulk</span>
+                    <button type="button" class="btn-guardar-custom ajuste-btn" onclick="recalcularImpuestoPrecios()">
+                        <i class="bi bi-calculator"></i> <span id="lblImpuestoBtn">Recalcular todos</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-row-config">
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <h5><i class="bi bi-plus-circle text-success"></i> Nuevo servicio</h5>
+                </div>
+                <div class="panel-body-custom">
+                    <form id="formPrecio">
+                        <div class="form-group-custom">
+                            <label>Nombre del servicio <span style="color:red">*</span></label>
+                            <input type="text" id="precioNombre" class="form-control-custom"
+                                   placeholder="Ej: Análisis fisicoquímico de agua" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Descripción</label>
+                            <textarea id="precioDescripcion" class="form-control-custom" rows="2"
+                                      placeholder="Opcional — detalle del servicio"></textarea>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Precio s/imp. (ARS) <span style="color:red">*</span></label>
+                            <input type="number" id="precioPrecio" class="form-control-custom"
+                                   placeholder="Ej: 15000" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Precio c/imp. (ARS)</label>
+                            <input type="number" id="precioPrecioImpuesto" class="form-control-custom"
+                                   placeholder="Ej: 18150" min="0" step="0.01">
+                        </div>
+                        <button type="submit" class="btn-guardar-custom">
+                            <i class="bi bi-check-lg"></i> Guardar servicio
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <div class="panel-header-row">
+                        <h5><i class="bi bi-table text-primary"></i> Servicios y precios</h5>
+                        <input type="text" id="filtroPrecios" class="tabla-filtro" placeholder="Buscar...">
+                    </div>
+                </div>
+                <div class="panel-body-custom" style="padding:0;">
+                    <table class="tabla-config">
+                        <thead>
+                        <tr>
+                            <th style="width:36px;text-align:center;">
+                                <input type="checkbox" id="checkAllPrecios" title="Seleccionar todos"
+                                       onchange="toggleSelectAllPrecios(this.checked)">
+                            </th>
+                            <th>Servicio</th>
+                            <th>Descripción</th>
+                            <th>Precio s/imp.</th>
+                            <th>Precio c/imp.</th>
+                            <th>Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaPreciosBody"></tbody>
+                    </table>
+                    <div class="tabla-paginador" id="paginadorPrecios"></div>
                 </div>
             </div>
         </div>
