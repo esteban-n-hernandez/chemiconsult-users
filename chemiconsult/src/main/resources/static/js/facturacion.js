@@ -57,7 +57,7 @@ function badgeEstado(estado) {
     const ico = estado === "AUTORIZADA" ? "bi-check-circle-fill"
               : estado === "RECHAZADA"  ? "bi-x-circle-fill"
               : "bi-slash-circle-fill";
-    return `<span class="badge-fact ${cls}"><i class="bi ${ico}"></i>${estado}</span>`;
+    return `<span class="badge-fact ${cls}"><i class="bi ${ico}"></i> ${estado}</span>`;
 }
 
 function tipoBadge(tipo) {
@@ -66,6 +66,17 @@ function tipoBadge(tipo) {
 
 function nroFmt(pv, num) {
     return `${String(pv).padStart(4,"0")}-${String(num).padStart(8,"0")}`;
+}
+
+function condIvaLabel(c) {
+    const m = {
+        RESPONSABLE_INSCRIPTO: "Responsable Inscripto",
+        MONOTRIBUTISTA:        "Monotributista",
+        EXENTO:                "Exento",
+        CONSUMIDOR_FINAL:      "Consumidor Final",
+        NO_RESPONSABLE:        "No Responsable",
+    };
+    return m[c] || c || "—";
 }
 
 // ================================================================
@@ -189,25 +200,27 @@ function abrirDetalle(id) {
     document.getElementById("detIva").textContent      = formatPrecio(f.totalIva);
     document.getElementById("detTotal").textContent    = formatPrecio(f.total);
 
-    const detItems = document.getElementById("detItemsBody");
-    detItems.innerHTML = (f.items || []).map(i => `
-        <tr>
-            <td>${esc(i.descripcion || "—")}</td>
-            <td style="text-align:center;">${i.cantidad ?? 1}</td>
-            <td style="text-align:right;">${formatPrecio(i.precioUnitario)}</td>
-            <td style="text-align:center;">${i.alicuotaIva ?? 0}%</td>
-            <td style="text-align:right;font-weight:600;">${formatPrecio(i.subtotal)}</td>
-        </tr>`).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Sin ítems</td></tr>`;
+    document.getElementById("detItemsBody").innerHTML =
+        (f.items || []).map(i => `
+            <tr>
+                <td>${esc(i.descripcion || "—")}</td>
+                <td style="text-align:center;">${i.cantidad ?? 1}</td>
+                <td style="text-align:right;">${formatPrecio(i.precioUnitario)}</td>
+                <td style="text-align:center;">${i.alicuotaIva ?? 0}%</td>
+                <td style="text-align:right;font-weight:600;">${formatPrecio(i.subtotal)}</td>
+            </tr>`).join("") ||
+        `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Sin ítems</td></tr>`;
 
-    const btnAnular = document.getElementById("detBtnAnular");
-    btnAnular.style.display = f.estado === "AUTORIZADA" ? "" : "none";
+    document.getElementById("detBtnAnular").style.display = f.estado === "AUTORIZADA" ? "" : "none";
 
-    document.getElementById("modalDetalle").style.display = "flex";
+    document.getElementById("modalDetalle").classList.add("visible");
 }
 
-document.getElementById("detBtnCerrar").addEventListener("click", () => {
-    document.getElementById("modalDetalle").style.display = "none";
-});
+function cerrarDetalle() {
+    document.getElementById("modalDetalle").classList.remove("visible");
+}
+
+document.getElementById("detBtnCerrar").addEventListener("click", cerrarDetalle);
 
 document.getElementById("detBtnPDF").addEventListener("click", () => {
     if (factDetalleActual) descargarPDF(factDetalleActual.id);
@@ -215,59 +228,48 @@ document.getElementById("detBtnPDF").addEventListener("click", () => {
 
 document.getElementById("detBtnAnular").addEventListener("click", async () => {
     if (!factDetalleActual) return;
-    if (!confirm(`¿Anular la Factura ${factDetalleActual.tipoComprobante} N° ${nroFmt(factDetalleActual.puntoVenta, factDetalleActual.numero)}?\nEsta acción no es reversible.`)) return;
+    const label = `Factura ${factDetalleActual.tipoComprobante} N° ${nroFmt(factDetalleActual.puntoVenta, factDetalleActual.numero)}`;
+    if (!confirm(`¿Anular ${label}?\nEsta acción no es reversible.`)) return;
     try {
         const res = await apiFetch(`${API_BASE}/api/factura/${factDetalleActual.id}/anular`, { method: "PUT" });
         if (!res.ok) throw new Error();
         toast("Factura anulada");
-        document.getElementById("modalDetalle").style.display = "none";
+        cerrarDetalle();
         await cargarFacturas();
     } catch {
         toast("Error al anular la factura", "error");
     }
 });
 
-function condIvaLabel(c) {
-    const m = {
-        RESPONSABLE_INSCRIPTO: "Responsable Inscripto",
-        MONOTRIBUTISTA:        "Monotributista",
-        EXENTO:                "Exento",
-        CONSUMIDOR_FINAL:      "Consumidor Final",
-        NO_RESPONSABLE:        "No Responsable",
-    };
-    return m[c] || c || "—";
-}
-
 // ================================================================
 // MODAL NUEVA FACTURA
 // ================================================================
 
-let nfItemCount    = 0;
-let nfClienteId    = null;
-let clientesLista  = [];
+let nfItemCount      = 0;
+let nfClienteId      = null;
+let clientesLista    = [];
 let clientesCargados = false;
 
-// ── Cargar clientes ──
+// ── Cargar lista de clientes para autocomplete ──
 async function cargarClientes() {
     if (clientesCargados) return;
     try {
         const res = await apiFetch(`${API_BASE}/api/clientes`);
         if (!res.ok) return;
-        const data = await res.json();
-        clientesLista = data.map(c => ({
-            id:    c.id,
-            label: c.tipoCliente === "PERSONA_FISICA"
-                ? `${c.nombre || ""} ${c.apellido || ""}`.trim()
-                : (c.razonSocial || c.email || ""),
-            cuit:      c.cuit || c.cuil || "",
-            direccion: c.direccion || "",
-            condIVA:   c.condicionIVA || "CONSUMIDOR_FINAL",
+        clientesLista = (await res.json()).map(c => ({
+            id:       c.id,
+            label:    c.tipoCliente === "PERSONA_FISICA"
+                          ? `${c.nombre || ""} ${c.apellido || ""}`.trim()
+                          : (c.razonSocial || c.email || ""),
+            cuit:     c.cuit || c.cuil || "",
+            direccion:c.direccion || "",
+            condIVA:  c.condicionIVA || "CONSUMIDOR_FINAL",
         })).filter(c => c.label);
         clientesCargados = true;
     } catch { /* silencioso */ }
 }
 
-// ── Combobox cliente ──
+// ── Combobox cliente (position:fixed, igual que otras pantallas) ──
 const nfClienteInput = document.getElementById("nfClienteInput");
 const nfClienteDrop  = document.getElementById("nfClienteDrop");
 
@@ -275,26 +277,27 @@ function mostrarDropCliente(lista) {
     if (!lista.length) { nfClienteDrop.style.display = "none"; return; }
     nfClienteDrop.innerHTML = lista.slice(0, 8).map(c =>
         `<div class="np-cliente-item" style="padding:8px 12px;cursor:pointer;">
-            <span style="font-weight:500;">${esc(c.label)}</span>
-            ${c.cuit ? `<span style="font-size:.75rem;color:var(--text-secondary);margin-left:6px;">${c.cuit}</span>` : ""}
+             <span style="font-weight:500;">${esc(c.label)}</span>
+             ${c.cuit ? `<span style="font-size:.75rem;color:var(--text-secondary);margin-left:6px;">${c.cuit}</span>` : ""}
          </div>`).join("");
     const rect = nfClienteInput.getBoundingClientRect();
-    nfClienteDrop.style.top   = (rect.bottom + 4) + "px";
-    nfClienteDrop.style.left  = rect.left + "px";
-    nfClienteDrop.style.width = rect.width + "px";
-    nfClienteDrop.style.display = "block";
-
+    Object.assign(nfClienteDrop.style, {
+        top: (rect.bottom + 4) + "px",
+        left: rect.left + "px",
+        width: rect.width + "px",
+        display: "block",
+    });
     nfClienteDrop.querySelectorAll(".np-cliente-item").forEach((el, i) => {
-        el.addEventListener("click", () => seleccionarCliente(lista[i]));
+        el.addEventListener("mousedown", e => { e.preventDefault(); seleccionarCliente(lista[i]); });
     });
 }
 
 function seleccionarCliente(c) {
     nfClienteId = c.id;
     nfClienteInput.value = c.label;
-    document.getElementById("nfCuit").value        = c.cuit      || "";
-    document.getElementById("nfDireccion").value   = c.direccion || "";
-    document.getElementById("nfCondicionIVA").value = c.condIVA  || "CONSUMIDOR_FINAL";
+    document.getElementById("nfCuit").value         = c.cuit      || "";
+    document.getElementById("nfDireccion").value    = c.direccion || "";
+    document.getElementById("nfCondicionIVA").value = c.condIVA   || "CONSUMIDOR_FINAL";
     nfClienteDrop.style.display = "none";
 }
 
@@ -305,49 +308,52 @@ nfClienteInput.addEventListener("input", () => {
     mostrarDropCliente(clientesLista.filter(c => c.label.toLowerCase().includes(q)));
 });
 
-document.addEventListener("click", e => {
-    if (!nfClienteInput.contains(e.target) && !nfClienteDrop.contains(e.target)) {
-        nfClienteDrop.style.display = "none";
-    }
+nfClienteInput.addEventListener("focus", () => {
+    const q = nfClienteInput.value.trim().toLowerCase();
+    if (q) mostrarDropCliente(clientesLista.filter(c => c.label.toLowerCase().includes(q)));
 });
 
-// ── Abrir modal ──
+nfClienteInput.addEventListener("blur", () => {
+    setTimeout(() => nfClienteDrop.style.display = "none", 150);
+});
+
+// ── Abrir / cerrar modal ──
 document.getElementById("btnNuevaFactura").addEventListener("click", () => {
     resetModalNF();
     cargarClientes();
-    document.getElementById("modalNuevaFactura").style.display = "flex";
+    document.getElementById("modalNuevaFactura").classList.add("visible");
 });
+
+function cerrarModalNF() {
+    document.getElementById("modalNuevaFactura").classList.remove("visible");
+}
 
 document.getElementById("nfBtnCerrar").addEventListener("click", cerrarModalNF);
 document.getElementById("nfBtnCancelarP1").addEventListener("click", cerrarModalNF);
 
-function cerrarModalNF() {
-    document.getElementById("modalNuevaFactura").style.display = "none";
-}
-
 function resetModalNF() {
     nfClienteId = null;
     nfItemCount  = 0;
-    document.getElementById("nfClienteInput").value   = "";
-    document.getElementById("nfCuit").value           = "";
-    document.getElementById("nfDireccion").value      = "";
-    document.getElementById("nfCondicionIVA").value   = "CONSUMIDOR_FINAL";
+    document.getElementById("nfClienteInput").value    = "";
+    document.getElementById("nfCuit").value            = "";
+    document.getElementById("nfDireccion").value       = "";
+    document.getElementById("nfCondicionIVA").value    = "CONSUMIDOR_FINAL";
     document.getElementById("nfTipoComprobante").value = "";
-    document.getElementById("nfFechaEmision").value   = new Date().toISOString().split("T")[0];
-    document.getElementById("nfItemsBody").innerHTML  = "";
-    document.getElementById("nfPaso1").style.display  = "";
-    document.getElementById("nfPaso2").style.display  = "none";
-    document.getElementById("nfTitulo").textContent   = "Nueva Factura";
+    document.getElementById("nfFechaEmision").value    = new Date().toISOString().split("T")[0];
+    document.getElementById("nfItemsBody").innerHTML   = "";
+    document.getElementById("nfPaso1").style.display   = "";
+    document.getElementById("nfPaso2").style.display   = "none";
+    document.getElementById("nfTitulo").textContent    = "Nueva Factura";
     recalcularTotales();
-    agregarItem(); // fila inicial
+    agregarItem();
 }
 
 // ── Paso 1 → 2 ──
 document.getElementById("nfBtnSiguiente").addEventListener("click", () => {
-    const tipo   = document.getElementById("nfTipoComprobante").value;
+    const tipo    = document.getElementById("nfTipoComprobante").value;
     const cliente = document.getElementById("nfClienteInput").value.trim();
-    if (!tipo)   { toast("Seleccioná el tipo de comprobante", "error"); return; }
-    if (!cliente){ toast("Ingresá el receptor de la factura", "error"); return; }
+    if (!tipo)    { toast("Seleccioná el tipo de comprobante", "error"); return; }
+    if (!cliente) { toast("Ingresá el receptor de la factura", "error"); return; }
     document.getElementById("nfPaso1").style.display = "none";
     document.getElementById("nfPaso2").style.display = "";
     document.getElementById("nfTitulo").textContent  = `Nueva Factura ${tipo} — Ítems`;
@@ -362,14 +368,12 @@ document.getElementById("nfBtnAtras").addEventListener("click", () => {
 
 // ── Tabla de ítems ──
 function agregarItem() {
-    const idx  = nfItemCount++;
     const tbody = document.getElementById("nfItemsBody");
     const tr    = document.createElement("tr");
-    tr.dataset.idx = idx;
     tr.innerHTML = `
-        <td><input type="text"   class="nf-desc"  placeholder="Descripción"/></td>
-        <td><input type="number" class="nf-cant"  value="1" min="0.01" step="0.01" style="width:60px;"/></td>
-        <td><input type="number" class="nf-pu"    value=""  min="0" step="0.01" placeholder="0.00"/></td>
+        <td><input type="text"   class="nf-desc" placeholder="Descripción del servicio"/></td>
+        <td><input type="number" class="nf-cant" value="1" min="0.01" step="0.01" style="width:60px;"/></td>
+        <td><input type="number" class="nf-pu"   value="" min="0" step="0.01" placeholder="0.00"/></td>
         <td>
             <select class="nf-aliq" style="width:70px;">
                 <option value="0">0%</option>
@@ -379,16 +383,14 @@ function agregarItem() {
             </select>
         </td>
         <td class="nf-subtotal-cell" style="text-align:right;font-weight:600;">$0</td>
-        <td><button class="btn-del-item" title="Eliminar"><i class="bi bi-trash3"></i></button></td>`;
+        <td><button type="button" class="btn-del-item" title="Eliminar"><i class="bi bi-trash3"></i></button></td>`;
     tbody.appendChild(tr);
 
     tr.querySelector(".nf-cant").addEventListener("input",  recalcularTotales);
     tr.querySelector(".nf-pu").addEventListener("input",    recalcularTotales);
     tr.querySelector(".nf-aliq").addEventListener("change", recalcularTotales);
-    tr.querySelector(".btn-del-item").addEventListener("click", () => {
-        tr.remove();
-        recalcularTotales();
-    });
+    tr.querySelector(".btn-del-item").addEventListener("click", () => { tr.remove(); recalcularTotales(); });
+    nfItemCount++;
 }
 
 document.getElementById("nfBtnAgregarItem").addEventListener("click", agregarItem);
@@ -400,25 +402,18 @@ function recalcularTotales() {
         const pu   = parseFloat(tr.querySelector(".nf-pu")?.value)   || 0;
         const aliq = parseFloat(tr.querySelector(".nf-aliq")?.value) || 0;
         const sub  = cant * pu;
-        const iva  = sub * aliq / 100;
+        totalIva += sub * aliq / 100;
         subtotal += sub;
-        totalIva += iva;
-        if (tr.querySelector(".nf-subtotal-cell")) {
-            tr.querySelector(".nf-subtotal-cell").textContent = formatPrecio(sub);
-        }
+        const cell = tr.querySelector(".nf-subtotal-cell");
+        if (cell) cell.textContent = formatPrecio(sub);
     });
-
-    const tipo = document.getElementById("nfTipoComprobante").value;
-    const total = subtotal + totalIva;
-
     document.getElementById("nfSubtotal").textContent = formatPrecio(subtotal);
     document.getElementById("nfIva").textContent      = formatPrecio(totalIva);
-    document.getElementById("nfTotal").textContent    = formatPrecio(total);
+    document.getElementById("nfTotal").textContent    = formatPrecio(subtotal + totalIva);
 }
 
 function actualizarVisibilidadTotales() {
-    const tipo = document.getElementById("nfTipoComprobante").value;
-    const disc = tipo === "A";
+    const disc = document.getElementById("nfTipoComprobante").value === "A";
     document.getElementById("nfRowSubtotal").style.display = disc ? "" : "none";
     document.getElementById("nfRowIVA").style.display      = disc ? "" : "none";
 }
@@ -438,7 +433,7 @@ document.getElementById("nfBtnEmitir").addEventListener("click", async () => {
     });
 
     if (!valido || items.length === 0) {
-        toast("Completá todos los ítems (descripción y precio mayores a 0)", "error");
+        toast("Completá todos los ítems (descripción y precio > 0)", "error");
         return;
     }
 
@@ -447,31 +442,29 @@ document.getElementById("nfBtnEmitir").addEventListener("click", async () => {
     btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Emitiendo…`;
 
     const payload = {
-        clienteId:          nfClienteId,
-        clienteNombre:      document.getElementById("nfClienteInput").value.trim(),
-        clienteCuit:        document.getElementById("nfCuit").value.trim(),
-        clienteDireccion:   document.getElementById("nfDireccion").value.trim(),
-        clienteCondicionIVA:document.getElementById("nfCondicionIVA").value,
-        tipoComprobante:    document.getElementById("nfTipoComprobante").value,
-        puntoVenta:         1,
-        fechaEmision:       document.getElementById("nfFechaEmision").value || null,
+        clienteId:           nfClienteId,
+        clienteNombre:       document.getElementById("nfClienteInput").value.trim(),
+        clienteCuit:         document.getElementById("nfCuit").value.trim(),
+        clienteDireccion:    document.getElementById("nfDireccion").value.trim(),
+        clienteCondicionIVA: document.getElementById("nfCondicionIVA").value,
+        tipoComprobante:     document.getElementById("nfTipoComprobante").value,
+        puntoVenta:          1,
+        fechaEmision:        document.getElementById("nfFechaEmision").value || null,
         items,
     };
 
     try {
-        const res = await apiFetch(`${API_BASE}/api/factura/emitir`, {
-            method: "POST",
+        const res  = await apiFetch(`${API_BASE}/api/factura/emitir`, {
+            method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body:    JSON.stringify(payload),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Error del servidor");
 
-        if (data.autorizada) {
-            toast(`Factura autorizada — CAE: ${data.cae}`);
-        } else {
-            toast("Factura emitida pero rechazada por ARCA", "error");
-        }
+        toast(data.autorizada
+            ? `Factura autorizada — CAE: ${data.cae}`
+            : "Factura rechazada por ARCA (ver detalle)", "error");
         cerrarModalNF();
         await cargarFacturas();
     } catch (e) {
