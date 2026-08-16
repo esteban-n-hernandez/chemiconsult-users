@@ -283,10 +283,16 @@ public class AnalisisController {
                 ? ((List<Number>) body.get("equipoIds")).stream().map(Number::longValue).toList()
                 : List.of();
 
-        byte[] pdf = informeService.generarYPublicar(id, equipoIds);
+        boolean preview                = body != null && Boolean.TRUE.equals(body.get("preview"));
+        boolean incluirConclusion      = body == null || !Boolean.FALSE.equals(body.get("incluirConclusion"));
+        boolean incluirConclusionAuto  = body == null || !Boolean.FALSE.equals(body.get("incluirConclusionAuto"));
+
+        byte[] pdf = informeService.generarYPublicar(id, equipoIds, preview, incluirConclusion, incluirConclusionAuto);
+
+        String disposition = preview ? "inline" : "attachment";
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"informe-" + nro + ".pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"informe-" + nro + ".pdf\"")
                 .body(pdf);
     }
 

@@ -2206,18 +2206,43 @@ async function onGenerarInforme() {
     }
 }
 
+// Parámetros guardados para el paso de confirmación del preview
+let _previewEquipoIds             = [];
+let _previewIncluirConclusion     = true;
+let _previewIncluirConclusionAuto = true;
+let _previewBlobUrl               = null;
+
+function _getEquiposSeleccionados() {
+    return Array.from(document.querySelectorAll(".equipo-check:checked")).map(cb => Number(cb.value));
+}
+
 async function ejecutarGeneracionInforme(equipoIds) {
+    const incluirConclusion     = document.getElementById("checkIncluirConclusion")?.checked ?? true;
+    const incluirConclusionAuto = document.getElementById("checkIncluirConclusionAuto")?.checked ?? true;
     cerrarModalEquipos();
 
-    const btn = document.getElementById("btnGenerarInforme");
-    const textoOriginal = btn ? btn.innerHTML : "";
-    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Generando...`; }
+    _previewEquipoIds              = equipoIds || [];
+    _previewIncluirConclusion      = incluirConclusion;
+    _previewIncluirConclusionAuto  = incluirConclusionAuto;
+
+    const overlay  = document.getElementById("modalPreviewInforme");
+    const frame    = document.getElementById("previewInformeFrame");
+    const loading  = document.getElementById("previewInformeLoading");
+    const titulo   = document.getElementById("previewInformeTitulo");
+    const btnConf  = document.getElementById("previewInformeConfirmar");
+
+    frame.style.display  = "none";
+    frame.src            = "";
+    loading.style.display = "flex";
+    btnConf.disabled     = true;
+    if (titulo) titulo.textContent = `Informe — muestra #${detalleAnalisisId}`;
+    overlay.classList.add("visible");
 
     try {
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/generar-informe`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ equipoIds: equipoIds || [] })
+            body: JSON.stringify({ equipoIds: _previewEquipoIds, preview: true, incluirConclusion, incluirConclusionAuto })
         });
 
         if (!resp.ok) {
@@ -2225,31 +2250,66 @@ async function ejecutarGeneracionInforme(equipoIds) {
             throw new Error(err.message || `Error HTTP ${resp.status}`);
         }
 
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `informe-${detalleAnalisisId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        if (_previewBlobUrl) URL.revokeObjectURL(_previewBlobUrl);
+        const blob       = await resp.blob();
+        _previewBlobUrl  = URL.createObjectURL(blob);
+        frame.src        = _previewBlobUrl;
+        frame.style.display = "";
+        loading.style.display = "none";
+        btnConf.disabled = false;
 
-        mostrarToast("Informe generado y descargado correctamente.");
+    } catch (err) {
+        console.error("Error generando preview:", err);
+        loading.innerHTML = `<span style="color:var(--rojo,#ef4444)"><i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}</span>`;
+    }
+}
+
+async function confirmarInforme() {
+    const btnConf = document.getElementById("previewInformeConfirmar");
+    const textoOrig = btnConf.innerHTML;
+    btnConf.disabled = true;
+    btnConf.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Guardando…`;
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/generar-informe`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                equipoIds:            _previewEquipoIds,
+                preview:              false,
+                incluirConclusion:    _previewIncluirConclusion,
+                incluirConclusionAuto: _previewIncluirConclusionAuto
+            })
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Error HTTP ${resp.status}`);
+        }
+
+        descartarPreview();
+        mostrarToast("Informe guardado correctamente. El cliente ya puede verlo.");
         cerrarModalDetalle();
         await cargarMuestrasActivas();
 
     } catch (err) {
-        console.error("Error generando informe:", err);
-        mostrarToast(`Error al generar el informe: ${err.message}`, true);
-    } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = textoOriginal; }
+        console.error("Error confirmando informe:", err);
+        mostrarToast(`Error al guardar el informe: ${err.message}`, true);
+        btnConf.disabled = false;
+        btnConf.innerHTML = textoOrig;
     }
+}
+
+function descartarPreview() {
+    document.getElementById("modalPreviewInforme").classList.remove("visible");
+    const frame = document.getElementById("previewInformeFrame");
+    frame.src = "";
+    frame.style.display = "none";
+    if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
 }
 
 // Listeners del modal de equipos
 document.addEventListener("DOMContentLoaded", () => {
-    // Listeners del modal de equipos
     document.getElementById("equiposInformeClose").addEventListener("click", cerrarModalEquipos);
     document.getElementById("equiposInformeCancelar").addEventListener("click", cerrarModalEquipos);
 
@@ -2258,9 +2318,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("btnConfirmarEquipos").addEventListener("click", () => {
-        const ids = Array.from(document.querySelectorAll(".equipo-check:checked"))
-            .map(cb => Number(cb.value));
-        ejecutarGeneracionInforme(ids);
+        ejecutarGeneracionInforme(_getEquiposSeleccionados());
+    });
+
+    document.getElementById("previewInformeClose").addEventListener("click", descartarPreview);
+    document.getElementById("previewInformeDescartar").addEventListener("click", descartarPreview);
+    document.getElementById("previewInformeConfirmar").addEventListener("click", confirmarInforme);
+    document.getElementById("modalPreviewInforme").addEventListener("click", e => {
+        if (e.target === document.getElementById("modalPreviewInforme")) descartarPreview();
+    });
+
+    const chkConclusion     = document.getElementById("checkIncluirConclusion");
+    const chkConclusionAuto = document.getElementById("checkIncluirConclusionAuto");
+    const labelAuto         = document.getElementById("labelConclusionAuto");
+    chkConclusion.addEventListener("change", () => {
+        const on = chkConclusion.checked;
+        chkConclusionAuto.disabled = !on;
+        labelAuto.style.opacity    = on ? "1" : "0.4";
+        labelAuto.style.pointerEvents = on ? "" : "none";
     });
 });
 

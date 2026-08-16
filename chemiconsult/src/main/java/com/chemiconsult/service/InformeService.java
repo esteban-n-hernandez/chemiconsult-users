@@ -94,7 +94,8 @@ public class InformeService {
     }
 
     @Transactional
-    public byte[] generarYPublicar(Long analisisId, List<Long> equipoIds) {
+    public byte[] generarYPublicar(Long analisisId, List<Long> equipoIds,
+                                   boolean preview, boolean incluirConclusion, boolean incluirConclusionAuto) {
         AnalisisDE analisis = analisisRepository.findById(analisisId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Muestra no encontrada"));
 
@@ -115,11 +116,13 @@ public class InformeService {
 
         byte[] pdfBytes;
         try {
-            pdfBytes = buildPdf(detalle, equipos);
+            pdfBytes = buildPdf(detalle, equipos, incluirConclusion, incluirConclusionAuto);
         } catch (Exception e) {
             log.error("Error generando PDF para analisis {}", analisisId, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al generar el informe: " + e.getMessage());
         }
+
+        if (preview) return pdfBytes;
 
         String nro = detalle.getNroProtocolo() != null ? detalle.getNroProtocolo() : String.valueOf(analisisId);
         String nombreArchivo = "informe-" + nro + ".pdf";
@@ -148,7 +151,8 @@ public class InformeService {
     // PDF construction
     // ----------------------------------------------------------------
 
-    private byte[] buildPdf(AnalisisDetalleTO d, List<EquipoDE> equipos) throws Exception {
+    private byte[] buildPdf(AnalisisDetalleTO d, List<EquipoDE> equipos,
+                             boolean incluirConclusion, boolean incluirConclusionAuto) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document doc = new Document(PageSize.A4, 50, 50, 110, 72);
         PdfWriter writer = PdfWriter.getInstance(doc, baos);
@@ -157,13 +161,14 @@ public class InformeService {
         writer.setPageEvent(new HeaderFooterEvento(logoBytes));
 
         doc.open();
-        addContenido(doc, d, equipos);
+        addContenido(doc, d, equipos, incluirConclusion, incluirConclusionAuto);
         doc.close();
 
         return baos.toByteArray();
     }
 
-    private void addContenido(Document doc, AnalisisDetalleTO d, List<EquipoDE> equipos) throws Exception {
+    private void addContenido(Document doc, AnalisisDetalleTO d, List<EquipoDE> equipos,
+                               boolean incluirConclusion, boolean incluirConclusionAuto) throws Exception {
         Font fTitulo = new Font(Font.HELVETICA, 14, Font.BOLD | Font.UNDERLINE);
         Font fLabel = new Font(Font.HELVETICA, 10, Font.BOLD);
         Font fValor = new Font(Font.HELVETICA, 10, Font.NORMAL);
@@ -236,8 +241,8 @@ public class InformeService {
         // Notas de abreviaturas (CAA, Ley 19587)
         addNotas(doc, d, fNota);
 
-        // Párrafo de conclusión
-        addConclusion(doc, d, fConcl);
+        // Párrafo de conclusión (opcional)
+        if (incluirConclusion) addConclusion(doc, d, fConcl, incluirConclusionAuto);
 
         // Nota arsénico (solo cuando el resultado supera 0,01 mg/l)
         addNotaArsenico(doc, d, fNota);
@@ -534,15 +539,26 @@ public class InformeService {
         doc.add(espacio);
     }
 
-    private void addConclusion(Document doc, AnalisisDetalleTO d, Font fConcl) throws DocumentException {
-        String texto = (d.getObservaciones() != null && !d.getObservaciones().isBlank())
-                ? d.getObservaciones()
-                : buildAutoConclusion(d);
+    private void addConclusion(Document doc, AnalisisDetalleTO d, Font fConcl,
+                               boolean incluirAuto) throws DocumentException {
+        String autoTexto = incluirAuto ? buildAutoConclusion(d) : null;
+        String obsTexto  = (d.getObservaciones() != null && !d.getObservaciones().isBlank())
+                           ? d.getObservaciones() : null;
 
-        Paragraph p = new Paragraph(texto, fConcl);
-        p.setSpacingBefore(6);
-        p.setSpacingAfter(30);
-        doc.add(p);
+        if (autoTexto == null && obsTexto == null) return;
+
+        if (autoTexto != null) {
+            Paragraph p = new Paragraph(autoTexto, fConcl);
+            p.setSpacingBefore(6);
+            p.setSpacingAfter(obsTexto != null ? 6 : 30);
+            doc.add(p);
+        }
+        if (obsTexto != null) {
+            Paragraph p = new Paragraph(obsTexto, fConcl);
+            p.setSpacingBefore(autoTexto != null ? 0 : 6);
+            p.setSpacingAfter(30);
+            doc.add(p);
+        }
     }
 
     private String buildAutoConclusion(AnalisisDetalleTO d) {
