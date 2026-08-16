@@ -1917,7 +1917,7 @@ pre {
         </tbody>
       </table>
     </div>
-    <p>El módulo <code>FACTURACION</code> existe en el enum pero no tiene pantalla implementada todavía.</p>
+    <p>El módulo <code>FACTURACION</code> permite emitir facturas electrónicas (A/B/C) con CAE via ARCA. La integración con WSMTXCA opera en modo MOCK mientras no haya certificado ARCA configurado.</p>
 
     <h3>Operación: eliminar usuario</h3>
     <p><code>DELETE /api/users/{id}</code> llama a <code>userRepository.deleteById(id)</code> — es una <strong>eliminación física</strong>, no hay soft delete. El registro se borra de <code>CHEMI_USERS</code> permanentemente.</p>
