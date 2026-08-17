@@ -154,6 +154,13 @@ public class AnalisisController {
                 .toList();
     }
 
+    /** Confirma el informe pendiente de revisión (estado pasa a COMPLETO). */
+    @PostMapping("/{id}/confirmar-informe")
+    public ResponseEntity<Void> confirmarInforme(@PathVariable Long id) {
+        analisisService.confirmarInforme(id);
+        return ResponseEntity.ok().build();
+    }
+
     /** Marca el informe de una muestra como desactualizado (estado pasa a COMPLETO_SIN_INFORME). */
     @PostMapping("/{id}/invalidar-informe")
     public ResponseEntity<Void> invalidarInforme(@PathVariable Long id) {
@@ -299,6 +306,13 @@ public class AnalisisController {
     /** Descarga un único .docx con los datos completos de una muestra. */
     @GetMapping("/{id}/export")
     public ResponseEntity<byte[]> exportarMuestra(@PathVariable Long id) {
+        AnalisisDE analisis = analisisRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Muestra no encontrada"));
+        if (analisis.getEstado() != EstadoMuestraEnum.COMPLETO
+                && analisis.getEstado() != EstadoMuestraEnum.COMPLETO_SIN_INFORME) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Solo se pueden exportar muestras completas");
+        }
         AnalisisDetalleTO detalle = analisisService.getEstudioDetalle(id);
         try {
             byte[] docx = exportWordService.generarDocx(detalle);
@@ -318,9 +332,15 @@ public class AnalisisController {
     public ResponseEntity<byte[]> exportarRango(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        List<AnalisisDE> muestras = analisisRepository.findAllByFechaIngresoBetweenOrderByFechaIngresoAsc(desde, hasta);
+        List<AnalisisDE> muestras = analisisRepository
+                .findAllByFechaIngresoBetweenOrderByFechaIngresoAsc(desde, hasta)
+                .stream()
+                .filter(m -> m.getEstado() == EstadoMuestraEnum.COMPLETO
+                        || m.getEstado() == EstadoMuestraEnum.COMPLETO_SIN_INFORME)
+                .toList();
         if (muestras.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay muestras en ese rango de fechas");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "No hay muestras completas en ese rango de fechas");
         }
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zip = new ZipOutputStream(baos)) {

@@ -140,7 +140,7 @@ public class InformeService {
         archivo.setDesactualizado(false);
         analisisArchivoRepository.save(archivo);
 
-        analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+        analisis.setEstado(EstadoMuestraEnum.INFORME_PENDIENTE_REVISION);
         analisis.setUpdateDate(LocalDate.now());
         analisisRepository.save(analisis);
 

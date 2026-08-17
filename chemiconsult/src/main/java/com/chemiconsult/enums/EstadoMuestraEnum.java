@@ -5,6 +5,7 @@ public enum EstadoMuestraEnum {
     EN_PROCESO,
     COMPLETO_SIN_INFORME,
     DEMORADA,
+    INFORME_PENDIENTE_REVISION,
     COMPLETO,
     CANCELADO
 }

@@ -529,6 +529,7 @@
             opt.value       = m.id;
             opt.textContent = m.nombre || m.name || String(m.id);
             if (String(m.id) === String(currentId)) opt.selected = true;
+            console.log(m.id, m.nombre)
             sel.appendChild(opt);
         });
     }

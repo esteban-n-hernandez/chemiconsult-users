@@ -97,6 +97,7 @@
                     <button class="filtro-btn" data-estado="EN_PROCESO">En proceso</button>
                     <button class="filtro-btn" data-estado="COMPLETO_SIN_INFORME">Completo sin informe</button>
                     <button class="filtro-btn" data-estado="DEMORADA">Demoradas</button>
+                    <button class="filtro-btn" data-estado="INFORME_PENDIENTE_REVISION">Informe pendiente revisión</button>
                 </div>
                 <div class="busqueda-filtros">
                     <input type="text" id="inputBuscarCodigo" class="input-buscar" placeholder="🔍 Buscar por código...">
@@ -454,6 +455,9 @@
             <button type="button" class="btn-cancelar" id="btnEditarResultados" style="display:none">
                 <i class="bi bi-pencil"></i> Editar resultados
             </button>
+            <button type="button" class="btn-guardar" id="btnConfirmarInforme" style="display:none;background:#16a34a;">
+                <i class="bi bi-check-circle-fill"></i> Confirmar informe
+            </button>
             <button type="button" class="btn-guardar btn-generar-informe" id="btnGenerarInforme" disabled>
                 <i class="bi bi-file-earmark-pdf-fill"></i> Generar informe
             </button>
@@ -559,7 +563,7 @@
                 <i class="bi bi-file-earmark-pdf"></i> Sin equipos
             </button>
             <button type="button" class="btn-guardar" id="btnConfirmarEquipos">
-                <i class="bi bi-eye"></i> Previsualizar
+                <i class="bi bi-file-earmark-pdf-fill"></i> Generar para revisión
             </button>
         </div>
     </div>

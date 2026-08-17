@@ -393,6 +393,20 @@ public class AnalisisService {
     }
 
     @Transactional
+    public void confirmarInforme(Long analisisId) {
+        AnalisisDE analisis = analisisRepository.findById(analisisId)
+                .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
+        if (analisis.getEstado() != EstadoMuestraEnum.INFORME_PENDIENTE_REVISION) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "El informe no está en estado pendiente de revisión");
+        }
+        analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+        analisis.setUpdateDate(LocalDate.now());
+        analisisRepository.save(analisis);
+    }
+
+    @Transactional
     public void invalidarInforme(Long analisisId) {
         AnalisisDE analisis = analisisRepository.findById(analisisId)
                 .orElseThrow(() -> new RuntimeException("Estudio no encontrado: " + analisisId));
@@ -433,7 +447,10 @@ public class AnalisisService {
         }
 
         if (tieneInforme) {
-            analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+            // Si el informe está pendiente de revisión, no lo pisamos automáticamente
+            if (analisis.getEstado() != EstadoMuestraEnum.INFORME_PENDIENTE_REVISION) {
+                analisis.setEstado(EstadoMuestraEnum.COMPLETO);
+            }
         } else {
             analisis.setEstado(EstadoMuestraEnum.COMPLETO_SIN_INFORME);
         }

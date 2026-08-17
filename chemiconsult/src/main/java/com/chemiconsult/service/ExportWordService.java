@@ -1,10 +1,12 @@
 package com.chemiconsult.service;
 
+import com.chemiconsult.entity.GrupoInformeDE;
 import com.chemiconsult.to.AnalisisDetalleTO;
 import com.chemiconsult.to.LimiteAplicableTO;
 import com.chemiconsult.to.ParametroResultadoTO;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -16,6 +18,13 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExportWordService {
+
+    private final GrupoInformeService grupoInformeService;
+
+    @Autowired
+    public ExportWordService(GrupoInformeService grupoInformeService) {
+        this.grupoInformeService = grupoInformeService;
+    }
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String COLOR_VERDE = "1A6B3A";
@@ -102,16 +111,22 @@ public class ExportWordService {
         List<String> colLabels = buildColLabels(resoluciones);
         List<String> footnotes = buildFootnotes(resoluciones);
 
-        Map<String, List<ParametroResultadoTO>> grupos = agruparPorTipo(d.getParametros());
+        List<GrupoInformeDE> gruposConfig = grupoInformeService.getAll();
+        Map<String, String> grupoLabels = gruposConfig.stream()
+                .collect(Collectors.toMap(GrupoInformeDE::getCodigo, GrupoInformeDE::getLabel, (a, b) -> a));
+        List<String> grupoOrden = gruposConfig.stream().map(GrupoInformeDE::getCodigo).toList();
+
+        Map<String, List<ParametroResultadoTO>> grupos = agruparPorTipo(d.getParametros(), grupoOrden);
 
         for (Map.Entry<String, List<ParametroResultadoTO>> entry : grupos.entrySet()) {
             String tipo = entry.getKey();
             if (!tipo.isEmpty()) {
+                String label = grupoLabels.getOrDefault(tipo, tipo);
                 XWPFParagraph subPar = doc.createParagraph();
                 subPar.setSpacingBefore(140);
                 subPar.setSpacingAfter(60);
                 XWPFRun rSub = subPar.createRun();
-                rSub.setText(tipo);
+                rSub.setText(label);
                 rSub.setBold(true);
                 rSub.setFontSize(10);
                 rSub.setColor(COLOR_VERDE);
@@ -191,8 +206,9 @@ public class ExportWordService {
 
     // ── Agrupación y etiquetas ───────────────────────────────────────────────
 
-    private Map<String, List<ParametroResultadoTO>> agruparPorTipo(List<ParametroResultadoTO> params) {
-        Map<String, List<ParametroResultadoTO>> result = new LinkedHashMap<>();
+    private Map<String, List<ParametroResultadoTO>> agruparPorTipo(List<ParametroResultadoTO> params,
+                                                                     List<String> ordenGrupos) {
+        Map<String, List<ParametroResultadoTO>> raw = new LinkedHashMap<>();
         List<ParametroResultadoTO> sinTipo = new ArrayList<>();
         for (ParametroResultadoTO p : params) {
             String tipo = (p.getTipoAnalisis() != null && !p.getTipoAnalisis().isBlank())
@@ -200,11 +216,17 @@ public class ExportWordService {
             if (tipo == null) {
                 sinTipo.add(p);
             } else {
-                result.computeIfAbsent(tipo, k -> new ArrayList<>()).add(p);
+                raw.computeIfAbsent(tipo, k -> new ArrayList<>()).add(p);
             }
         }
-        if (!sinTipo.isEmpty()) result.put("", sinTipo);
-        return result;
+
+        Map<String, List<ParametroResultadoTO>> ordered = new LinkedHashMap<>();
+        for (String codigo : ordenGrupos) {
+            if (raw.containsKey(codigo)) ordered.put(codigo, raw.get(codigo));
+        }
+        raw.forEach((k, v) -> { if (!k.isEmpty() && !ordered.containsKey(k)) ordered.put(k, v); });
+        if (!sinTipo.isEmpty()) ordered.put("", sinTipo);
+        return ordered;
     }
 
     private List<String> buildColLabels(List<String> resoluciones) {

@@ -85,12 +85,15 @@ function condIvaLabel(c) {
 
 let todasFacturas = [];
 let filtroEstado  = "";
+let factPagina    = 1;
+let factPageSize  = 10;
 
 async function cargarFacturas() {
     try {
         const res = await apiFetch(`${API_BASE}/api/factura`);
         if (!res.ok) throw new Error();
         todasFacturas = await res.json();
+        factPagina = 1;
         renderTabla();
     } catch {
         document.getElementById("factTablaBody").innerHTML =
@@ -106,10 +109,16 @@ function renderTabla() {
 
     if (!lista.length) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-secondary);">Sin comprobantes</td></tr>`;
+        renderPaginacion(0);
         return;
     }
 
-    tbody.innerHTML = lista.map(f => `
+    const total   = lista.length;
+    const desde   = (factPagina - 1) * factPageSize;
+    const hasta   = Math.min(desde + factPageSize, total);
+    const pagina  = lista.slice(desde, hasta);
+
+    tbody.innerHTML = pagina.map(f => `
         <tr style="cursor:pointer;" data-id="${f.id}">
             <td>${tipoBadge(f.tipoComprobante)}</td>
             <td style="font-size:.82rem;font-family:monospace;">${nroFmt(f.puntoVenta, f.numero)}</td>
@@ -119,7 +128,7 @@ function renderTabla() {
             <td class="cae-chip">${f.cae ? f.cae.substring(0,8) + "…" : "—"}</td>
             <td>${badgeEstado(f.estado)}</td>
             <td>
-                <button class="btn-pres-secondary btn-pdf-fact" data-id="${f.id}" title="PDF" style="padding:4px 8px;">
+                <button class="btn-accion btn-pdf btn-pdf-fact" data-id="${f.id}" title="Descargar PDF">
                     <i class="bi bi-file-pdf"></i>
                 </button>
             </td>
@@ -135,6 +144,49 @@ function renderTabla() {
     tbody.querySelectorAll(".btn-pdf-fact").forEach(btn => {
         btn.addEventListener("click", () => descargarPDF(+btn.dataset.id));
     });
+
+    renderPaginacion(total);
+}
+
+function renderPaginacion(total) {
+    const totalPags = Math.ceil(total / factPageSize) || 1;
+    const desde     = total === 0 ? 0 : (factPagina - 1) * factPageSize + 1;
+    const hasta     = Math.min(factPagina * factPageSize, total);
+
+    document.getElementById("factPagInfo").textContent =
+        `Mostrando ${desde}–${hasta} de ${total}`;
+
+    const controls = document.getElementById("factPagControls");
+    controls.innerHTML = "";
+
+    const mkBtn = (label, page, active, disabled) => {
+        const b = document.createElement("button");
+        b.className = "pag-btn" + (active ? " pag-btn-active" : "") + (disabled ? " pag-btn-disabled" : "");
+        b.textContent = label;
+        b.disabled = disabled;
+        if (!disabled && !active) b.addEventListener("click", () => { factPagina = page; renderTabla(); });
+        return b;
+    };
+
+    controls.appendChild(mkBtn("‹", factPagina - 1, false, factPagina === 1));
+
+    const range = [];
+    for (let i = 1; i <= totalPags; i++) {
+        if (i === 1 || i === totalPags || Math.abs(i - factPagina) <= 1) range.push(i);
+        else if (range[range.length - 1] !== "…") range.push("…");
+    }
+    range.forEach(p => {
+        if (p === "…") {
+            const s = document.createElement("span");
+            s.textContent = "…";
+            s.style.cssText = "padding:0 4px;color:var(--color-text-secondary);font-size:12px;";
+            controls.appendChild(s);
+        } else {
+            controls.appendChild(mkBtn(p, p, p === factPagina, false));
+        }
+    });
+
+    controls.appendChild(mkBtn("›", factPagina + 1, false, factPagina === totalPags));
 }
 
 // Filtros
@@ -143,8 +195,15 @@ document.querySelectorAll(".fact-filter-btn").forEach(btn => {
         document.querySelectorAll(".fact-filter-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         filtroEstado = btn.dataset.estado;
+        factPagina = 1;
         renderTabla();
     });
+});
+
+document.getElementById("factPageSize").addEventListener("change", e => {
+    factPageSize = +e.target.value;
+    factPagina   = 1;
+    renderTabla();
 });
 
 document.getElementById("btnRefresh").addEventListener("click", cargarFacturas);

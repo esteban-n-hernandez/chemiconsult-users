@@ -25,46 +25,90 @@
         /* ── Chips de filtro ── */
         .fact-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
         .fact-filter-btn {
-            padding: 4px 14px; border-radius: 20px; border: 1px solid var(--border);
-            background: transparent; color: var(--text); cursor: pointer; font-size: .82rem;
-            transition: background .15s, color .15s;
+            padding: 5px 14px; border-radius: 20px;
+            border: 1px solid var(--color-border-tertiary);
+            background: var(--bg-surface); color: var(--text-main);
+            cursor: pointer; font-size: 12px; font-weight: 600;
+            transition: background .15s, color .15s, border-color .15s;
         }
-        .fact-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .fact-filter-btn:hover { background: var(--bg-subtle); }
+        .fact-filter-btn.active { background: var(--verde); color: #fff; border-color: var(--verde); }
+
+        /* ── Paginación ── */
+        .paginacion-wrapper {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 8px;
+            padding: 10px 0 2px;
+            border-top: 1px solid var(--color-border-tertiary);
+            margin-top: 8px;
+        }
+        .paginacion-info { font-size: 12px; color: var(--color-text-secondary); }
+
+        /* ── Receptor fieldset ── */
+        .fact-fieldset {
+            border: 1.5px solid var(--color-border-tertiary);
+            border-radius: 10px; padding: 14px 16px; margin-top: 4px;
+        }
+        .fact-fieldset-legend {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; color: var(--verde);
+            padding: 0 6px; margin-left: -4px;
+        }
 
         /* ── Totales del modal ── */
         .fact-totales {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+            background: var(--bg-subtle, #f9fafb); border: 1.5px solid var(--color-border-tertiary);
+            border-radius: 10px; padding: 12px 16px; margin-top: 12px;
         }
-        .fact-totales-row { display: flex; justify-content: space-between; font-size: .85rem; margin: 3px 0; }
-        .fact-totales-row.total { font-weight: 700; font-size: .95rem; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; }
+        .fact-totales-row { display: flex; justify-content: space-between; font-size: .85rem; margin: 4px 0; color: var(--text-main); }
+        .fact-totales-row.total { font-weight: 700; font-size: .95rem; border-top: 1.5px solid var(--color-border-tertiary); padding-top: 8px; margin-top: 8px; color: var(--verde); }
 
         /* ── Tabla de ítems en el modal ── */
         .fact-items-wrap { overflow-x: auto; margin-top: 8px; }
         .fact-items-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-        .fact-items-table th { background: var(--surface); color: var(--text-secondary);
-            padding: 6px 8px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); }
-        .fact-items-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .fact-items-table th {
+            background: var(--bg-subtle, #f9fafb); color: var(--verde);
+            padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .5px;
+            border-bottom: 2px solid var(--color-border-tertiary);
+        }
+        .fact-items-table td { padding: 6px 8px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: middle; }
+        .fact-items-table tr:nth-child(even) td { background: var(--bg-subtle, #f9fafb); }
         .fact-items-table input, .fact-items-table select {
-            width: 100%; border: 1px solid var(--border); border-radius: 5px;
-            padding: 4px 6px; background: var(--background); color: var(--text); font-size: .82rem;
+            width: 100%; border: 1.5px solid var(--color-border-tertiary); border-radius: 7px;
+            padding: 5px 8px; background: var(--bg-surface); color: var(--text-main);
+            font-size: .82rem; font-family: inherit; outline: none;
+            transition: border-color .15s, box-shadow .15s;
         }
-        .fact-items-table input:focus, .fact-items-table select:focus { outline: none; border-color: var(--accent); }
+        .fact-items-table input:focus, .fact-items-table select:focus {
+            border-color: var(--verde);
+            box-shadow: 0 0 0 3px rgba(94,165,4,.1);
+        }
         .btn-del-item {
-            background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px 4px; font-size: 1rem;
+            background: none; border: none; color: var(--color-text-secondary);
+            cursor: pointer; padding: 4px 6px; border-radius: 5px; font-size: .95rem;
+            transition: color .15s, background .15s;
         }
-        .btn-del-item:hover { color: #b91c1c; }
+        .btn-del-item:hover { color: #ef4444; background: #fff0f0; }
 
         /* ── CAE chip en la tabla ── */
-        .cae-chip { font-family: monospace; font-size: .78rem; color: var(--text-secondary); }
+        .cae-chip { font-family: monospace; font-size: .78rem; color: var(--color-text-secondary); }
 
         /* ── Detail modal ── */
-        .fact-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .fact-detail-field label { font-size:.75rem; color: var(--text-secondary); display: block; margin-bottom: 2px; }
-        .fact-detail-field span  { font-size:.9rem; font-weight: 500; }
+        .fact-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .fact-detail-field label { font-size:10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-secondary); display: block; margin-bottom: 3px; }
+        .fact-detail-field span  { font-size:.9rem; font-weight: 500; color: var(--text-main); }
         .fact-detail-cae {
             font-family: monospace; font-size: 1rem; font-weight: 700;
-            color: var(--accent); letter-spacing: 2px;
+            color: var(--verde); letter-spacing: 2px;
+        }
+
+        /* ── Flecha custom para <select> con form-control-custom ── */
+        select.form-control-custom {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%236c757d' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
         }
 
         /* ── Tipo comprobante badge ── */
@@ -98,19 +142,18 @@
         </div>
     </div>
 
-    <div class="page-actions">
-        <button class="btn-nuevo-pres" id="btnNuevaFactura">
-            <i class="bi bi-plus-lg"></i> Nueva factura
-        </button>
-    </div>
-
     <!-- Historial -->
     <div class="panel hist-panel">
         <div class="panel-header">
             <h5><i class="bi bi-receipt me-2 panel-title-icon-green"></i>Comprobantes emitidos</h5>
-            <button class="btn-pres-secondary" id="btnRefresh" title="Actualizar">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button class="btn-pres-secondary" id="btnRefresh" title="Actualizar">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="btn-nuevo-pres" id="btnNuevaFactura">
+                    <i class="bi bi-plus-lg"></i> Nueva factura
+                </button>
+            </div>
         </div>
         <div class="panel-body">
             <div class="fact-filters">
@@ -138,6 +181,20 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginación -->
+            <div class="paginacion-wrapper" id="factPaginacion">
+                <div id="factPagInfo" class="paginacion-info">Mostrando 0–0 de 0</div>
+                <div id="factPagControls" class="pag-controls"></div>
+                <div class="pag-page-size">
+                    <label for="factPageSize">Por página:</label>
+                    <select id="factPageSize">
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -148,18 +205,22 @@
 <div class="modal-overlay" id="modalNuevaFactura">
     <div class="modal-box" style="max-width:760px;">
         <div class="modal-header">
-            <h3 id="nfTitulo">Nueva Factura</h3>
+            <div class="mh-icon"><i class="bi bi-receipt"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Facturación</div>
+                <h5 id="nfTitulo">Nueva Factura</h5>
+            </div>
             <button class="modal-close" id="nfBtnCerrar"><i class="bi bi-x-lg"></i></button>
         </div>
 
         <!-- Paso 1: datos generales -->
         <div id="nfPaso1">
             <div class="modal-body">
-                <div class="form-grid-2">
+                <div class="form-row">
                     <!-- Tipo de comprobante -->
                     <div class="form-group">
-                        <label>Tipo de comprobante <span class="req">*</span></label>
-                        <select id="nfTipoComprobante">
+                        <label>Tipo de comprobante <span class="required">*</span></label>
+                        <select id="nfTipoComprobante" class="form-control-custom">
                             <option value="">— Seleccionar —</option>
                             <option value="A">Factura A — IVA Responsable Inscripto</option>
                             <option value="B">Factura B — Consumidor Final / Monotributista</option>
@@ -168,25 +229,27 @@
                     </div>
                     <!-- Fecha de emisión -->
                     <div class="form-group">
-                        <label>Fecha de emisión <span class="req">*</span></label>
-                        <input type="date" id="nfFechaEmision"/>
+                        <label>Fecha de emisión <span class="required">*</span></label>
+                        <input type="date" id="nfFechaEmision" class="form-control-custom"/>
                     </div>
                 </div>
 
                 <!-- Receptor -->
-                <fieldset style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;">
-                    <legend style="font-size:.85rem;font-weight:600;padding:0 6px;">Receptor</legend>
-                    <div class="form-grid-2">
+                <fieldset class="fact-fieldset">
+                    <legend class="fact-fieldset-legend">Receptor</legend>
+                    <div class="form-row">
                         <div class="form-group" style="position:relative;">
-                            <label>Nombre / Razón social <span class="req">*</span></label>
-                            <input type="text" id="nfClienteInput" placeholder="Buscar cliente…" autocomplete="off"/>
-                            <div id="nfClienteDrop" style="display:none;position:fixed;background:var(--surface);
-                                border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);
+                            <label>Nombre / Razón social <span class="required">*</span></label>
+                            <input type="text" id="nfClienteInput" class="form-control-custom"
+                                   placeholder="Buscar cliente…" autocomplete="off"/>
+                            <div id="nfClienteDrop" style="display:none;position:fixed;
+                                background:var(--bg-surface);border:1.5px solid var(--verde);
+                                border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);
                                 z-index:9999;max-height:200px;overflow-y:auto;min-width:260px;"></div>
                         </div>
                         <div class="form-group">
                             <label>Condición IVA</label>
-                            <select id="nfCondicionIVA">
+                            <select id="nfCondicionIVA" class="form-control-custom">
                                 <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
                                 <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
                                 <option value="MONOTRIBUTISTA">Monotributista</option>
@@ -195,19 +258,21 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>CUIT / CUIL <small style="color:var(--text-secondary)">(sin guiones)</small></label>
-                            <input type="text" id="nfCuit" placeholder="30712345678" maxlength="13"/>
+                            <label>CUIT / CUIL <span class="task-opt">(sin guiones)</span></label>
+                            <input type="text" id="nfCuit" class="form-control-custom"
+                                   placeholder="30712345678" maxlength="13"/>
                         </div>
                         <div class="form-group">
                             <label>Dirección</label>
-                            <input type="text" id="nfDireccion" placeholder="Calle, número, localidad"/>
+                            <input type="text" id="nfDireccion" class="form-control-custom"
+                                   placeholder="Calle, número, localidad"/>
                         </div>
                     </div>
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button class="btn-pres-secondary" id="nfBtnCancelarP1">Cancelar</button>
-                <button class="btn-nuevo-pres" id="nfBtnSiguiente">
+                <button class="btn-cancelar" id="nfBtnCancelarP1">Cancelar</button>
+                <button class="btn-guardar" id="nfBtnSiguiente">
                     Ítems <i class="bi bi-arrow-right"></i>
                 </button>
             </div>
@@ -231,8 +296,8 @@
                         <tbody id="nfItemsBody"></tbody>
                     </table>
                 </div>
-                <button class="btn-pres-secondary" id="nfBtnAgregarItem" style="margin-top:8px;">
-                    <i class="bi bi-plus"></i> Agregar ítem
+                <button class="btn-cancelar" id="nfBtnAgregarItem" style="margin-top:10px;">
+                    <i class="bi bi-plus-lg"></i> Agregar ítem
                 </button>
 
                 <div class="fact-totales" id="nfTotalesBox">
@@ -248,10 +313,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-pres-secondary" id="nfBtnAtras">
+                <button class="btn-cancelar" id="nfBtnAtras">
                     <i class="bi bi-arrow-left"></i> Volver
                 </button>
-                <button class="btn-nuevo-pres" id="nfBtnEmitir">
+                <button class="btn-guardar" id="nfBtnEmitir">
                     <i class="bi bi-send-check"></i> Emitir factura
                 </button>
             </div>
@@ -265,7 +330,11 @@
 <div class="modal-overlay" id="modalDetalle">
     <div class="modal-box" style="max-width:680px;">
         <div class="modal-header">
-            <h3 id="detTitulo">Detalle de Factura</h3>
+            <div class="mh-icon"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Comprobante</div>
+                <h5 id="detTitulo">Detalle de Factura</h5>
+            </div>
             <button class="modal-close" id="detBtnCerrar"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="modal-body">
@@ -330,10 +399,10 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-pres-secondary" id="detBtnAnular" style="color:#ef4444;border-color:#ef4444;">
+            <button class="btn-cancelar" id="detBtnAnular" style="color:#ef4444;border-color:#fecaca;">
                 <i class="bi bi-slash-circle"></i> Anular
             </button>
-            <button class="btn-nuevo-pres" id="detBtnPDF">
+            <button class="btn-guardar" id="detBtnPDF">
                 <i class="bi bi-file-pdf"></i> Descargar PDF
             </button>
         </div>

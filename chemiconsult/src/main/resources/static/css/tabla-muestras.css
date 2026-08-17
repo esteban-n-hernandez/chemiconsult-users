@@ -75,12 +75,13 @@
 
 .badge-dot { display: none; }
 
-.badge-pendiente            { background: #fef3c7; color: #92400e; }
-.badge-proceso              { background: #dbeafe; color: #1e40af; }
-.badge-completo-sin-informe { background: #f1f5f9; color: #475569; }
-.badge-demorada             { background: #fee2e2; color: #991b1b; }
-.badge-informe              { background: #dcfce7; color: #166534; }
-.badge-cancelado            { background: #f3f4f6; color: #6b7280; }
+.badge-pendiente              { background: #fef3c7; color: #92400e; }
+.badge-proceso                { background: #dbeafe; color: #1e40af; }
+.badge-completo-sin-informe   { background: #f1f5f9; color: #475569; }
+.badge-demorada               { background: #fee2e2; color: #991b1b; }
+.badge-informe-pendiente-rev  { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+.badge-informe                { background: #dcfce7; color: #166534; }
+.badge-cancelado              { background: #f3f4f6; color: #6b7280; }
 
 /* ── Fechas de vencimiento ── */
 .fecha-ok      { color: var(--color-text-secondary); }

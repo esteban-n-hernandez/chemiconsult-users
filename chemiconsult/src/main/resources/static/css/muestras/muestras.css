@@ -1071,15 +1071,91 @@ button.btn-nueva-muestra-btn {
 .btn-export-word:hover { background: #1d4ed8; }
 .btn-export-word:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ── Botón Word por fila ── */
-.btn-accion-word {
-    background: #eff6ff;
-    border-color: #93c5fd;
-    color: #2563eb;
+/* ── Dropdown de informe por fila ── */
+.btn-accion-informe {
+    background: var(--bg-surface);
+    border-color: #c5e6a0;
+    color: var(--verde);
 }
 
-.btn-accion-word:hover {
-    background: #2563eb;
+.btn-accion-informe:hover {
+    background: var(--verde);
+    border-color: var(--verde);
     color: #fff;
-    border-color: #2563eb;
+}
+
+.informe-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+
+.informe-dropdown-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.13);
+    z-index: 200;
+    min-width: 170px;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.informe-dropdown-panel.open {
+    display: flex;
+}
+
+.informe-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary, #555);
+    white-space: nowrap;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.informe-dropdown-item:hover {
+    background: var(--bg-hover, #f4f4f4);
+    color: var(--text-primary, #111);
+}
+
+.informe-dropdown-item small {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-text-tertiary, #999);
+    background: var(--bg-card, #f8f9fa);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--color-border-tertiary, #e0e0e0);
+}
+
+.informe-dropdown-item + .informe-dropdown-item {
+    border-top: 1px solid var(--color-border-tertiary, #e8e8e8);
+}
+
+@media (prefers-color-scheme: dark) {
+    .informe-dropdown-panel {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    }
+    .informe-dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+}
+:root[data-theme="dark"] .informe-dropdown-panel {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme="dark"] .informe-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.06);
 }

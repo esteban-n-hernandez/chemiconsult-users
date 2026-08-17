@@ -1481,11 +1481,27 @@ function renderizarTablaMuestras(lista) {
                 <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
                         onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
                     <i class="bi bi-paperclip"></i>
-                </button>` : ''}
-                <button class="btn-accion btn-accion-word" title="Descargar Word (.docx)"
-                        onclick="descargarWord(${m.id}, '${protocolo}')">
-                    <i class="bi bi-file-earmark-word"></i>
                 </button>
+                <div class="informe-dropdown" id="inf-drop-${m.id}">
+                    <button class="btn-accion btn-accion-informe" title="Generar informe"
+                            onclick="toggleInformeDropdown(${m.id}, event)">
+                        <i class="bi bi-file-earmark-plus"></i>
+                    </button>
+                    <div class="informe-dropdown-panel" id="inf-panel-${m.id}">
+                        <button class="informe-dropdown-item"
+                                onclick="onGenerarInformeDesdeTabla(${m.id}); cerrarInformeDropdowns()">
+                            <i class="bi bi-file-earmark-pdf-fill" style="color:#ef4444;"></i>
+                            <span>Informe cliente</span>
+                            <small>PDF</small>
+                        </button>
+                        <button class="informe-dropdown-item"
+                                onclick="descargarWord(${m.id}, '${protocolo}'); cerrarInformeDropdowns()">
+                            <i class="bi bi-file-earmark-word-fill" style="color:#2563eb;"></i>
+                            <span>Informe interno</span>
+                            <small>Word</small>
+                        </button>
+                    </div>
+                </div>` : ''}
                 ${!esCancelado ? `
                 <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
                         onclick="abrirModalCancelar(${m.id}, '${codigo}')">
@@ -1690,12 +1706,13 @@ function cerrarModalDetalle() {
 function badgeHTML(estado) {
     const e = (estado || "").toUpperCase();
     const classMap = {
-        PENDIENTE:            "badge-pendiente",
-        EN_PROCESO:           "badge-proceso",
-        COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
-        DEMORADA:             "badge-demorada",
-        COMPLETO:             "badge-informe",
-        CANCELADO:            "badge-cancelado",
+        PENDIENTE:                   "badge-pendiente",
+        EN_PROCESO:                  "badge-proceso",
+        COMPLETO_SIN_INFORME:        "badge-completo-sin-informe",
+        DEMORADA:                    "badge-demorada",
+        INFORME_PENDIENTE_REVISION:  "badge-informe-pendiente-rev",
+        COMPLETO:                    "badge-informe",
+        CANCELADO:                   "badge-cancelado",
     };
     const cls = classMap[e] || "";
     const lbl = labelEstadoDetalle(e);
@@ -1704,12 +1721,13 @@ function badgeHTML(estado) {
 
 function labelEstadoDetalle(estado) {
     const map = {
-        PENDIENTE: "Pendiente",
-        EN_PROCESO: "En proceso",
-        COMPLETO_SIN_INFORME: "Completo sin informe",
-        DEMORADA: "Demorada",
-        COMPLETO: "Completo",
-        CANCELADO: "Cancelado",
+        PENDIENTE:                  "Pendiente",
+        EN_PROCESO:                 "En proceso",
+        COMPLETO_SIN_INFORME:       "Completo sin informe",
+        DEMORADA:                   "Demorada",
+        INFORME_PENDIENTE_REVISION: "Informe pendiente revisión",
+        COMPLETO:                   "Completo",
+        CANCELADO:                  "Cancelado",
     };
     return map[(estado || "").toUpperCase()] || (estado || "—");
 }
@@ -1717,19 +1735,31 @@ function labelEstadoDetalle(estado) {
 function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || `#${d.id}`;
 
-    const btnGenerar  = document.getElementById("btnGenerarInforme");
-    const btnEditar   = document.getElementById("btnEditarResultados");
-    const statusEl    = document.getElementById("autoGuardadoStatus");
-    const esCancelado = d.estado === "CANCELADO";
-    const esCompleto  = d.estado === "COMPLETO";
+    const btnGenerar   = document.getElementById("btnGenerarInforme");
+    const btnConfirmar = document.getElementById("btnConfirmarInforme");
+    const btnEditar    = document.getElementById("btnEditarResultados");
+    const statusEl     = document.getElementById("autoGuardadoStatus");
+    const esCancelado  = d.estado === "CANCELADO";
+    const esCompleto   = d.estado === "COMPLETO";
+    const esPendRev    = d.estado === "INFORME_PENDIENTE_REVISION";
 
     modoEdicionCompleto = false;
     detalleEstadoActual = d.estado;
+
+    if (btnConfirmar) btnConfirmar.style.display = "none";
 
     if (esCancelado) {
         btnGenerar.style.display = "none";
         btnEditar.style.display = "none";
         if (statusEl) statusEl.style.display = "none";
+    } else if (esPendRev) {
+        btnGenerar.style.display = "";
+        btnGenerar.disabled = false;
+        btnGenerar.innerHTML = '<i class="bi bi-arrow-repeat"></i> Regenerar informe';
+        btnGenerar.title = "";
+        btnEditar.style.display = "";
+        if (btnConfirmar) btnConfirmar.style.display = "";
+        if (statusEl) statusEl.style.display = "";
     } else if (esCompleto) {
         btnGenerar.style.display = "";
         btnGenerar.disabled = false;
@@ -2221,28 +2251,20 @@ async function ejecutarGeneracionInforme(equipoIds) {
     const incluirConclusionAuto = document.getElementById("checkIncluirConclusionAuto")?.checked ?? true;
     cerrarModalEquipos();
 
-    _previewEquipoIds              = equipoIds || [];
-    _previewIncluirConclusion      = incluirConclusion;
-    _previewIncluirConclusionAuto  = incluirConclusionAuto;
-
-    const overlay  = document.getElementById("modalPreviewInforme");
-    const frame    = document.getElementById("previewInformeFrame");
-    const loading  = document.getElementById("previewInformeLoading");
-    const titulo   = document.getElementById("previewInformeTitulo");
-    const btnConf  = document.getElementById("previewInformeConfirmar");
-
-    frame.style.display  = "none";
-    frame.src            = "";
-    loading.style.display = "flex";
-    btnConf.disabled     = true;
-    if (titulo) titulo.textContent = `Informe — muestra #${detalleAnalisisId}`;
-    overlay.classList.add("visible");
+    const btn = document.getElementById("btnGenerarInforme");
+    const textoOrig = btn?.innerHTML;
+    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Generando…`; }
 
     try {
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/generar-informe`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ equipoIds: _previewEquipoIds, preview: true, incluirConclusion, incluirConclusionAuto })
+            body: JSON.stringify({
+                equipoIds: equipoIds || [],
+                preview: false,
+                incluirConclusion,
+                incluirConclusionAuto
+            })
         });
 
         if (!resp.ok) {
@@ -2250,17 +2272,42 @@ async function ejecutarGeneracionInforme(equipoIds) {
             throw new Error(err.message || `Error HTTP ${resp.status}`);
         }
 
-        if (_previewBlobUrl) URL.revokeObjectURL(_previewBlobUrl);
-        const blob       = await resp.blob();
-        _previewBlobUrl  = URL.createObjectURL(blob);
-        frame.src        = _previewBlobUrl;
-        frame.style.display = "";
-        loading.style.display = "none";
-        btnConf.disabled = false;
+        mostrarToast("Informe generado. Queda pendiente de revisión antes de publicarse al cliente.");
+        cerrarModalDetalle();
+        await cargarMuestrasActivas();
 
     } catch (err) {
-        console.error("Error generando preview:", err);
-        loading.innerHTML = `<span style="color:var(--rojo,#ef4444)"><i class="bi bi-exclamation-triangle-fill me-2"></i>${err.message}</span>`;
+        console.error("Error generando informe:", err);
+        mostrarToast(`Error al generar el informe: ${err.message}`, true);
+        if (btn) { btn.disabled = false; btn.innerHTML = textoOrig; }
+    }
+}
+
+async function confirmarInformeDefinitivo() {
+    const btn = document.getElementById("btnConfirmarInforme");
+    const textoOrig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Confirmando…`;
+
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/confirmar-informe`, {
+            method: "POST"
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Error HTTP ${resp.status}`);
+        }
+
+        mostrarToast("Informe confirmado. El cliente ya puede verlo.");
+        cerrarModalDetalle();
+        await cargarMuestrasActivas();
+
+    } catch (err) {
+        console.error("Error confirmando informe:", err);
+        mostrarToast(`Error al confirmar el informe: ${err.message}`, true);
+        btn.disabled = false;
+        btn.innerHTML = textoOrig;
     }
 }
 
@@ -2321,6 +2368,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ejecutarGeneracionInforme(_getEquiposSeleccionados());
     });
 
+    document.getElementById("btnConfirmarInforme")?.addEventListener("click", confirmarInformeDefinitivo);
+
     document.getElementById("previewInformeClose").addEventListener("click", descartarPreview);
     document.getElementById("previewInformeDescartar").addEventListener("click", descartarPreview);
     document.getElementById("previewInformeConfirmar").addEventListener("click", confirmarInforme);
@@ -2351,10 +2400,10 @@ function recalcularEstadoBtnGenerarInforme() {
     btnGenerar.title = todosCompletos ? "" : "Faltan resultados en uno o más parámetros";
 }
 
-// Genera el informe directamente desde la fila de la tabla (sin abrir el modal)
-window.onGenerarInformeDesdeTabla = async function(id) {
+// Genera el informe directamente desde la fila de la tabla (sin abrir el modal de detalle)
+window.onGenerarInformeDesdeTabla = function(id) {
     detalleAnalisisId = id;
-    abrirModalResumen();
+    abrirModalEquipos();
 };
 
 // ============================================================
@@ -2568,6 +2617,21 @@ if (document.readyState === "loading") {
 // ──────────────────────────────────────────
 // EXPORTACIÓN WORD
 // ──────────────────────────────────────────
+
+window.toggleInformeDropdown = function(id, event) {
+    event.stopPropagation();
+    const panel = document.getElementById(`inf-panel-${id}`);
+    const isOpen = panel.classList.contains("open");
+    cerrarInformeDropdowns();
+    if (!isOpen) panel.classList.add("open");
+};
+
+function cerrarInformeDropdowns() {
+    document.querySelectorAll(".informe-dropdown-panel.open")
+            .forEach(p => p.classList.remove("open"));
+}
+
+document.addEventListener("click", cerrarInformeDropdowns);
 
 window.descargarWord = async function(id, protocolo) {
     try {
