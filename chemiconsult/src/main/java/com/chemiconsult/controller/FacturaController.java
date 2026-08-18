@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -58,5 +59,37 @@ public class FacturaController {
     public ResponseEntity<Void> anular(@PathVariable Long id) {
         facturaService.anular(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/adjuntar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> adjuntar(
+            @RequestParam(required = false) Long clienteId,
+            @RequestParam String clienteNombre,
+            @RequestParam(required = false) String clienteCuit,
+            @RequestParam(required = false) String clienteDireccion,
+            @RequestParam(required = false) String condicionIva,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String fechaEmision,
+            @RequestParam(required = false) Long numero,
+            @RequestParam(required = false) Integer puntoVenta,
+            @RequestParam(required = false) Double total,
+            @RequestParam(required = false) MultipartFile archivo) {
+        long id = facturaService.adjuntar(clienteId, clienteNombre, clienteCuit, clienteDireccion,
+                condicionIva, tipo, fechaEmision, numero, puntoVenta, total, archivo);
+        return ResponseEntity.ok(Map.of("id", id));
+    }
+
+    @GetMapping("/cliente/{clienteId}")
+    public List<FacturaResumenTO> listarPorCliente(@PathVariable Long clienteId) {
+        return facturaService.listarPorCliente(clienteId);
+    }
+
+    @GetMapping("/{id}/archivo")
+    public ResponseEntity<byte[]> getArchivo(@PathVariable Long id) {
+        FacturaService.ArchivoFactura a = facturaService.getArchivo(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + a.nombre() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(a.datos());
     }
 }

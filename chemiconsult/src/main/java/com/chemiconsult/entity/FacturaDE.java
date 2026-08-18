@@ -76,6 +76,16 @@ public class FacturaDE {
     @Column(name = "presupuesto_id")
     private Long presupuestoId;
 
+    @Column(name = "es_externa", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean esExterna = false;
+
+    @Column(name = "archivo_nombre", length = 255)
+    private String archivoNombre;
+
+    @Lob
+    @Column(name = "archivo_pdf")
+    private byte[] archivoPdf;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

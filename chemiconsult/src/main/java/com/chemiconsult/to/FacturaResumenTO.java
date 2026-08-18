@@ -28,6 +28,9 @@ public class FacturaResumenTO {
     private String             mensajeError;
     private LocalDateTime      createdAt;
     private List<ItemTO>       items;
+    private Long               clienteId;
+    private boolean            esExterna;
+    private String             archivoNombre;
 
     @Data
     public static class ItemTO {

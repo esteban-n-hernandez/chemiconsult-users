@@ -143,6 +143,36 @@
         </div>
     </div>
 
+    <!-- ══ Panel Facturas ══ -->
+    <div class="panel" style="margin-top:20px;">
+        <div class="panel-header">
+            <h5><i class="bi bi-receipt me-2" style="color:var(--verde);"></i>Mis facturas</h5>
+        </div>
+
+        <div class="panel-body" style="padding:0;">
+            <table class="tabla-muestras" id="tablaFacturas">
+                <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>N°</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>PDF</th>
+                </tr>
+                </thead>
+                <tbody id="tablaFacturasBody">
+                    <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gris);">Cargando…</td></tr>
+                </tbody>
+            </table>
+
+            <div id="sinFacturas" style="display:none;padding:32px;text-align:center;color:var(--gris);">
+                <i class="bi bi-receipt" style="font-size:28px;opacity:.4;"></i>
+                <p style="margin:8px 0 0;font-size:13px;">No hay facturas registradas.</p>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- ══════════════════════════════════

@@ -32,6 +32,12 @@ public class ClienteController {
         return clienteService.getClientes();
     }
 
+    // GET /api/clientes/buscar?q=... - búsqueda live (max 10 resultados)
+    @GetMapping("/buscar")
+    public List<ClienteDE> buscar(@RequestParam String q) {
+        return clienteService.buscar(q);
+    }
+
     // GET /api/clientes/mi-cliente - cliente del usuario autenticado
     @GetMapping("/mi-cliente")
     public ResponseEntity<ClienteDE> getMiCliente(@AuthenticationPrincipal UserDetails principal) {

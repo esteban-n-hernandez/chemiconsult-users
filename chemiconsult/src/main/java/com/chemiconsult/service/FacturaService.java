@@ -10,6 +10,7 @@ import com.chemiconsult.to.FacturaItemTO;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
 import com.chemiconsult.wsmtxca.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import lombok.extern.log4j.Log4j2;
@@ -57,6 +58,7 @@ public class FacturaService {
 
     public record EmitirResult(long id, long numero, String cae, LocalDate caeFechaVencimiento, boolean autorizada) {}
     public record PdfFactura(byte[] pdf, long numero, int puntoVenta, TipoComprobanteEnum tipo) {}
+    public record ArchivoFactura(byte[] datos, String nombre) {}
 
     // ── Emitir ──
 
@@ -174,12 +176,75 @@ public class FacturaService {
                 caeResponse.cae(), caeResponse.caeFechaVencimiento(), caeResponse.autorizado());
     }
 
+    // ── Adjuntar factura externa ──
+
+    @Transactional
+    public long adjuntar(Long clienteId, String clienteNombre, String clienteCuit,
+                         String clienteDireccion, String condicionIva,
+                         String tipo, String fechaEmisionStr,
+                         Long numero, Integer puntoVenta, Double total,
+                         MultipartFile archivo) {
+        if (clienteNombre == null || clienteNombre.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nombre del cliente requerido");
+        }
+        TipoComprobanteEnum tipoEnum = tipo != null ? TipoComprobanteEnum.valueOf(tipo) : TipoComprobanteEnum.B;
+        LocalDate fecha = (fechaEmisionStr != null && !fechaEmisionStr.isBlank())
+                ? LocalDate.parse(fechaEmisionStr) : LocalDate.now();
+
+        FacturaDE f = new FacturaDE();
+        f.setEsExterna(true);
+        f.setClienteId(clienteId);
+        f.setClienteNombre(clienteNombre.toUpperCase());
+        f.setClienteCuit(clienteCuit);
+        f.setClienteDireccion(clienteDireccion);
+        f.setClienteCondicionIVA(condicionIva != null ? CondicionIVAEnum.valueOf(condicionIva) : null);
+        f.setTipoComprobante(tipoEnum);
+        f.setFechaEmision(fecha);
+        f.setNumero(numero != null ? numero : 0L);
+        f.setPuntoVenta(puntoVenta != null ? puntoVenta : 0);
+        f.setTotal(total);
+        f.setSubtotal(null);
+        f.setTotalIva(null);
+        f.setEstado(FacturaEstadoEnum.AUTORIZADA);
+
+        if (archivo != null && !archivo.isEmpty()) {
+            try {
+                f.setArchivoPdf(archivo.getBytes());
+                f.setArchivoNombre(archivo.getOriginalFilename());
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al leer el archivo");
+            }
+        }
+
+        return facturaRepository.save(f).getId();
+    }
+
     // ── Listar ──
 
     @Transactional(readOnly = true)
     public List<FacturaResumenTO> listar() {
-        return facturaRepository.findAllByOrderByNumeroDesc()
+        return facturaRepository.findAllByOrderByFechaEmisionDescNumeroDesc()
                 .stream().map(this::toResumen).toList();
+    }
+
+    // ── Listar por cliente ──
+
+    @Transactional(readOnly = true)
+    public List<FacturaResumenTO> listarPorCliente(Long clienteId) {
+        return facturaRepository.findByClienteIdOrderByFechaEmisionDescNumeroDesc(clienteId)
+                .stream().map(this::toResumen).toList();
+    }
+
+    // ── Obtener archivo adjunto ──
+
+    @Transactional(readOnly = true)
+    public ArchivoFactura getArchivo(Long id) {
+        FacturaDE f = findOrThrow(id);
+        if (!f.isEsExterna() || f.getArchivoPdf() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Esta factura no tiene archivo adjunto");
+        }
+        String nombre = f.getArchivoNombre() != null ? f.getArchivoNombre() : "factura-" + id + ".pdf";
+        return new ArchivoFactura(f.getArchivoPdf(), nombre);
     }
 
     // ── Detalle ──
@@ -230,6 +295,7 @@ public class FacturaService {
         r.setPuntoVenta(e.getPuntoVenta());
         r.setTipoComprobante(e.getTipoComprobante());
         r.setFechaEmision(e.getFechaEmision());
+        r.setClienteId(e.getClienteId());
         r.setClienteNombre(e.getClienteNombre());
         r.setClienteCuit(e.getClienteCuit());
         r.setClienteCondicionIVA(e.getClienteCondicionIVA());
@@ -241,6 +307,8 @@ public class FacturaService {
         r.setEstado(e.getEstado());
         r.setMensajeError(e.getMensajeError());
         r.setCreatedAt(e.getCreatedAt());
+        r.setEsExterna(e.isEsExterna());
+        r.setArchivoNombre(e.getArchivoNombre());
         if (e.getItems() != null) {
             r.setItems(e.getItems().stream().map(i -> {
                 FacturaResumenTO.ItemTO it = new FacturaResumenTO.ItemTO();

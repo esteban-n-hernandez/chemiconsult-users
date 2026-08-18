@@ -375,5 +375,118 @@ document.getElementById("btnLimpiarFecha").addEventListener("click", () => {
     aplicarFiltros();
 });
 
+// ──────────────────────────────────────────
+// FACTURAS DEL CLIENTE
+// ──────────────────────────────────────────
+
+function formatPrecioFact(val) {
+    if (!val && val !== 0) return "—";
+    return "$" + Number(val).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatFechaFact(iso) {
+    if (!iso) return "—";
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+}
+
+function nroFmtFact(pv, num) {
+    if (!num && num !== 0) return "—";
+    return `${String(pv || 0).padStart(4,"0")}-${String(num).padStart(8,"0")}`;
+}
+
+async function cargarFacturas() {
+    const tbody = document.getElementById("tablaFacturasBody");
+    try {
+        const res = await fetch(`${API_CLIENTES_BASE}/factura/cliente/${userId}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        const facturas = await res.json();
+
+        if (!facturas.length) {
+            tbody.innerHTML = "";
+            document.getElementById("sinFacturas").style.display = "";
+            return;
+        }
+        document.getElementById("sinFacturas").style.display = "none";
+
+        tbody.innerHTML = facturas.map(f => {
+            const badge = f.estado === "AUTORIZADA"
+                ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+                     font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;">
+                     <i class="bi bi-check-circle-fill"></i> Autorizada</span>`
+                : f.estado === "ANULADA"
+                ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+                     font-size:.75rem;font-weight:600;background:#f3f4f6;color:#6b7280;text-decoration:line-through;">
+                     Anulada</span>`
+                : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+                     font-size:.75rem;font-weight:600;background:#fee2e2;color:#991b1b;">
+                     Rechazada</span>`;
+
+            const tipoBadge = `<span style="display:inline-flex;align-items:center;justify-content:center;
+                width:26px;height:26px;border-radius:6px;font-weight:800;font-size:.85rem;
+                ${f.tipoComprobante === 'A' ? 'background:#dbeafe;color:#1e40af;'
+                : f.tipoComprobante === 'C' ? 'background:#fef9c3;color:#854d0e;'
+                : 'background:#dcfce7;color:#166534;'}">${f.tipoComprobante}</span>`;
+
+            const nroCol = f.esExterna
+                ? (f.numero && f.numero > 0
+                    ? `<span style="font-family:monospace;font-size:.82rem;">${nroFmtFact(f.puntoVenta, f.numero)}</span>
+                       <i class="bi bi-paperclip" title="Adjuntada" style="font-size:.7rem;color:#9ca3af;margin-left:3px;"></i>`
+                    : `<span style="color:#9ca3af;">—</span>
+                       <i class="bi bi-paperclip" title="Adjuntada" style="font-size:.7rem;color:#9ca3af;margin-left:3px;"></i>`)
+                : `<span style="font-family:monospace;font-size:.82rem;">${nroFmtFact(f.puntoVenta, f.numero)}</span>`;
+
+            let pdfCell = "—";
+            if (f.esExterna && f.archivoNombre) {
+                pdfCell = `<button class="btn-informe fact-pdf-btn" data-id="${f.id}" data-externa="true"
+                    style="padding:4px 10px;font-size:.78rem;">
+                    <i class="bi bi-file-pdf-fill"></i> Ver
+                </button>`;
+            } else if (!f.esExterna) {
+                pdfCell = `<button class="btn-informe fact-pdf-btn" data-id="${f.id}" data-externa="false"
+                    style="padding:4px 10px;font-size:.78rem;">
+                    <i class="bi bi-download"></i> PDF
+                </button>`;
+            }
+
+            return `<tr>
+                <td>${tipoBadge}</td>
+                <td>${nroCol}</td>
+                <td>${formatFechaFact(f.fechaEmision)}</td>
+                <td style="font-weight:600;">${formatPrecioFact(f.total)}</td>
+                <td>${badge}</td>
+                <td>${pdfCell}</td>
+            </tr>`;
+        }).join("");
+
+        document.querySelectorAll(".fact-pdf-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const id = btn.dataset.id;
+                const esExterna = btn.dataset.externa === "true";
+                const url = esExterna
+                    ? `${API_CLIENTES_BASE}/factura/${id}/archivo`
+                    : `${API_CLIENTES_BASE}/factura/${id}/pdf`;
+                try {
+                    const r = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+                    if (!r.ok) throw new Error();
+                    const blob = await r.blob();
+                    const objUrl = URL.createObjectURL(blob);
+                    window.open(objUrl, "_blank");
+                    setTimeout(() => URL.revokeObjectURL(objUrl), 30000);
+                } catch {
+                    alert("No se pudo abrir el archivo.");
+                }
+            });
+        });
+
+    } catch {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:20px;">
+            Error al cargar las facturas.</td></tr>`;
+    }
+}
+
 // ── Init ──
 cargarEstudios();
+cargarFacturas();

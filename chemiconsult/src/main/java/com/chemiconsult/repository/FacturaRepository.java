@@ -10,8 +10,10 @@ import java.util.List;
 
 public interface FacturaRepository extends JpaRepository<FacturaDE, Long> {
 
-    List<FacturaDE> findAllByOrderByNumeroDesc();
+    List<FacturaDE> findAllByOrderByFechaEmisionDescNumeroDesc();
 
-    @Query("SELECT COALESCE(MAX(f.numero), 0) FROM FacturaDE f WHERE f.puntoVenta = :pv AND f.tipoComprobante = :tipo")
+    List<FacturaDE> findByClienteIdOrderByFechaEmisionDescNumeroDesc(Long clienteId);
+
+    @Query("SELECT COALESCE(MAX(f.numero), 0) FROM FacturaDE f WHERE f.puntoVenta = :pv AND f.tipoComprobante = :tipo AND f.esExterna = false")
     long findUltimoNumero(@Param("pv") int puntoVenta, @Param("tipo") TipoComprobanteEnum tipo);
 }

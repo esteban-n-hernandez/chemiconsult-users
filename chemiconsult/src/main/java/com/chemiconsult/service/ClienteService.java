@@ -33,6 +33,12 @@ public class ClienteService {
         return clienteRepository.findByActivoTrue();
     }
 
+    // ── Búsqueda live ──
+    public List<ClienteDE> buscar(String q) {
+        if (q == null || q.isBlank()) return List.of();
+        return clienteRepository.buscar(q.trim());
+    }
+
     // ── Todos ──
     public List<ClienteDE> getClientesTodos() {
         return clienteRepository.findAll();

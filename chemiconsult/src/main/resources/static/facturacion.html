@@ -111,6 +111,9 @@
             padding-right: 30px;
         }
 
+        /* ── Spinner para autocomplete ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         /* ── Tipo comprobante badge ── */
         .tipo-badge {
             display: inline-flex; align-items: center; justify-content: center;
@@ -145,12 +148,15 @@
     <!-- Historial -->
     <div class="panel hist-panel">
         <div class="panel-header">
-            <h5><i class="bi bi-receipt me-2 panel-title-icon-green"></i>Comprobantes emitidos</h5>
+            <h5><i class="bi bi-receipt me-2 panel-title-icon-green"></i>Comprobantes</h5>
             <div style="display:flex;align-items:center;gap:8px;">
-                <button class="btn-pres-secondary" id="btnRefresh" title="Actualizar">
+                <button class="btn-cancelar" id="btnRefresh" title="Actualizar">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
-                <button class="btn-nuevo-pres" id="btnNuevaFactura">
+                <button class="btn-cancelar" id="btnAdjuntarFactura">
+                    <i class="bi bi-paperclip"></i> Adjuntar
+                </button>
+                <button class="btn-guardar" id="btnNuevaFactura">
                     <i class="bi bi-plus-lg"></i> Nueva factura
                 </button>
             </div>
@@ -242,10 +248,6 @@
                             <label>Nombre / Razón social <span class="required">*</span></label>
                             <input type="text" id="nfClienteInput" class="form-control-custom"
                                    placeholder="Buscar cliente…" autocomplete="off"/>
-                            <div id="nfClienteDrop" style="display:none;position:fixed;
-                                background:var(--bg-surface);border:1.5px solid var(--verde);
-                                border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);
-                                z-index:9999;max-height:200px;overflow-y:auto;min-width:260px;"></div>
                         </div>
                         <div class="form-group">
                             <label>Condición IVA</label>
@@ -416,6 +418,110 @@
     <i id="toastIcon" class="bi bi-check-circle-fill success" style="font-size:1.2rem;"></i>
     <span id="toastMsg" style="font-size:.9rem;">—</span>
 </div>
+
+<!-- ================================================================
+     MODAL: ADJUNTAR FACTURA EXTERNA
+     ================================================================ -->
+<div class="modal-overlay" id="modalAdjuntar">
+    <div class="modal-box" style="max-width:640px;">
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-paperclip"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Facturación</div>
+                <h5>Adjuntar factura externa</h5>
+            </div>
+            <button class="modal-close" id="adjBtnCerrar"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <!-- Cliente -->
+            <div class="form-group" style="position:relative;">
+                <label>Cliente <span class="required">*</span></label>
+                <input type="text" id="adjClienteInput" class="form-control-custom"
+                       placeholder="Buscar cliente…" autocomplete="off"/>
+            </div>
+
+            <!-- Tipo + Fecha -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tipo de comprobante</label>
+                    <select id="adjTipo" class="form-control-custom">
+                        <option value="A">Factura A</option>
+                        <option value="B" selected>Factura B</option>
+                        <option value="C">Factura C</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de emisión</label>
+                    <input type="date" id="adjFecha" class="form-control-custom"/>
+                </div>
+            </div>
+
+            <!-- N° / Punto de venta / Total -->
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Punto de venta <span class="task-opt">(opcional)</span></label>
+                    <input type="number" id="adjPuntoVenta" class="form-control-custom"
+                           placeholder="0001" min="0"/>
+                </div>
+                <div class="form-group">
+                    <label>N° comprobante <span class="task-opt">(opcional)</span></label>
+                    <input type="number" id="adjNumero" class="form-control-custom"
+                           placeholder="00000001" min="0"/>
+                </div>
+                <div class="form-group">
+                    <label>Total <span class="task-opt">(opcional)</span></label>
+                    <input type="number" id="adjTotal" class="form-control-custom"
+                           placeholder="0.00" min="0" step="0.01"/>
+                </div>
+            </div>
+
+            <!-- Archivo PDF -->
+            <div class="form-group">
+                <label>Archivo PDF <span class="task-opt">(opcional)</span></label>
+                <div id="adjDropzone" style="
+                    border: 2px dashed var(--color-border-tertiary); border-radius: 10px;
+                    padding: 24px 16px; text-align: center; cursor: pointer;
+                    transition: border-color .15s, background .15s;
+                    background: var(--bg-subtle, #f9fafb);">
+                    <i class="bi bi-file-pdf" style="font-size:1.8rem;color:var(--color-text-tertiary);"></i>
+                    <p style="margin:6px 0 4px;font-size:13px;font-weight:500;color:var(--color-text-secondary);">
+                        Arrastrá el PDF o hacé clic para seleccionar
+                    </p>
+                    <p style="margin:0;font-size:11px;color:var(--color-text-tertiary);">Máx. 20 MB</p>
+                    <input type="file" id="adjArchivo" accept="application/pdf" style="display:none;"/>
+                </div>
+                <div id="adjArchivoNombre" style="display:none;
+                    margin-top:8px;padding:8px 12px;border-radius:8px;
+                    background:var(--verde-suave);border:1.5px solid var(--verde);
+                    font-size:12px;font-weight:500;display:none;align-items:center;gap:8px;">
+                    <i class="bi bi-file-pdf-fill" style="color:var(--verde);"></i>
+                    <span id="adjArchivoLabel"></span>
+                    <button type="button" id="adjArchivoQuitar"
+                        style="margin-left:auto;background:none;border:none;cursor:pointer;
+                        color:var(--color-text-secondary);padding:0;line-height:1;">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancelar" id="adjBtnCancelar">Cancelar</button>
+            <button class="btn-guardar" id="adjBtnGuardar">
+                <i class="bi bi-paperclip"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Dropdowns de autocomplete — fuera de los modales para evitar el efecto transform -->
+<div id="nfClienteDrop" style="display:none;position:fixed;
+    background:var(--bg-surface);border:1.5px solid var(--color-border-tertiary);
+    border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);
+    z-index:10000;max-height:240px;overflow-y:auto;min-width:280px;"></div>
+<div id="adjClienteDrop" style="display:none;position:fixed;
+    background:var(--bg-surface);border:1.5px solid var(--color-border-tertiary);
+    border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);
+    z-index:10000;max-height:240px;overflow-y:auto;min-width:280px;"></div>
 
 <script src="js/config.js"></script>
 <script src="js/sidebar.js"></script>
