@@ -33,8 +33,7 @@ public class AnalisisService {
     private final NumeradorService    numeradorService;
     private final BrevoEmailService   brevoEmailService;
     private final MetodologiaRepository metodologiaRepository;
-    private final ParametroMetodologiaRepository parametroMetodologiaRepository;
-    private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
+    private final EstudiosMapper estudiosMapper;
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final ClienteContactoRepository contactoRepository;
 
@@ -572,8 +571,7 @@ public class AnalisisService {
                            NumeradorService numeradorService,
                            BrevoEmailService brevoEmailService,
                            MetodologiaRepository metodologiaRepository,
-                           ParametroMetodologiaRepository parametroMetodologiaRepository,
-                           com.chemiconsult.mapper.EstudiosMapper estudiosMapper,
+                           EstudiosMapper estudiosMapper,
                            AnalisisArchivoRepository analisisArchivoRepository,
                            ClienteContactoRepository contactoRepository) {
         this.analisisRepository = analisisRepository;
@@ -587,7 +585,6 @@ public class AnalisisService {
         this.numeradorService = numeradorService;
         this.brevoEmailService = brevoEmailService;
         this.metodologiaRepository = metodologiaRepository;
-        this.parametroMetodologiaRepository = parametroMetodologiaRepository;
         this.estudiosMapper = estudiosMapper;
         this.analisisArchivoRepository = analisisArchivoRepository;
         this.contactoRepository = contactoRepository;

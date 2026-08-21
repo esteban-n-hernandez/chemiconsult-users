@@ -394,7 +394,7 @@ public class InformeService {
         tabla.setSpacingAfter(6);
         tabla.setHeaderRows(1);
 
-        Font fHeader = new Font(Font.HELVETICA, 9, Font.BOLD, new Color(0, 0, 0));
+        Font fHeader = new Font(Font.HELVETICA, 8, Font.BOLD, new Color(0, 0, 0));
         Color headerBg = new Color(226, 239, 217);
 
         addHeaderCell(tabla, "Analito", fHeader, headerBg);
@@ -405,9 +405,9 @@ public class InformeService {
         }
         addHeaderCell(tabla, "Metodología", fHeader, headerBg);
 
-        Font fParam = new Font(Font.HELVETICA, 9, Font.NORMAL);
-        Font fResult = new Font(Font.HELVETICA, 9, Font.BOLD);
-        Font fSmall = new Font(Font.HELVETICA, 8, Font.NORMAL);
+        Font fParam = new Font(Font.HELVETICA, 8, Font.NORMAL);
+        Font fResult = new Font(Font.HELVETICA, 8, Font.BOLD);
+        Font fSmall = new Font(Font.HELVETICA, 7, Font.NORMAL);
 
         for (ParametroResultadoTO p : params) {
             addDataCell(tabla, nvl(p.getNombre()), fParam, Element.ALIGN_LEFT);
@@ -619,9 +619,9 @@ public class InformeService {
         titulo.setSpacingAfter(6);
         doc.add(titulo);
 
-        PdfPTable tabla = new PdfPTable(6);
+        PdfPTable tabla = new PdfPTable(5);
         tabla.setWidthPercentage(100);
-        tabla.setWidths(new float[]{20f, 14f, 14f, 14f, 24f, 14f});
+        tabla.setWidths(new float[]{28f, 16f, 16f, 16f, 24f});
         tabla.setSpacingAfter(8);
         tabla.setHeaderRows(1);
 
@@ -631,7 +631,6 @@ public class InformeService {
         addHeaderCell(tabla, "Marca", fHeader, headerBg);
         addHeaderCell(tabla, "Modelo", fHeader, headerBg);
         addHeaderCell(tabla, "N° Serie", fHeader, headerBg);
-        addHeaderCell(tabla, "Certificación", fHeader, headerBg);
         addHeaderCell(tabla, "Vencimiento", fHeader, headerBg);
 
         Font fData = new Font(Font.HELVETICA, 9, Font.NORMAL);
@@ -640,7 +639,6 @@ public class InformeService {
             addDataCell(tabla, nvl(eq.getMarca()), fData, Element.ALIGN_CENTER);
             addDataCell(tabla, nvl(eq.getModelo()), fData, Element.ALIGN_CENTER);
             addDataCell(tabla, nvl(eq.getNroSerie()), fData, Element.ALIGN_CENTER);
-            addDataCell(tabla, nvl(eq.getCertificacion()), fData, Element.ALIGN_LEFT);
             String venc = "-";
             if (eq.getVencimiento() != null) {
                 String raw = eq.getVencimiento().format(FMT_MES_AIO);
