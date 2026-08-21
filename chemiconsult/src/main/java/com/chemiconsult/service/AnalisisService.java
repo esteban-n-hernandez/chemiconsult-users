@@ -66,6 +66,7 @@ public class AnalisisService {
         return tos;
     }
 
+    @Transactional(readOnly = true)
     public List<EstudioTO> getEstudiosByID(Long userId) {
         ClienteDE cliente = clienteRepository.findByUser_Id(userId)
                 .orElseGet(() -> {
