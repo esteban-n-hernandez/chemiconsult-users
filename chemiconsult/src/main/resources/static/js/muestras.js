@@ -1,4 +1,4 @@
-// js/muestras.js
+﻿// js/muestras.js
 "use strict";
 
 const API_URL = `${API_BASE}/api`;
@@ -1425,9 +1425,8 @@ function aplicarFiltrosYBusqueda() {
 // ============================================================
 
 const AVANZAR_ESTADO_MAP = {
-    PENDIENTE:                  { label: "Iniciar análisis",  icono: "bi-play-circle" },
-    DEMORADA:                   { label: "Reactivar",         icono: "bi-arrow-counterclockwise" },
-    INFORME_PENDIENTE_REVISION: { label: "Aprobar informe",   icono: "bi-check-circle" },
+    PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
+    DEMORADA:  { label: "Reactivar",        icono: "bi-arrow-counterclockwise" },
 };
 
 function buildAccionesHTML(m) {
@@ -1447,6 +1446,12 @@ function buildAccionesHTML(m) {
         <button class="btn-accion" title="${avanzar.label}"
                 onclick="avanzarEstadoMuestra(${m.id}, '${m.estado}', this)">
             <i class="bi ${avanzar.icono}"></i>
+        </button>` : '';
+
+    const btnVerInforme = m.estado === "INFORME_PENDIENTE_REVISION" ? `
+        <button class="btn-accion btn-accion-verde" title="Ver / aprobar informe"
+                onclick="verInformeEnRevision(${m.id})">
+            <i class="bi bi-file-earmark-check"></i>
         </button>` : '';
 
     const btnEditar = !esCancelado ? `
@@ -1474,7 +1479,7 @@ function buildAccionesHTML(m) {
         </button>` : '';
 
     return `<td class="acciones-celda">
-        ${btnVerDetalle}${btnAvanzar}${btnEditar}${btnArchivos}${btnWord}${btnCancelar}
+        ${btnVerDetalle}${btnAvanzar}${btnVerInforme}${btnEditar}${btnArchivos}${btnWord}${btnCancelar}
     </td>`;
 }
 
@@ -1508,56 +1513,7 @@ function renderizarTablaMuestras(lista) {
             <td>${badgeHTML(m.estado)}</td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
-<<<<<<< HEAD
-            <td class="acciones-celda">
-                <button class="btn-accion" title="Ver detalle"
-                        onclick="verDetalleMuestra(${m.id})">
-                    <i class="bi bi-eye"></i>
-                </button>
-                ${avanzar ? `
-                <button class="btn-accion" title="${avanzar.label}"
-                        onclick="avanzarEstadoMuestra(${m.id}, '${m.estado}', this)">
-                    <i class="bi ${avanzar.icono}"></i>
-                </button>` : ''}
-                ${!esCancelado ? `
-                <button class="btn-accion" title="Editar datos"
-                        onclick="abrirEdicionMuestra(${m.id})">
-                    <i class="bi bi-pencil"></i>
-                </button>` : ''}
-                ${puedeAdjuntar ? `
-                <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
-                        onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
-                    <i class="bi bi-paperclip"></i>
-                </button>
-                <div class="informe-dropdown" id="inf-drop-${m.id}">
-                    <button class="btn-accion btn-accion-informe" title="Generar informe"
-                            onclick="toggleInformeDropdown(${m.id}, event)">
-                        <i class="bi bi-file-earmark-plus"></i>
-                    </button>
-                    <div class="informe-dropdown-panel" id="inf-panel-${m.id}">
-                        <button class="informe-dropdown-item"
-                                onclick="onGenerarInformeDesdeTabla(${m.id}); cerrarInformeDropdowns()">
-                            <i class="bi bi-file-earmark-pdf-fill" style="color:#ef4444;"></i>
-                            <span>Informe cliente</span>
-                            <small>PDF</small>
-                        </button>
-                        <button class="informe-dropdown-item"
-                                onclick="descargarWord(${m.id}, '${protocolo}'); cerrarInformeDropdowns()">
-                            <i class="bi bi-file-earmark-word-fill" style="color:#2563eb;"></i>
-                            <span>Informe interno</span>
-                            <small>Word</small>
-                        </button>
-                    </div>
-                </div>` : ''}
-                ${!esCancelado ? `
-                <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
-                        onclick="abrirModalCancelar(${m.id}, '${codigo}')">
-                    <i class="bi bi-x-circle"></i>
-                </button>` : ''}
-            </td>
-=======
             ${buildAccionesHTML(m)}
->>>>>>> fd0f995 (mejoras muestra)
         `;
         tbody.appendChild(fila);
     });
@@ -1761,15 +1717,6 @@ function cerrarModalDetalle() {
 function badgeHTML(estado) {
     const e = (estado || "").toUpperCase();
     const classMap = {
-<<<<<<< HEAD
-        PENDIENTE:                   "badge-pendiente",
-        EN_PROCESO:                  "badge-proceso",
-        COMPLETO_SIN_INFORME:        "badge-completo-sin-informe",
-        DEMORADA:                    "badge-demorada",
-        INFORME_PENDIENTE_REVISION:  "badge-informe-pendiente-rev",
-        COMPLETO:                    "badge-informe",
-        CANCELADO:                   "badge-cancelado",
-=======
         PENDIENTE:                  "badge-pendiente",
         EN_PROCESO:                 "badge-proceso",
         COMPLETO_SIN_INFORME:       "badge-completo-sin-informe",
@@ -1777,7 +1724,6 @@ function badgeHTML(estado) {
         DEMORADA:                   "badge-demorada",
         COMPLETO:                   "badge-informe",
         CANCELADO:                  "badge-cancelado",
->>>>>>> fd0f995 (mejoras muestra)
     };
     const cls = classMap[e] || "";
     const lbl = labelEstadoDetalle(e);
@@ -1789,13 +1735,8 @@ function labelEstadoDetalle(estado) {
         PENDIENTE:                  "Pendiente",
         EN_PROCESO:                 "En proceso",
         COMPLETO_SIN_INFORME:       "Completo sin informe",
-<<<<<<< HEAD
-        DEMORADA:                   "Demorada",
         INFORME_PENDIENTE_REVISION: "Informe pendiente revisión",
-=======
-        INFORME_PENDIENTE_REVISION: "Informe en revisión",
         DEMORADA:                   "Demorada",
->>>>>>> fd0f995 (mejoras muestra)
         COMPLETO:                   "Completo",
         CANCELADO:                  "Cancelado",
     };
@@ -2233,14 +2174,18 @@ function mostrarAutoGuardadoStatus(estado) {
 
 // ── Modal de selección de equipos ────────────────────────────
 function abrirModalEquipos() {
-    const overlay = document.getElementById("modalEquiposInforme");
-    const lista   = document.getElementById("equiposInformeList");
-    const loading = document.getElementById("equiposInformeLoading");
-    const vacio   = document.getElementById("equiposInformeVacio");
+    const overlay      = document.getElementById("modalEquiposInforme");
+    const lista        = document.getElementById("equiposInformeList");
+    const loading      = document.getElementById("equiposInformeLoading");
+    const vacio        = document.getElementById("equiposInformeVacio");
+    const lblTodos     = document.getElementById("equiposSeleccionarTodos");
+    const chkTodos     = document.getElementById("checkSeleccionarTodos");
 
-    lista.style.display   = "none";
-    loading.style.display = "block";
-    vacio.style.display   = "none";
+    lista.style.display    = "none";
+    loading.style.display  = "block";
+    vacio.style.display    = "none";
+    lblTodos.style.display = "none";
+    chkTodos.checked       = false;
     overlay.classList.add("visible");
 
     fetchConAuth(`${API_URL}/equipos`)
@@ -2260,7 +2205,16 @@ function abrirModalEquipos() {
                         ${eq.certificacion ? `<br><span style="font-size:11px;color:var(--color-text-secondary);">${escHtml(eq.certificacion)}</span>` : ''}
                     </span>
                 </label>`).join('');
-            lista.style.display = "flex";
+            lista.style.display    = "flex";
+            lblTodos.style.display = "flex";
+
+            chkTodos.addEventListener("change", () => {
+                document.querySelectorAll(".equipo-check").forEach(cb => cb.checked = chkTodos.checked);
+            });
+            lista.addEventListener("change", () => {
+                const todos = document.querySelectorAll(".equipo-check");
+                chkTodos.checked = [...todos].every(cb => cb.checked);
+            });
         })
         .catch(() => {
             loading.style.display = "none";
@@ -2311,6 +2265,7 @@ let _previewEquipoIds             = [];
 let _previewIncluirConclusion     = true;
 let _previewIncluirConclusionAuto = true;
 let _previewBlobUrl               = null;
+let _previewModoRevision          = false;
 
 function _getEquiposSeleccionados() {
     return Array.from(document.querySelectorAll(".equipo-check:checked")).map(cb => Number(cb.value));
@@ -2370,7 +2325,8 @@ async function confirmarInformeDefinitivo() {
         }
 
         mostrarToast("Informe confirmado. El cliente ya puede verlo.");
-        cerrarModalDetalle();
+        if (_previewModoRevision) descartarPreview();
+        else cerrarModalDetalle();
         await cargarMuestrasActivas();
 
     } catch (err) {
@@ -2423,7 +2379,57 @@ function descartarPreview() {
     frame.src = "";
     frame.style.display = "none";
     if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
+    if (_previewModoRevision) {
+        document.getElementById("previewInformeTitulo").textContent = "Informe";
+        document.getElementById("previewInformeConfirmar").innerHTML = '<i class="bi bi-cloud-check-fill"></i> Confirmar y guardar';
+        document.getElementById("previewInformeDescartar").innerHTML = '<i class="bi bi-x-circle"></i> Descartar';
+        _previewModoRevision = false;
+    }
 }
+
+window.verInformeEnRevision = async function(id) {
+    detalleAnalisisId = id;
+    _previewModoRevision = true;
+
+    const loading = document.getElementById("previewInformeLoading");
+    const frame   = document.getElementById("previewInformeFrame");
+
+    document.getElementById("previewInformeTitulo").textContent = "Revisión de informe";
+    document.getElementById("previewInformeConfirmar").innerHTML = '<i class="bi bi-check-circle-fill"></i> Aprobar informe';
+    document.getElementById("previewInformeDescartar").innerHTML = '<i class="bi bi-x-circle"></i> Cerrar';
+
+    loading.style.display = "flex";
+    frame.style.display   = "none";
+    frame.src             = "";
+    document.getElementById("modalPreviewInforme").classList.add("visible");
+
+    try {
+        const archResp = await fetchConAuth(`${API_URL}/estudios/${id}/archivos`);
+        if (!archResp.ok) throw new Error(`HTTP ${archResp.status}`);
+        const archivos = await archResp.json();
+        const informe  = [...archivos].reverse().find(a => a.tipo === "INFORME");
+
+        if (!informe) {
+            mostrarToast("No se encontró el informe generado.", true);
+            descartarPreview();
+            return;
+        }
+
+        const pdfResp = await fetchConAuth(`${API_URL}/estudios/${id}/archivos/${informe.id}`);
+        if (!pdfResp.ok) throw new Error(`HTTP ${pdfResp.status}`);
+        const blob = await pdfResp.blob();
+        _previewBlobUrl = URL.createObjectURL(blob);
+
+        frame.src             = _previewBlobUrl;
+        loading.style.display = "none";
+        frame.style.display   = "block";
+
+    } catch (err) {
+        console.error("Error cargando informe para revisión:", err);
+        mostrarToast("Error al cargar el informe.", true);
+        descartarPreview();
+    }
+};
 
 // Listeners del modal de equipos
 document.addEventListener("DOMContentLoaded", () => {
@@ -2442,7 +2448,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("previewInformeClose").addEventListener("click", descartarPreview);
     document.getElementById("previewInformeDescartar").addEventListener("click", descartarPreview);
-    document.getElementById("previewInformeConfirmar").addEventListener("click", confirmarInforme);
+    document.getElementById("previewInformeConfirmar").addEventListener("click", () => {
+        if (_previewModoRevision) confirmarInformeDefinitivo();
+        else confirmarInforme();
+    });
     document.getElementById("modalPreviewInforme").addEventListener("click", e => {
         if (e.target === document.getElementById("modalPreviewInforme")) descartarPreview();
     });
