@@ -1423,6 +1423,61 @@ function aplicarFiltrosYBusqueda() {
 // ============================================================
 // 11. RENDER DE LA TABLA CON PAGINACIÓN
 // ============================================================
+
+const AVANZAR_ESTADO_MAP = {
+    PENDIENTE:                  { label: "Iniciar análisis",  icono: "bi-play-circle" },
+    DEMORADA:                   { label: "Reactivar",         icono: "bi-arrow-counterclockwise" },
+    INFORME_PENDIENTE_REVISION: { label: "Aprobar informe",   icono: "bi-check-circle" },
+};
+
+function buildAccionesHTML(m) {
+    const codigo      = m.nroProtocolo || m.id || "S/N";
+    const protocolo   = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
+    const esCancelado = m.estado === "CANCELADO";
+    const puedeAdjuntar = m.estado === "COMPLETO" || m.estado === "COMPLETO_SIN_INFORME" || m.estado === "INFORME_PENDIENTE_REVISION";
+    const avanzar     = AVANZAR_ESTADO_MAP[m.estado];
+
+    const btnVerDetalle = `
+        <button class="btn-accion" title="Ver detalle"
+                onclick="verDetalleMuestra(${m.id})">
+            <i class="bi bi-eye"></i>
+        </button>`;
+
+    const btnAvanzar = avanzar ? `
+        <button class="btn-accion" title="${avanzar.label}"
+                onclick="avanzarEstadoMuestra(${m.id}, '${m.estado}', this)">
+            <i class="bi ${avanzar.icono}"></i>
+        </button>` : '';
+
+    const btnEditar = !esCancelado ? `
+        <button class="btn-accion" title="Editar datos"
+                onclick="abrirEdicionMuestra(${m.id})">
+            <i class="bi bi-pencil"></i>
+        </button>` : '';
+
+    const btnArchivos = puedeAdjuntar ? `
+        <button class="btn-accion btn-accion-gris" title="Ver / subir archivos"
+                onclick="abrirAltaInforme(${m.id}, '${protocolo}')">
+            <i class="bi bi-paperclip"></i>
+        </button>` : '';
+
+    const btnWord = m.estado === "COMPLETO" ? `
+        <button class="btn-accion btn-accion-word" title="Descargar Word (.docx)"
+                onclick="descargarWord(${m.id}, '${protocolo}')">
+            <i class="bi bi-file-earmark-word"></i>
+        </button>` : '';
+
+    const btnCancelar = !esCancelado ? `
+        <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
+                onclick="abrirModalCancelar(${m.id}, '${codigo}')">
+            <i class="bi bi-x-circle"></i>
+        </button>` : '';
+
+    return `<td class="acciones-celda">
+        ${btnVerDetalle}${btnAvanzar}${btnEditar}${btnArchivos}${btnWord}${btnCancelar}
+    </td>`;
+}
+
 function renderizarTablaMuestras(lista) {
     const tbody = document.getElementById("tablaMuestrasBody");
     tbody.innerHTML = "";
@@ -1446,15 +1501,6 @@ function renderizarTablaMuestras(lista) {
     pagina.forEach(m => {
         const fila = document.createElement("tr");
         const codigo = m.nroProtocolo || m.id || "S/N";
-        const puedeGenerar   = m.estado === "COMPLETO_SIN_INFORME";
-        const esCancelado    = m.estado === "CANCELADO";
-        const puedeAdjuntar  = m.estado === "COMPLETO" || m.estado === "COMPLETO_SIN_INFORME";
-        const protocolo     = (m.nroProtocolo || m.id || "").toString().replace(/'/g, "");
-        const avanzarMap = {
-            PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
-            DEMORADA:   { label: "Reactivar",        icono: "bi-arrow-counterclockwise" },
-        };
-        const avanzar = avanzarMap[m.estado];
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
             <td>${m.cliente || '—'}</td>
@@ -1462,6 +1508,7 @@ function renderizarTablaMuestras(lista) {
             <td>${badgeHTML(m.estado)}</td>
             <td>${formatearFecha(m.fechaIngreso)}</td>
             <td>${formatearFecha(m.fechaEntrega)}</td>
+<<<<<<< HEAD
             <td class="acciones-celda">
                 <button class="btn-accion" title="Ver detalle"
                         onclick="verDetalleMuestra(${m.id})">
@@ -1508,6 +1555,9 @@ function renderizarTablaMuestras(lista) {
                     <i class="bi bi-x-circle"></i>
                 </button>` : ''}
             </td>
+=======
+            ${buildAccionesHTML(m)}
+>>>>>>> fd0f995 (mejoras muestra)
         `;
         tbody.appendChild(fila);
     });
@@ -1517,9 +1567,10 @@ function renderizarTablaMuestras(lista) {
 
 window.avanzarEstadoMuestra = async function(id, estadoActual, btn) {
     const mapa = {
-        PENDIENTE: "EN_PROCESO",
-        EN_PROCESO: "COMPLETO_SIN_INFORME",
-        DEMORADA: "EN_PROCESO",
+        PENDIENTE:                  "EN_PROCESO",
+        EN_PROCESO:                 "COMPLETO_SIN_INFORME",
+        DEMORADA:                   "EN_PROCESO",
+        INFORME_PENDIENTE_REVISION: "COMPLETO",
     };
     const siguiente = mapa[estadoActual];
     if (!siguiente) return;
@@ -1532,7 +1583,11 @@ window.avanzarEstadoMuestra = async function(id, estadoActual, btn) {
             body: JSON.stringify({ estado: siguiente }),
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const labels = { EN_PROCESO: "En proceso", COMPLETO_SIN_INFORME: "Completo sin informe" };
+        const labels = {
+            EN_PROCESO:                 "En proceso",
+            COMPLETO_SIN_INFORME:       "Completo sin informe",
+            COMPLETO:                   "Completo",
+        };
         mostrarToast(`Estado actualizado: ${labels[siguiente] || siguiente}`);
         await cargarMuestrasActivas();
     } catch (err) {
@@ -1706,6 +1761,7 @@ function cerrarModalDetalle() {
 function badgeHTML(estado) {
     const e = (estado || "").toUpperCase();
     const classMap = {
+<<<<<<< HEAD
         PENDIENTE:                   "badge-pendiente",
         EN_PROCESO:                  "badge-proceso",
         COMPLETO_SIN_INFORME:        "badge-completo-sin-informe",
@@ -1713,6 +1769,15 @@ function badgeHTML(estado) {
         INFORME_PENDIENTE_REVISION:  "badge-informe-pendiente-rev",
         COMPLETO:                    "badge-informe",
         CANCELADO:                   "badge-cancelado",
+=======
+        PENDIENTE:                  "badge-pendiente",
+        EN_PROCESO:                 "badge-proceso",
+        COMPLETO_SIN_INFORME:       "badge-completo-sin-informe",
+        INFORME_PENDIENTE_REVISION: "badge-informe-revision",
+        DEMORADA:                   "badge-demorada",
+        COMPLETO:                   "badge-informe",
+        CANCELADO:                  "badge-cancelado",
+>>>>>>> fd0f995 (mejoras muestra)
     };
     const cls = classMap[e] || "";
     const lbl = labelEstadoDetalle(e);
@@ -1724,8 +1789,13 @@ function labelEstadoDetalle(estado) {
         PENDIENTE:                  "Pendiente",
         EN_PROCESO:                 "En proceso",
         COMPLETO_SIN_INFORME:       "Completo sin informe",
+<<<<<<< HEAD
         DEMORADA:                   "Demorada",
         INFORME_PENDIENTE_REVISION: "Informe pendiente revisión",
+=======
+        INFORME_PENDIENTE_REVISION: "Informe en revisión",
+        DEMORADA:                   "Demorada",
+>>>>>>> fd0f995 (mejoras muestra)
         COMPLETO:                   "Completo",
         CANCELADO:                  "Cancelado",
     };
