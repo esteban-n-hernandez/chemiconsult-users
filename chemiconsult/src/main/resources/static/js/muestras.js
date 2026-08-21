@@ -1426,7 +1426,6 @@ function aplicarFiltrosYBusqueda() {
 
 const AVANZAR_ESTADO_MAP = {
     PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
-    DEMORADA:  { label: "Reactivar",        icono: "bi-arrow-counterclockwise" },
 };
 
 function buildAccionesHTML(m) {
@@ -1505,6 +1504,7 @@ function renderizarTablaMuestras(lista) {
 
     pagina.forEach(m => {
         const fila = document.createElement("tr");
+        if (m.estado === "DEMORADA") fila.classList.add("fila-demorada");
         const codigo = m.nroProtocolo || m.id || "S/N";
         fila.innerHTML = `
             <td><strong>${codigo}</strong></td>
@@ -1525,7 +1525,6 @@ window.avanzarEstadoMuestra = async function(id, estadoActual, btn) {
     const mapa = {
         PENDIENTE:                  "EN_PROCESO",
         EN_PROCESO:                 "COMPLETO_SIN_INFORME",
-        DEMORADA:                   "EN_PROCESO",
         INFORME_PENDIENTE_REVISION: "COMPLETO",
     };
     const siguiente = mapa[estadoActual];
@@ -1747,7 +1746,6 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
     document.getElementById("detalleProtocolo").textContent = d.nroProtocolo || `#${d.id}`;
 
     const btnGenerar   = document.getElementById("btnGenerarInforme");
-    const btnConfirmar = document.getElementById("btnConfirmarInforme");
     const btnEditar    = document.getElementById("btnEditarResultados");
     const statusEl     = document.getElementById("autoGuardadoStatus");
     const esCancelado  = d.estado === "CANCELADO";
@@ -1756,8 +1754,6 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
 
     modoEdicionCompleto = false;
     detalleEstadoActual = d.estado;
-
-    if (btnConfirmar) btnConfirmar.style.display = "none";
 
     if (esCancelado) {
         btnGenerar.style.display = "none";
@@ -1769,7 +1765,6 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
         btnGenerar.innerHTML = '<i class="bi bi-arrow-repeat"></i> Regenerar informe';
         btnGenerar.title = "";
         btnEditar.style.display = "";
-        if (btnConfirmar) btnConfirmar.style.display = "";
         if (statusEl) statusEl.style.display = "";
     } else if (esCompleto) {
         btnGenerar.style.display = "";
@@ -2309,10 +2304,9 @@ async function ejecutarGeneracionInforme(equipoIds) {
 }
 
 async function confirmarInformeDefinitivo() {
-    const btn = document.getElementById("btnConfirmarInforme");
-    const textoOrig = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Confirmando…`;
+    const btn = document.getElementById("previewInformeConfirmar");
+    const textoOrig = btn ? btn.innerHTML : "";
+    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Confirmando…`; }
 
     try {
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/confirmar-informe`, {
@@ -2325,15 +2319,13 @@ async function confirmarInformeDefinitivo() {
         }
 
         mostrarToast("Informe confirmado. El cliente ya puede verlo.");
-        if (_previewModoRevision) descartarPreview();
-        else cerrarModalDetalle();
+        descartarPreview();
         await cargarMuestrasActivas();
 
     } catch (err) {
         console.error("Error confirmando informe:", err);
         mostrarToast(`Error al confirmar el informe: ${err.message}`, true);
-        btn.disabled = false;
-        btn.innerHTML = textoOrig;
+        if (btn) { btn.disabled = false; btn.innerHTML = textoOrig; }
     }
 }
 

@@ -36,6 +36,7 @@ public class AnalisisService {
     private final ParametroMetodologiaRepository parametroMetodologiaRepository;
     private final com.chemiconsult.mapper.EstudiosMapper estudiosMapper;
     private final AnalisisArchivoRepository analisisArchivoRepository;
+    private final ClienteContactoRepository contactoRepository;
 
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
@@ -68,7 +69,11 @@ public class AnalisisService {
 
     public List<EstudioTO> getEstudiosByID(Long userId) {
         ClienteDE cliente = clienteRepository.findByUser_Id(userId)
-                .orElseThrow(() -> new RuntimeException("No se encontró un cliente asociado a este usuario"));
+                .orElseGet(() -> {
+                    com.chemiconsult.entity.ClienteContactoDE contacto = contactoRepository.findByUser_Id(userId)
+                            .orElseThrow(() -> new RuntimeException("No se encontró un cliente asociado a este usuario"));
+                    return contacto.getCliente();
+                });
 
         List<EstudioTO> tos = analisisRepository.findAllByCliente(cliente)
                 .stream()
@@ -569,7 +574,8 @@ public class AnalisisService {
                            MetodologiaRepository metodologiaRepository,
                            ParametroMetodologiaRepository parametroMetodologiaRepository,
                            com.chemiconsult.mapper.EstudiosMapper estudiosMapper,
-                           AnalisisArchivoRepository analisisArchivoRepository) {
+                           AnalisisArchivoRepository analisisArchivoRepository,
+                           ClienteContactoRepository contactoRepository) {
         this.analisisRepository = analisisRepository;
         this.clienteRepository = clienteRepository;
         this.matrizRepository = matrizRepository;
@@ -584,5 +590,6 @@ public class AnalisisService {
         this.parametroMetodologiaRepository = parametroMetodologiaRepository;
         this.estudiosMapper = estudiosMapper;
         this.analisisArchivoRepository = analisisArchivoRepository;
+        this.contactoRepository = contactoRepository;
     }
 }

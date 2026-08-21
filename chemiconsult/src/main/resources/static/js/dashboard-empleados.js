@@ -1328,7 +1328,6 @@ function renderPage() {
             const AVANZAR_MAP = {
                 PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
                 EN_PROCESO: { label: "Marcar completo", icono: "bi-check2-circle" },
-                DEMORADA: { label: "Reactivar", icono: "bi-arrow-counterclockwise" },
             };
             if (AVANZAR_MAP[estadoNorm]) {
                 const av = AVANZAR_MAP[estadoNorm];
@@ -1356,7 +1355,7 @@ function renderPage() {
             }
 
             const row = `
-                    <tr data-estado="${(m.estado || "").toString().toUpperCase()}" data-id="${m.id}">
+                    <tr data-estado="${(m.estado || "").toString().toUpperCase()}" data-id="${m.id}" class="${estadoNorm === 'DEMORADA' ? 'fila-demorada' : ''}">
                         <td><strong>${m.codigo}</strong></td>
                         <td>${m.cliente}</td>
                         <td>${m.tipo}</td>

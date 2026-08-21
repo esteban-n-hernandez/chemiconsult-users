@@ -4,6 +4,8 @@ import com.chemiconsult.entity.ClienteDE;
 import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.enums.RolEnum;
 import com.chemiconsult.mapper.ClienteMapper;
+import com.chemiconsult.entity.ClienteContactoDE;
+import com.chemiconsult.repository.ClienteContactoRepository;
 import com.chemiconsult.repository.ClienteRepository;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.to.AsignarUsuarioTO;
@@ -21,6 +23,9 @@ public class ClienteService {
 
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private ClienteContactoRepository contactoRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -103,11 +108,19 @@ public class ClienteService {
     }
 
     // ── Cliente por usuario logueado ──
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ClienteDE getClientePorEmail(String email) {
         UserDE user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
-        return clienteRepository.findByUser_Id(user.getId())
+
+        // 1. Usuario directo de empresa
+        var clienteDirecto = clienteRepository.findByUser_Id(user.getId());
+        if (clienteDirecto.isPresent()) return clienteDirecto.get();
+
+        // 2. Usuario de contacto — retorna el cliente (empresa) al que pertenece
+        ClienteContactoDE contacto = contactoRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new RuntimeException("No hay cliente asociado a este usuario"));
+        return contacto.getCliente();
     }
 
     // ── Asignar usuario al cliente ──

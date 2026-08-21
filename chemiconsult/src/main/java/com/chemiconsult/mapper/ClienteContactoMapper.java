@@ -44,7 +44,9 @@ public class ClienteContactoMapper {
                 .email(entity.getEmail())
                 .telefono(entity.getTelefono())
                 .activo(entity.getActivo())
-                .build(); // sucursalIds se completa aparte en el service (ver abajo)
+                .tieneUsuario(entity.getUser() != null)
+                .sucursalIds(sucursalIds)
+                .build();
     }
 
     public static SucursalContactoResumenTO mapContactoToResumen(ClienteContactoDE entity) {

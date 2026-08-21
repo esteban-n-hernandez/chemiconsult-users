@@ -1,6 +1,7 @@
 package com.chemiconsult.controller;
 
 import com.chemiconsult.service.ClienteContactoService;
+import com.chemiconsult.to.AsignarUsuarioTO;
 import com.chemiconsult.to.ClienteContactoTO;
 import com.chemiconsult.to.SucursalContactoResumenTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,12 @@ public class ClienteContactoController {
     public ResponseEntity<Void> desactivarContacto(@PathVariable Long id) {
         contactoService.desactivarContacto(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/contactos/{id}/asignar-usuario")
+    public ResponseEntity<ClienteContactoTO> asignarUsuario(@PathVariable Long id,
+                                                             @RequestBody AsignarUsuarioTO to) {
+        return ResponseEntity.ok(contactoService.asignarUsuario(id, to));
     }
 
     @Autowired

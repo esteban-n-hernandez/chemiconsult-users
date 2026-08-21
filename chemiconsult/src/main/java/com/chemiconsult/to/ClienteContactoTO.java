@@ -14,5 +14,6 @@ public class ClienteContactoTO {
     private String email;
     private String telefono;
     private Boolean activo;
-    private List<Long> sucursalIds; // en qué sucursales participa este contacto
+    private Boolean tieneUsuario;
+    private List<Long> sucursalIds;
 }

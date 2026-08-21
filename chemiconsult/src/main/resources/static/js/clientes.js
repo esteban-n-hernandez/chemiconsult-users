@@ -416,6 +416,7 @@ async function desactivarCliente(id) {
 //  MODAL ASIGNAR USUARIO
 // ══════════════════════════════════════════
 let clienteAsignandoId = null;
+let contactoAsignandoId = null;
 
 function initModalAsignar() {
     document.getElementById('modalAsignarClose').addEventListener('click', cerrarModalAsignar);
@@ -459,7 +460,21 @@ function asignarUsuario(id) {
 
 function cerrarModalAsignar() {
     document.getElementById('modalAsignarUsuario').classList.remove('visible');
+    document.getElementById('modalAsignarUsuario').removeAttribute('data-modo');
     clienteAsignandoId = null;
+    contactoAsignandoId = null;
+}
+
+function abrirModalAsignarContacto(id, nombre, email) {
+    contactoAsignandoId = id;
+    document.getElementById('modalAsignarUsuario').setAttribute('data-modo', 'contacto');
+    document.getElementById('asignarClienteNombre').textContent = `${nombre} (${email})`;
+    document.getElementById('asignarPassword').value = '';
+    document.getElementById('asignarPasswordConfirmar').value = '';
+    ocultarErrorServidorAsignar();
+    limpiarErroresAsignar();
+    document.getElementById('modalAsignarUsuario').classList.add('visible');
+    document.getElementById('asignarPassword').focus();
 }
 
 async function confirmarAsignarUsuario() {
@@ -485,7 +500,12 @@ async function confirmarAsignarUsuario() {
     btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Creando...`;
 
     try {
-        const res = await fetch(`${API_URL}/${clienteAsignandoId}/asignar-usuario`, {
+        const modo = document.getElementById('modalAsignarUsuario').getAttribute('data-modo');
+        const url = modo === 'contacto'
+            ? `${API_BASE}/api/clientes/contactos/${contactoAsignandoId}/asignar-usuario`
+            : `${API_URL}/${clienteAsignandoId}/asignar-usuario`;
+
+        const res = await fetch(url, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -501,7 +521,11 @@ async function confirmarAsignarUsuario() {
         }
 
         cerrarModalAsignar();
-        await cargarClientes();
+        if (modo === 'contacto') {
+            await cargarContactos();
+        } else {
+            await cargarClientes();
+        }
         mostrarToast('Acceso al sistema creado correctamente ✓', 'success');
 
     } catch {
@@ -736,6 +760,10 @@ function initModalSucursales() {
     document.getElementById('btnNuevoContacto').addEventListener('click', () => abrirFormContacto(null));
     document.getElementById('btnCancelarContacto').addEventListener('click', cerrarFormContacto);
     document.getElementById('btnGuardarContacto').addEventListener('click', guardarContacto);
+    document.getElementById('modalContactoFormClose').addEventListener('click', cerrarFormContacto);
+    document.getElementById('modalContactoForm').addEventListener('click', e => {
+        if (e.target === document.getElementById('modalContactoForm')) cerrarFormContacto();
+    });
 }
 
 async function abrirModalSucursales(clienteId) {
@@ -946,14 +974,30 @@ function renderContactos() {
             ? sucursalesNombres.map(n => `<span class="chip-sucursal">${n}</span>`).join('')
             : '<span class="item-card-sub">Sin sucursales asignadas</span>';
 
+        const usuarioBadgeContacto = c.tieneUsuario
+            ? `<span class="badge-usuario-ok" style="font-size:11px;"><i class="bi bi-check-circle"></i> Con acceso</span>`
+            : `<span class="badge-sin-usuario" style="font-size:11px;"><i class="bi bi-dash-circle"></i> Sin acceso</span>`;
+
+        const btnDarAcceso = !c.tieneUsuario && c.activo && c.email
+            ? `<button class="btn-accion" title="Dar acceso al sistema"
+                       data-cid="${c.id}"
+                       data-cnombre="${(c.nombre || '').replace(/"/g, '&quot;')}"
+                       data-cemail="${(c.email || '').replace(/"/g, '&quot;')}"
+                       onclick="abrirModalAsignarContacto(this.dataset.cid, this.dataset.cnombre, this.dataset.cemail)">
+                   <i class="bi bi-person-plus"></i>
+               </button>`
+            : '';
+
         return `
             <div class="item-card">
                 <div class="item-card-info">
                     <strong>${c.nombre}</strong>
                     <span class="item-card-sub">${[c.email, c.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto'}</span>
                     <div class="chips-container">${chipsSucursales}</div>
+                    <div style="margin-top:4px;">${usuarioBadgeContacto}</div>
                 </div>
                 <div class="item-card-acciones">
+                    ${btnDarAcceso}
                     <button class="btn-accion" title="Editar" onclick="abrirFormContacto(${c.id})">
                         <i class="bi bi-pencil"></i>
                     </button>
@@ -968,12 +1012,10 @@ function renderContactos() {
 
 function abrirFormContacto(id) {
     contactoEditandoId = id;
-    const card = document.getElementById('formContactoCard');
     const titulo = document.getElementById('formContactoTitulo');
 
     limpiarErroresContacto();
 
-    // Arma los checkboxes de sucursales SIEMPRE fresco (por si se agregó una sucursal recién)
     const checksCont = document.getElementById('contactoSucursalesCheckboxes');
     if (sucursalesDelCliente.length === 0) {
         checksCont.innerHTML = '<span class="item-card-sub">Cargá al menos una sucursal primero.</span>';
@@ -1004,12 +1046,12 @@ function abrirFormContacto(id) {
         document.getElementById('contactoTelefono').value = '';
     }
 
-    card.classList.remove('d-none');
+    document.getElementById('modalContactoForm').classList.add('visible');
     document.getElementById('contactoNombre').focus();
 }
 
 function cerrarFormContacto() {
-    document.getElementById('formContactoCard').classList.add('d-none');
+    document.getElementById('modalContactoForm').classList.remove('visible');
     contactoEditandoId = null;
     limpiarErroresContacto();
 }

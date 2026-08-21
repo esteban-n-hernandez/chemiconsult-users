@@ -1,11 +1,14 @@
 package com.chemiconsult.service;
 
 import com.chemiconsult.entity.*;
+import com.chemiconsult.enums.RolEnum;
 import com.chemiconsult.mapper.ClienteContactoMapper;
 import com.chemiconsult.repository.*;
+import com.chemiconsult.to.AsignarUsuarioTO;
 import com.chemiconsult.to.ClienteContactoTO;
 import com.chemiconsult.to.SucursalContactoResumenTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,8 @@ public class ClienteContactoService {
     private final ClienteRepository clienteRepository;
     private final ClienteSucursalRepository sucursalRepository;
     private final ClienteSucursalContactoRepository sucursalContactoRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public List<ClienteContactoTO> getContactosPorCliente(Long clienteId) {
         return contactoRepository.findByClienteIdAndActivoTrue(clienteId)
@@ -68,6 +73,32 @@ public class ClienteContactoService {
         return ClienteContactoMapper.mapEntityToTO(actualizado);
     }
 
+    @Transactional
+    public ClienteContactoTO asignarUsuario(Long contactoId, AsignarUsuarioTO to) {
+        ClienteContactoDE contacto = contactoRepository.findById(contactoId)
+                .orElseThrow(() -> new RuntimeException("Contacto no encontrado"));
+
+        if (contacto.getUser() != null)
+            throw new RuntimeException("El contacto ya tiene un usuario asignado");
+        if (contacto.getEmail() == null || contacto.getEmail().isBlank())
+            throw new RuntimeException("El contacto no tiene email configurado");
+        if (userRepository.existsByEmail(contacto.getEmail()))
+            throw new RuntimeException("El email del contacto ya está registrado en el sistema");
+
+        UserDE user = new UserDE();
+        user.setUsername(contacto.getNombre());
+        user.setEmail(contacto.getEmail());
+        user.setPassword(passwordEncoder.encode(to.getPassword()));
+        user.setRol(RolEnum.ROLE_CLIENTE.name());
+        user.setCreatedDate(LocalDate.now());
+        user.setUpdateDate(LocalDate.now());
+        userRepository.save(user);
+
+        contacto.setUser(user);
+        contacto.setUpdateDate(LocalDate.now());
+        return ClienteContactoMapper.mapEntityToTO(contactoRepository.save(contacto));
+    }
+
     public void desactivarContacto(Long id) {
         ClienteContactoDE contacto = contactoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contacto no encontrado"));
@@ -96,10 +127,14 @@ public class ClienteContactoService {
     public ClienteContactoService(ClienteContactoRepository contactoRepository,
                                   ClienteRepository clienteRepository,
                                   ClienteSucursalRepository sucursalRepository,
-                                  ClienteSucursalContactoRepository sucursalContactoRepository) {
+                                  ClienteSucursalContactoRepository sucursalContactoRepository,
+                                  UserRepository userRepository,
+                                  PasswordEncoder passwordEncoder) {
         this.contactoRepository = contactoRepository;
         this.clienteRepository = clienteRepository;
         this.sucursalRepository = sucursalRepository;
         this.sucursalContactoRepository = sucursalContactoRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 }

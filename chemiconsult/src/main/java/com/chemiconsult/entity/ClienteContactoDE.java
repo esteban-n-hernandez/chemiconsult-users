@@ -43,6 +43,13 @@ public class ClienteContactoDE {
     @Column(name = "UPDATE_DATE")
     private LocalDate updateDate;
 
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private UserDE user;
+
     @OneToMany(mappedBy = "contacto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude

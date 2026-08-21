@@ -154,7 +154,7 @@ function renderTabla() {
     sinRes.style.display = "none";
 
     tbody.innerHTML = slice.map(m => `
-        <tr>
+        <tr class="${m.estado === 'DEMORADA' ? 'fila-demorada' : ''}">
             <td><strong>${m.codigo}</strong></td>
             <td>${m.tipo}</td>
             <td>${m.fecha}</td>
