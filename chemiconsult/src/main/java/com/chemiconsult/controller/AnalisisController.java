@@ -2,9 +2,11 @@ package com.chemiconsult.controller;
 
 import com.chemiconsult.entity.AnalisisArchivoDE;
 import com.chemiconsult.entity.AnalisisDE;
+import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.enums.EstadoMuestraEnum;
 import com.chemiconsult.repository.AnalisisArchivoRepository;
 import com.chemiconsult.repository.AnalisisRepository;
+import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.service.AnalisisService;
 import com.chemiconsult.service.ExportWordService;
 import com.chemiconsult.service.InformeService;
@@ -21,6 +23,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -44,6 +48,7 @@ public class AnalisisController {
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final InformeService informeService;
     private final ExportWordService exportWordService;
+    private final UserRepository userRepository;
     private final String BUCKET = "chemiconsult-bucket";
 
     @GetMapping
@@ -57,7 +62,11 @@ public class AnalisisController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<EstudioTO> getEstudiosByID(@PathVariable Long userId) {
+    public List<EstudioTO> getEstudiosByID(@PathVariable Long userId,
+                                            @AuthenticationPrincipal UserDetails principal) {
+        if (esCliente(principal)) {
+            userId = resolveCallerUserId(principal);
+        }
         return analisisService.getEstudiosByID(userId);
     }
 
@@ -172,7 +181,12 @@ public class AnalisisController {
     @GetMapping("/{id}/archivos/{archivoId}")
     public ResponseEntity<byte[]> descargarArchivo(
             @PathVariable Long id,
-            @PathVariable Long archivoId) {
+            @PathVariable Long archivoId,
+            @AuthenticationPrincipal UserDetails principal) {
+
+        if (esCliente(principal)) {
+            analisisService.verificarAccesoEstudio(id, resolveCallerUserId(principal));
+        }
 
         AnalisisArchivoDE archivo = analisisArchivoRepository.findByIdAndAnalisisId(archivoId, id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -252,10 +266,13 @@ public class AnalisisController {
 
     /** Devuelve el primer archivo de la muestra (usado por el dashboard del cliente). */
     @GetMapping("/{id}/resultado")
-    public ResponseEntity<byte[]> getResultado(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getResultado(@PathVariable Long id,
+                                                @AuthenticationPrincipal UserDetails principal) {
         log.info("Obteniendo resultado del estudio con ID: {}", id);
 
-        if (!analisisRepository.existsById(id)) {
+        if (esCliente(principal)) {
+            analisisService.verificarAccesoEstudio(id, resolveCallerUserId(principal));
+        } else if (!analisisRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
@@ -372,18 +389,31 @@ public class AnalisisController {
                 : String.valueOf(d.getId());
     }
 
+    private boolean esCliente(UserDetails principal) {
+        return principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"));
+    }
+
+    private Long resolveCallerUserId(UserDetails principal) {
+        UserDE user = userRepository.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        return user.getId();
+    }
+
     @Autowired
     public AnalisisController(AnalisisService analisisService,
                               SupabaseBucketService supabaseBucketService,
                               AnalisisRepository analisisRepository,
                               AnalisisArchivoRepository analisisArchivoRepository,
                               InformeService informeService,
-                              ExportWordService exportWordService) {
+                              ExportWordService exportWordService,
+                              UserRepository userRepository) {
         this.analisisService = analisisService;
         this.supabaseBucketService = supabaseBucketService;
         this.analisisRepository = analisisRepository;
         this.analisisArchivoRepository = analisisArchivoRepository;
         this.informeService = informeService;
         this.exportWordService = exportWordService;
+        this.userRepository = userRepository;
     }
 }

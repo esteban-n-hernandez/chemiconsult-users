@@ -6,6 +6,7 @@ import com.chemiconsult.to.ClienteContactoTO;
 import com.chemiconsult.to.SucursalContactoResumenTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,22 +29,26 @@ public class ClienteContactoController {
         return ResponseEntity.ok(contactoService.getContactosPorSucursal(sucursalId));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PostMapping("/contactos")
     public ResponseEntity<ClienteContactoTO> createContacto(@RequestBody ClienteContactoTO to) {
         return ResponseEntity.status(201).body(contactoService.createContacto(to));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PutMapping("/contactos/{id}")
     public ResponseEntity<ClienteContactoTO> updateContacto(@PathVariable Long id, @RequestBody ClienteContactoTO to) {
         return ResponseEntity.ok(contactoService.updateContacto(id, to));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PatchMapping("/contactos/{id}/desactivar")
     public ResponseEntity<Void> desactivarContacto(@PathVariable Long id) {
         contactoService.desactivarContacto(id);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PatchMapping("/contactos/{id}/asignar-usuario")
     public ResponseEntity<ClienteContactoTO> asignarUsuario(@PathVariable Long id,
                                                              @RequestBody AsignarUsuarioTO to) {

@@ -7,6 +7,7 @@ import com.chemiconsult.to.ClienteTO;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -60,6 +61,7 @@ public class ClienteController {
     }
 
     // POST /api/clientes
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PostMapping
     public ResponseEntity<ClienteDE> createCliente(@RequestBody ClienteTO to) {
         log.info("Creando nuevo cliente: {}", to);
@@ -68,6 +70,7 @@ public class ClienteController {
     }
 
     // PUT /api/clientes/{id}
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PutMapping("/{id}")
     public ResponseEntity<ClienteDE> updateCliente(
             @PathVariable Long id,
@@ -78,6 +81,7 @@ public class ClienteController {
     }
 
     // PATCH /api/clientes/{id}/desactivar
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<Void> desactivarCliente(@PathVariable Long id) {
         log.info("Desactivando cliente con ID: {}", id);
@@ -86,6 +90,7 @@ public class ClienteController {
     }
 
     // PATCH /api/clientes/{id}/reactivar
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PatchMapping("/{id}/reactivar")
     public ResponseEntity<Void> reactivarCliente(@PathVariable Long id) {
         log.info("Reactivando cliente con ID: {}", id);
@@ -94,6 +99,7 @@ public class ClienteController {
     }
 
     // PATCH /api/clientes/{id}/asignar-usuario
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @PatchMapping("/{id}/asignar-usuario")
     public ResponseEntity<ClienteDE> asignarUsuario(
             @PathVariable Long id,
@@ -104,6 +110,7 @@ public class ClienteController {
     }
 
     // DELETE /api/clientes/{id}
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCliente(@PathVariable Long id) {
         log.info("Eliminando cliente con ID: {}", id);

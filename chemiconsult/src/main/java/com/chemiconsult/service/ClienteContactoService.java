@@ -85,6 +85,9 @@ public class ClienteContactoService {
         if (userRepository.existsByEmail(contacto.getEmail()))
             throw new RuntimeException("El email del contacto ya está registrado en el sistema");
 
+        if (to.getPassword() == null || to.getPassword().length() < 8)
+            throw new RuntimeException("La contraseña debe tener al menos 8 caracteres");
+
         UserDE user = new UserDE();
         user.setUsername(contacto.getNombre());
         user.setEmail(contacto.getEmail());

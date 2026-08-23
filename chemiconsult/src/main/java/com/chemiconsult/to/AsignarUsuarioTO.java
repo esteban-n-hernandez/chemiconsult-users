@@ -1,6 +1,5 @@
 package com.chemiconsult.to;
 
-
 import lombok.Data;
 
 @Data

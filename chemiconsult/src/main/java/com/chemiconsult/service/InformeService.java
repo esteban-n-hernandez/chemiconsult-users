@@ -307,9 +307,13 @@ public class InformeService {
             raw.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
         }
 
-        // Ordenar parámetros alfabéticamente dentro de cada grupo
-        Comparator<ParametroResultadoTO> alfa = Comparator.comparing(
-                ParametroResultadoTO::getNombre, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        // Ordenar parámetros: "Recuento de Bacterias aerobias mesófilas" siempre primero, luego alfabético
+        Comparator<ParametroResultadoTO> alfa = Comparator
+                .<ParametroResultadoTO, Integer>comparing(p -> {
+                    String n = p.getNombre();
+                    return (n != null && n.toLowerCase().contains("recuento de bacterias aerobias")) ? 0 : 1;
+                })
+                .thenComparing(ParametroResultadoTO::getNombre, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
         raw.values().forEach(list -> list.sort(alfa));
 
         // Reordenar grupos según ORDEN de GRUPO_INFORME
@@ -457,7 +461,7 @@ public class InformeService {
         // Pesos con clamp por tipo de columna
         float[] weights = new float[cols];
         weights[0] = clampW(maxLen[0], 18, 40);
-        weights[1] = clampW(maxLen[1], 5, 9);
+        weights[1] = clampW(maxLen[1], 5, 14);
         weights[2] = clampW(maxLen[2], 8, 13);
         for (int i = 0; i < numLimCols; i++) {
             // Con superíndices el header es corto ("Límites¹"), el contenido manda

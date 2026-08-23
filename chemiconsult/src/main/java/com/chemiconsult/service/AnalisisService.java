@@ -99,6 +99,26 @@ public class AnalisisService {
     }
 
     @Transactional(readOnly = true)
+    public void verificarAccesoEstudio(Long analisisId, Long callerUserId) {
+        AnalisisDE analisis = analisisRepository.findById(analisisId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND));
+        ClienteDE clienteDelCaller = clienteRepository.findByUser_Id(callerUserId)
+                .orElseGet(() -> {
+                    com.chemiconsult.entity.ClienteContactoDE contacto =
+                            contactoRepository.findByUser_Id(callerUserId)
+                            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                                    org.springframework.http.HttpStatus.FORBIDDEN, "Acceso denegado"));
+                    return contacto.getCliente();
+                });
+        if (analisis.getCliente() == null ||
+                !analisis.getCliente().getId().equals(clienteDelCaller.getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Acceso denegado");
+        }
+    }
+
+    @Transactional(readOnly = true)
     public AnalisisDetalleTO getEstudioDetalle(Long id) {
         AnalisisDE analisis = analisisRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Muestra no encontrada con ID: " + id));

@@ -137,6 +137,10 @@ public class ClienteService {
             throw new RuntimeException("El email del cliente ya tiene un usuario registrado");
         }
 
+        if (to.getPassword() == null || to.getPassword().length() < 8) {
+            throw new RuntimeException("La contraseña debe tener al menos 8 caracteres");
+        }
+
         UserDE user = new UserDE();
         user.setUsername(cliente.getNombre());
         user.setPassword(passwordEncoder.encode(to.getPassword()));

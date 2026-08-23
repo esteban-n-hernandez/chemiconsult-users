@@ -1,5 +1,14 @@
 const API_CLIENTES_BASE = `${API_BASE}/api`;
 
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 // ── Guard ──
 const rol = (localStorage.getItem("userRole") || "").toUpperCase();
 if (!localStorage.getItem("token") || rol !== "ROLE_CLIENTE") {
@@ -155,9 +164,9 @@ function renderTabla() {
 
     tbody.innerHTML = slice.map(m => `
         <tr class="${m.estado === 'DEMORADA' ? 'fila-demorada' : ''}">
-            <td><strong>${m.codigo}</strong></td>
-            <td>${m.tipo}</td>
-            <td>${m.fecha}</td>
+            <td><strong>${escapeHtml(m.codigo)}</strong></td>
+            <td>${escapeHtml(m.tipo)}</td>
+            <td>${escapeHtml(m.fecha)}</td>
             <td>${badgeHTML(m.estado)}</td>
             <td>${btnInformeHTML(m)}</td>
         </tr>

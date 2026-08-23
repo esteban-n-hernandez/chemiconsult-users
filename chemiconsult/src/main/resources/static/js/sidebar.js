@@ -95,9 +95,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div class="sidebar-bottom">
                 <hr class="sidebar-divider"/>
-                <a href="guia.html" target="_blank" title="Documentación del sistema">
+                ${!esCliente ? `<a href="guia.html" target="_blank" title="Documentación del sistema">
                     <i class="bi bi-book"></i><span class="sidebar-label"> Documentación</span>
-                </a>
+                </a>` : ''}
                 <button class="sidebar-collapse-btn" id="themeToggle" title="Cambiar tema">
                     <i class="bi bi-moon"></i>
                     <span class="sidebar-label"> Modo oscuro</span>
