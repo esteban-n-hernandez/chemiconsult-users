@@ -461,7 +461,7 @@ public class InformeService {
         // Pesos con clamp por tipo de columna
         float[] weights = new float[cols];
         weights[0] = clampW(maxLen[0], 18, 40);
-        weights[1] = clampW(maxLen[1], 5, 14);
+        weights[1] = clampW(maxLen[1], 8, 18);
         weights[2] = clampW(maxLen[2], 8, 13);
         for (int i = 0; i < numLimCols; i++) {
             // Con superíndices el header es corto ("Límites¹"), el contenido manda

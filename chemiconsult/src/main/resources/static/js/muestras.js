@@ -1465,20 +1465,39 @@ function buildAccionesHTML(m) {
             <i class="bi bi-paperclip"></i>
         </button>` : '';
 
-    const btnWord = m.estado === "COMPLETO" ? `
-        <button class="btn-accion btn-accion-word" title="Descargar Word (.docx)"
-                onclick="descargarWord(${m.id}, '${protocolo}')">
-            <i class="bi bi-file-earmark-word"></i>
-        </button>` : '';
-
     const btnCancelar = !esCancelado ? `
         <button class="btn-accion btn-accion-rojo" title="Cancelar muestra"
                 onclick="abrirModalCancelar(${m.id}, '${codigo}')">
             <i class="bi bi-x-circle"></i>
         </button>` : '';
 
+    const tieneInforme   = m.estado === "COMPLETO";
+    const puedeExportar  = m.estado === "COMPLETO" || m.estado === "COMPLETO_SIN_INFORME";
+    const btnDescargar   = puedeExportar ? `
+        <div class="informe-dropdown">
+            <button class="btn-accion" title="Descargar informe"
+                    onclick="toggleInformeDropdown(${m.id}, event)">
+                <i class="bi bi-download"></i>
+            </button>
+            <div class="informe-dropdown-panel" id="inf-panel-${m.id}">
+                ${tieneInforme ? `
+                <button class="informe-dropdown-item"
+                        onclick="descargarPdf(${m.id}, '${protocolo}'); cerrarInformeDropdowns();">
+                    <i class="bi bi-file-earmark-pdf" style="color:#ef4444;"></i>
+                    Informe PDF
+                    <small style="color:#ef4444;">PDF</small>
+                </button>` : ''}
+                <button class="informe-dropdown-item"
+                        onclick="descargarWord(${m.id}, '${protocolo}'); cerrarInformeDropdowns();">
+                    <i class="bi bi-file-earmark-word" style="color:#2b579a;"></i>
+                    Exportar Word
+                    <small style="color:#2b579a;">DOCX</small>
+                </button>
+            </div>
+        </div>` : '';
+
     return `<td class="acciones-celda">
-        ${btnVerDetalle}${btnAvanzar}${btnVerInforme}${btnEditar}${btnArchivos}${btnWord}${btnCancelar}
+        ${btnVerDetalle}${btnAvanzar}${btnVerInforme}${btnEditar}${btnArchivos}${btnDescargar}${btnCancelar}
     </td>`;
 }
 
@@ -1642,6 +1661,26 @@ function mostrarToast(mensaje, esError = false) {
         toast.classList.remove("visible");
         toast.style.backgroundColor = "";
     }, 3500);
+}
+
+let _toastCargandoEl = null;
+function mostrarCargando(mensaje) {
+    ocultarCargando();
+    const el = document.createElement("div");
+    el.id = "toastCargando";
+    el.innerHTML = `<span class="spinner-border spinner-border-sm me-2" style="vertical-align:middle;"></span>${mensaje}`;
+    Object.assign(el.style, {
+        position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)",
+        background: "#1e293b", color: "#fff", padding: "12px 24px",
+        borderRadius: "8px", fontSize: "14px", zIndex: "9999",
+        boxShadow: "0 4px 16px rgba(0,0,0,.3)", display: "flex", alignItems: "center",
+        whiteSpace: "nowrap"
+    });
+    document.body.appendChild(el);
+    _toastCargandoEl = el;
+}
+function ocultarCargando() {
+    if (_toastCargandoEl) { _toastCargandoEl.remove(); _toastCargandoEl = null; }
 }
 
 // ============================================================
@@ -2270,10 +2309,7 @@ async function ejecutarGeneracionInforme(equipoIds) {
     const incluirConclusion     = document.getElementById("checkIncluirConclusion")?.checked ?? true;
     const incluirConclusionAuto = document.getElementById("checkIncluirConclusionAuto")?.checked ?? true;
     cerrarModalEquipos();
-
-    const btn = document.getElementById("btnGenerarInforme");
-    const textoOrig = btn?.innerHTML;
-    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Generando…`; }
+    mostrarCargando("Generando informe PDF, por favor espere…");
 
     try {
         const resp = await fetchConAuth(`${API_URL}/estudios/${detalleAnalisisId}/generar-informe`, {
@@ -2292,14 +2328,15 @@ async function ejecutarGeneracionInforme(equipoIds) {
             throw new Error(err.message || `Error HTTP ${resp.status}`);
         }
 
+        ocultarCargando();
         mostrarToast("Informe generado. Queda pendiente de revisión antes de publicarse al cliente.");
         cerrarModalDetalle();
         await cargarMuestrasActivas();
 
     } catch (err) {
+        ocultarCargando();
         console.error("Error generando informe:", err);
         mostrarToast(`Error al generar el informe: ${err.message}`, true);
-        if (btn) { btn.disabled = false; btn.innerHTML = textoOrig; }
     }
 }
 
@@ -2386,8 +2423,10 @@ window.verInformeEnRevision = async function(id) {
     const loading = document.getElementById("previewInformeLoading");
     const frame   = document.getElementById("previewInformeFrame");
 
+    const btnConfirmar = document.getElementById("previewInformeConfirmar");
     document.getElementById("previewInformeTitulo").textContent = "Revisión de informe";
-    document.getElementById("previewInformeConfirmar").innerHTML = '<i class="bi bi-check-circle-fill"></i> Aprobar informe';
+    btnConfirmar.innerHTML  = '<i class="bi bi-check-circle-fill"></i> Aprobar informe';
+    btnConfirmar.disabled   = false;
     document.getElementById("previewInformeDescartar").innerHTML = '<i class="bi bi-x-circle"></i> Cerrar';
 
     loading.style.display = "flex";
@@ -2704,7 +2743,28 @@ function cerrarInformeDropdowns() {
 
 document.addEventListener("click", cerrarInformeDropdowns);
 
+window.descargarPdf = async function(id, protocolo) {
+    mostrarCargando("Descargando informe PDF…");
+    try {
+        const resp = await fetchConAuth(`${API_URL}/estudios/${id}/resultado`);
+        if (!resp.ok) throw new Error("Error al obtener el informe");
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `informe-${protocolo || id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        ocultarCargando();
+    } catch (err) {
+        ocultarCargando();
+        console.error(err);
+        mostrarToast("No se pudo descargar el informe PDF.", true);
+    }
+};
+
 window.descargarWord = async function(id, protocolo) {
+    mostrarCargando("Generando archivo Word…");
     try {
         const resp = await fetchConAuth(`${API_URL}/estudios/${id}/export`);
         if (!resp.ok) throw new Error("Error al generar el archivo");
@@ -2715,9 +2775,11 @@ window.descargarWord = async function(id, protocolo) {
         a.download = `muestra-${protocolo || id}.docx`;
         a.click();
         URL.revokeObjectURL(url);
+        ocultarCargando();
     } catch (err) {
+        ocultarCargando();
         console.error(err);
-        alert("No se pudo descargar el archivo Word.");
+        mostrarToast("No se pudo descargar el archivo Word.", true);
     }
 };
 
