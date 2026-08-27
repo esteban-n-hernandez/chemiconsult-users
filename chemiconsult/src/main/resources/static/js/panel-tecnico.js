@@ -1414,3 +1414,312 @@ function cerrarMetodoOverlay(event) {
         event.currentTarget.classList.remove('visible');
     }
 }
+
+// ============================================================
+// PLANTILLAS
+// ============================================================
+
+let _todosLosParams = [];
+let _plantillasData = [];
+let _plantillaFiltro = '';
+let _plantillaPagina = 1;
+let _plantillaParamsSeleccionados = new Set();
+const PLANTILLA_POR_PAG = 10;
+
+async function cargarPlantillasTab() {
+    await _cargarTodosParamsPlantilla();
+    await _cargarPlantillasTodas();
+    _renderTablaPlantillas();
+
+    document.getElementById('filtroPlantillas').addEventListener('input', e => {
+        _plantillaFiltro = e.target.value.toLowerCase();
+        _plantillaPagina = 1;
+        _renderTablaPlantillas();
+    });
+    document.getElementById('btnGuardarPlantilla').addEventListener('click', _guardarPlantilla);
+    document.getElementById('plantillaFiltroParam').addEventListener('input', e => {
+        _filtrarListaParams(e.target.value);
+    });
+}
+
+async function _cargarTodosParamsPlantilla() {
+    if (_todosLosParams.length > 0) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/parametros`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) _todosLosParams = await res.json();
+    } catch (e) { console.error('Error cargando parámetros:', e); }
+}
+
+async function _cargarPlantillasTodas() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/plantillas/todas`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) _plantillasData = await res.json();
+    } catch (e) { console.error('Error cargando plantillas:', e); }
+}
+
+window._abrirModalPlantillaForm = function(plantilla = null) {
+    const titulo = document.getElementById('plantillaFormTitulo');
+    const btnGuardar = document.getElementById('btnGuardarPlantilla');
+
+    if (plantilla) {
+        document.getElementById('plantillaEditId').value = plantilla.id;
+        document.getElementById('plantillaNombre').value = plantilla.nombre || '';
+        document.getElementById('plantillaDescripcion').value = plantilla.descripcion || '';
+        titulo.innerHTML = '<i class="bi bi-pencil" style="color:#d97706"></i> Editar plantilla';
+        btnGuardar.innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
+        _plantillaParamsSeleccionados = new Set((plantilla.parametros || []).map(p => p.id));
+    } else {
+        document.getElementById('plantillaEditId').value = '';
+        document.getElementById('plantillaNombre').value = '';
+        document.getElementById('plantillaDescripcion').value = '';
+        titulo.innerHTML = '<i class="bi bi-plus-circle" style="color:#16a34a"></i> Nueva plantilla';
+        btnGuardar.innerHTML = '<i class="bi bi-check-lg"></i> Guardar';
+        _plantillaParamsSeleccionados = new Set();
+    }
+
+    document.getElementById('plantillaNombre').classList.remove('campo-error');
+    _actualizarBotonParams();
+    document.getElementById('plantillaFormOverlay').classList.add('visible');
+    setTimeout(() => document.getElementById('plantillaNombre').focus(), 50);
+};
+
+window._cerrarModalPlantillaForm = function(event) {
+    if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove('visible');
+    }
+};
+
+function _actualizarBotonParams() {
+    const n = _plantillaParamsSeleccionados.size;
+    const el = document.getElementById('plantillaParamContador');
+    if (el) el.textContent = n > 0 ? `${n} parámetro${n > 1 ? 's' : ''} seleccionado${n > 1 ? 's' : ''}` : 'Sin parámetros seleccionados';
+}
+
+window._abrirModalPlantillaParams = function() {
+    document.getElementById('plantillaFiltroParam').value = '';
+    _renderListaParams([..._plantillaParamsSeleccionados]);
+    document.getElementById('plantillaParamsOverlay').classList.add('visible');
+    document.getElementById('plantillaFiltroParam').focus();
+};
+
+window._cerrarModalPlantillaParams = function(event) {
+    if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove('visible');
+    }
+};
+
+window._confirmarModalPlantillaParams = function() {
+    _plantillaParamsSeleccionados = new Set(
+        Array.from(document.querySelectorAll('.check-plantilla-param:checked')).map(cb => parseInt(cb.value))
+    );
+    _actualizarBotonParams();
+    document.getElementById('plantillaParamsOverlay').classList.remove('visible');
+};
+
+function _renderListaParams(checkedIds = []) {
+    const checkedSet = new Set(checkedIds.map(Number));
+    const contenedor = document.getElementById('plantillaParamLista');
+    const activos = _todosLosParams.filter(p => p.activo).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    if (activos.length === 0) {
+        contenedor.innerHTML = '<p class="text-muted-pt" style="padding:8px;font-size:13px;">Sin parámetros disponibles.</p>';
+        _actualizarPanelSeleccionados();
+        return;
+    }
+    contenedor.innerHTML = activos.map(p => `
+        <label style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:4px;cursor:pointer;font-size:13px;transition:background .1s;" class="plantilla-param-row"
+               onmouseover="this.style.background='var(--bg-hover,#f3f4f6)'" onmouseout="this.style.background=''">
+            <input type="checkbox" class="check-plantilla-param" value="${p.id}" data-nombre="${esc(p.nombre)}" data-unidad="${esc(p.unidad || '')}"
+                   style="accent-color:var(--verde,#2e7d32);width:14px;height:14px;flex-shrink:0;"
+                   ${checkedSet.has(p.id) ? 'checked' : ''}>
+            <span style="flex:1;">${esc(p.nombre)}</span>
+            ${p.unidad ? `<span style="font-size:11px;color:var(--text-muted,#6b7280);">${esc(p.unidad)}</span>` : ''}
+        </label>
+    `).join('');
+    _actualizarPanelSeleccionados();
+    document.querySelectorAll('.check-plantilla-param').forEach(cb =>
+        cb.addEventListener('change', () => _actualizarPanelSeleccionados())
+    );
+}
+
+function _actualizarPanelSeleccionados() {
+    const checked = Array.from(document.querySelectorAll('.check-plantilla-param:checked'));
+    const panel = document.getElementById('plantillaSeleccionadosLista');
+    const contador = document.getElementById('plantillaParamContadorModal');
+    const total = document.querySelectorAll('.check-plantilla-param').length;
+
+    if (contador) contador.textContent = checked.length > 0 ? `${checked.length} de ${total}` : '';
+
+    if (!panel) return;
+    if (checked.length === 0) {
+        panel.innerHTML = '<p style="font-size:13px;color:var(--text-muted,#9ca3af);padding:8px;text-align:center;margin:auto 0;">Ningún parámetro seleccionado</p>';
+        return;
+    }
+    panel.innerHTML = checked.map(cb => `
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:5px;background:var(--verde-suave,#edf7ee);border:1px solid var(--verde-borde,#bbf7d0);">
+            <span style="flex:1;font-size:13px;font-weight:600;color:var(--text,#111827);">${esc(cb.dataset.nombre)}</span>
+            ${cb.dataset.unidad ? `<span style="font-size:11px;color:var(--text-muted,#6b7280);">${esc(cb.dataset.unidad)}</span>` : ''}
+            <button type="button" onclick="_quitarParamSeleccionado('${cb.value}')"
+                    style="background:none;border:none;cursor:pointer;color:var(--verde,#2e7d32);opacity:.6;padding:0 2px;font-size:14px;line-height:1;"
+                    title="Quitar">×</button>
+        </div>
+    `).join('');
+}
+
+window._quitarParamSeleccionado = function(id) {
+    const cb = document.querySelector(`.check-plantilla-param[value="${id}"]`);
+    if (cb) { cb.checked = false; _actualizarPanelSeleccionados(); }
+};
+
+function _filtrarListaParams(termino) {
+    const t = termino.toLowerCase().trim();
+    document.querySelectorAll('.plantilla-param-row').forEach(row => {
+        const nombre = row.querySelector('span')?.textContent.toLowerCase() || '';
+        row.style.display = (!t || nombre.includes(t)) ? '' : 'none';
+    });
+}
+
+async function _guardarPlantilla() {
+    const nombre = document.getElementById('plantillaNombre').value.trim();
+    if (!nombre) {
+        document.getElementById('plantillaNombre').classList.add('campo-error');
+        return;
+    }
+    document.getElementById('plantillaNombre').classList.remove('campo-error');
+
+    const descripcion = document.getElementById('plantillaDescripcion').value.trim() || null;
+    const parametroIds = [..._plantillaParamsSeleccionados];
+    const editId = document.getElementById('plantillaEditId').value;
+    const body = { nombre, descripcion, parametroIds };
+
+    const token = localStorage.getItem('token');
+    const btn = document.getElementById('btnGuardarPlantilla');
+    btn.disabled = true;
+    try {
+        const url = editId ? `${API_URL}/plantillas/${editId}` : `${API_URL}/plantillas`;
+        const method = editId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        mostrarToast(editId ? 'Plantilla actualizada.' : 'Plantilla creada.', 'success');
+        await _cargarPlantillasTodas();
+        document.getElementById('plantillaFormOverlay').classList.remove('visible');
+        _renderTablaPlantillas();
+    } catch (e) {
+        mostrarToast('Error al guardar la plantilla.', 'danger');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function _renderTablaPlantillas() {
+    const filtrados = _plantillasData.filter(p =>
+        !_plantillaFiltro ||
+        p.nombre.toLowerCase().includes(_plantillaFiltro) ||
+        (p.descripcion || '').toLowerCase().includes(_plantillaFiltro)
+    );
+    const total = filtrados.length;
+    const inicio = (_plantillaPagina - 1) * PLANTILLA_POR_PAG;
+    const pagina = filtrados.slice(inicio, inicio + PLANTILLA_POR_PAG);
+    const tbody = document.getElementById('tablaPlantillasBody');
+
+    if (total === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:#6b7280;font-size:13px;">
+            ${_plantillaFiltro ? 'Sin resultados' : 'No hay plantillas configuradas aún'}
+        </td></tr>`;
+        document.getElementById('paginadorPlantillas').innerHTML = '';
+        return;
+    }
+
+    tbody.innerHTML = pagina.map(p => `
+        <tr style="${!p.activo ? 'opacity:.55;' : ''}">
+            <td style="font-weight:500">${esc(p.nombre)}${!p.activo ? ' <span style="font-size:11px;color:#b91c1c">(inactiva)</span>' : ''}</td>
+            <td style="font-size:13px;color:#6b7280">${esc(p.descripcion || '—')}</td>
+            <td style="font-size:13px">
+                <span style="display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;border-radius:12px;padding:2px 8px;font-size:12px;color:#374151;">
+                    <i class="bi bi-list-check"></i> ${(p.parametros || []).length}
+                </span>
+            </td>
+            <td>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn-accion" onclick="_editarPlantilla(${p.id})" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    ${p.activo
+                        ? `<button class="btn-accion btn-accion-gris" onclick="_togglePlantilla(${p.id}, false)" title="Desactivar">
+                            <i class="bi bi-archive"></i>
+                           </button>`
+                        : `<button class="btn-accion btn-accion-verde" onclick="_togglePlantilla(${p.id}, true)" title="Activar">
+                            <i class="bi bi-arrow-repeat"></i>
+                           </button>`
+                    }
+                    <button class="btn-accion btn-accion-rojo" onclick="_eliminarPlantilla(${p.id}, '${esc(p.nombre)}')" title="Eliminar">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    // Paginador
+    const totalPags = Math.ceil(total / PLANTILLA_POR_PAG);
+    document.getElementById('paginadorPlantillas').innerHTML = totalPags <= 1 ? '' : `
+        <button onclick="_plantillaIrPag(${_plantillaPagina - 1})" ${_plantillaPagina === 1 ? 'disabled' : ''}>‹</button>
+        <span>${_plantillaPagina} / ${totalPags}</span>
+        <button onclick="_plantillaIrPag(${_plantillaPagina + 1})" ${_plantillaPagina === totalPags ? 'disabled' : ''}>›</button>
+    `;
+}
+
+window._plantillaIrPag = function(p) {
+    _plantillaPagina = p;
+    _renderTablaPlantillas();
+};
+
+window._editarPlantilla = function(id) {
+    const p = _plantillasData.find(x => x.id === id);
+    if (p) _abrirModalPlantillaForm(p);
+};
+
+window._togglePlantilla = async function(id, activar) {
+    const token = localStorage.getItem('token');
+    try {
+        const endpoint = activar ? 'activar' : 'desactivar';
+        const res = await fetch(`${API_URL}/plantillas/${id}/${endpoint}`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        mostrarToast(activar ? 'Plantilla activada.' : 'Plantilla desactivada.', 'success');
+        await _cargarPlantillasTodas();
+        _renderTablaPlantillas();
+    } catch {
+        mostrarToast('Error al actualizar la plantilla.', 'danger');
+    }
+};
+
+window._eliminarPlantilla = async function(id, nombre) {
+    const ok = await UI.confirmar({
+        titulo: `¿Eliminar "${nombre}"?`,
+        subtexto: 'Esta acción no se puede deshacer.',
+        textoConfirmar: 'Eliminar',
+        tipo: 'danger',
+    });
+    if (!ok) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_URL}/plantillas/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        mostrarToast('Plantilla eliminada.', 'success');
+        await _cargarPlantillasTodas();
+        _renderTablaPlantillas();
+    } catch {
+        mostrarToast('No se pudo eliminar la plantilla.', 'danger');
+    }
+};

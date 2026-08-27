@@ -253,6 +253,8 @@ let editandoMuestraId = null;
 // Paso actual del wizard (1 = Datos, 2 = Normativas, 3 = Parámetros)
 let currentStep = 1;
 
+let plantillasCache = [];
+
 
 // ============================================================
 // 1b. WIZARD — navegación entre pasos
@@ -551,6 +553,7 @@ async function abrirModal() {
     renderWizardStep();
     document.getElementById("modalAltaMuestra").classList.add("visible");
     document.getElementById("inputFecha").value = new Date().toISOString().slice(0, 10);
+    document.getElementById("selectPlantilla").value = "";
 
     // Pre-llenar el número de protocolo con el próximo sugerido (editable)
     const inputProtocolo = document.getElementById("inputProtocolo");
@@ -596,6 +599,7 @@ function cerrarModal() {
     // Restaurar modo alta
     editandoMuestraId = null;
     currentStep = 1;
+    document.getElementById("selectPlantilla").value = "";
     document.getElementById("modalTitulo").textContent = "Alta de muestra";
     document.getElementById("inputProtocolo").disabled = false;
     tomSelectCliente?.enable();
@@ -2709,9 +2713,71 @@ async function onUploadAltaInforme() {
     }
 }
 
+// ============================================================
+// PLANTILLAS — carga y aplicación en el wizard de nueva muestra
+// ============================================================
+
+async function cargarPlantillas() {
+    try {
+        const resp = await fetchConAuth(`${API_URL}/plantillas`);
+        if (!resp.ok) return;
+        plantillasCache = await resp.json();
+    } catch (e) {
+        console.warn("No se pudieron cargar plantillas:", e);
+        plantillasCache = [];
+    }
+    const select = document.getElementById("selectPlantilla");
+    if (!select) return;
+    select.innerHTML = '<option value="">Desde plantilla...</option>';
+    plantillasCache.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        select.appendChild(opt);
+    });
+    select.addEventListener("change", (e) => {
+        aplicarPlantilla(e.target.value);
+        e.target.value = "";
+    });
+}
+
+function aplicarPlantilla(plantillaId) {
+    if (!plantillaId) return;
+    const plantilla = plantillasCache.find(p => String(p.id) === String(plantillaId));
+    if (!plantilla) return;
+
+    const params = plantilla.parametros || [];
+
+    // Destildar todos los parámetros visibles sin eliminarlos
+    document.querySelectorAll(".check-parametro").forEach(cb => {
+        cb.checked = false;
+        cb.closest(".param-select-card")?.classList.remove("selected");
+    });
+    actualizarContadorParams();
+
+    // Para cada parámetro de la plantilla: tildar si ya existe, agregar si no
+    const plantillaIds = new Set(params.map(p => p.id));
+    params.forEach(p => {
+        const existente = document.getElementById(`check-param-${p.id}`);
+        if (existente) {
+            existente.checked = true;
+            existente.closest(".param-select-card")?.classList.add("selected");
+        } else {
+            agregarParametroALaLista(p, "manual");
+        }
+    });
+    actualizarContadorParams();
+
+    if (params.length > 0) {
+        mostrarToast(`Plantilla "${plantilla.nombre}" — ${params.length} parámetro${params.length > 1 ? 's' : ''} seleccionado${params.length > 1 ? 's' : ''}.`, "success");
+    } else {
+        mostrarToast(`La plantilla "${plantilla.nombre}" no tiene parámetros configurados.`, "info");
+    }
+}
+
 async function init() {
     inicializarHeader();
-    await Promise.all([cargarClientes(), cargarMatrices()]);
+    await Promise.all([cargarClientes(), cargarMatrices(), cargarPlantillas()]);
     cargarMuestrasActivas();
     vincularEventos();
     if (new URLSearchParams(location.search).get('nueva') === '1') {

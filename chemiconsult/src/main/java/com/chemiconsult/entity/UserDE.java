@@ -2,7 +2,7 @@ package com.chemiconsult.entity;
 
 
 import com.chemiconsult.enums.ModuloEnum;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -50,7 +50,7 @@ public class UserDE {
     private Set<ModuloEnum> modulos = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("user-estudios")
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<AnalisisDE> estudios;

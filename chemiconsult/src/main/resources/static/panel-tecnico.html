@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/sidebar.css"/>
     <link rel="stylesheet" href="css/panel/panel-tecnico.css">
     <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/tabla-muestras.css">
     <script src="js/auth.js" data-roles="ROLE_IT,ROLE_EMPLEADO" data-modulo="PANEL_TECNICO"></script>
 </head>
 <body>
@@ -62,6 +63,9 @@
         </button>
         <button class="tab-btn-custom" onclick="cambiarPestaña('precios')">
             <i class="bi bi-cash-coin"></i> Precios de Servicios
+        </button>
+        <button class="tab-btn-custom" onclick="cambiarPestaña('plantillas')">
+            <i class="bi bi-journal-bookmark"></i> Plantillas
         </button>
     </div>
 
@@ -550,6 +554,43 @@
         </div>
     </div>
 
+    <!-- ==========================================
+         PÁGINA / SECCIÓN: PLANTILLAS
+         ========================================== -->
+    <div id="tab-plantillas" class="tab-content-panel">
+        <div class="main-row-config" style="grid-template-columns:1fr;">
+            <div class="panel-custom">
+                <div class="panel-header-custom">
+                    <div class="panel-header-row">
+                        <h5><i class="bi bi-journal-bookmark"></i> Plantillas configuradas</h5>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="text" id="filtroPlantillas" class="tabla-filtro" placeholder="Buscar...">
+                            <button type="button" class="btn-guardar-custom"
+                                    style="white-space:nowrap;margin-top:0;width:auto;padding:7px 14px;"
+                                    onclick="_abrirModalPlantillaForm()">
+                                <i class="bi bi-plus-lg"></i> Nueva plantilla
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body-custom" style="padding:0;">
+                    <table class="tabla-config">
+                        <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Parámetros</th>
+                            <th>Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaPlantillasBody"></tbody>
+                    </table>
+                    <div class="tabla-paginador" id="paginadorPlantillas"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="tab-categoriasDoc" class="tab-content-panel">
         <div class="main-row-config">
             <div class="panel-custom">
@@ -595,14 +636,115 @@
 
 <script>
     // Conmutador interactivo de pestañas usando tus selectores de filtros activos
+    let _plantillasTabIniciado = false;
     function cambiarPestaña(tabId) {
         document.querySelectorAll('.tab-content-panel').forEach(panel => panel.classList.remove('active'));
         document.querySelectorAll('.tab-btn-custom').forEach(btn => btn.classList.remove('active'));
 
         document.getElementById(`tab-${tabId}`).classList.add('active');
         event.currentTarget.classList.add('active');
+
+        if (tabId === 'plantillas' && !_plantillasTabIniciado) {
+            _plantillasTabIniciado = true;
+            cargarPlantillasTab();
+        }
     }
 </script>
+
+<!-- Modal: formulario de plantilla (alta y edición) -->
+<div class="params-overlay" id="plantillaFormOverlay" onclick="_cerrarModalPlantillaForm(event)">
+    <div class="params-modal" style="max-width:480px;">
+        <div class="params-modal-header">
+            <h5 id="plantillaFormTitulo"><i class="bi bi-plus-circle"></i> Nueva plantilla</h5>
+            <button class="params-modal-close" onclick="document.getElementById('plantillaFormOverlay').classList.remove('visible')" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="params-modal-body" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <input type="hidden" id="plantillaEditId">
+            <div class="form-group-custom" style="margin:0;">
+                <label>Nombre <span style="color:red">*</span></label>
+                <input type="text" id="plantillaNombre" class="form-control-custom"
+                       placeholder="Ej: Efluente industrial, Agua de red...">
+            </div>
+            <div class="form-group-custom" style="margin:0;">
+                <label>Descripción</label>
+                <input type="text" id="plantillaDescripcion" class="form-control-custom"
+                       placeholder="Opcional">
+            </div>
+            <div class="form-group-custom" style="margin:0;">
+                <label>Parámetros</label>
+                <button type="button" onclick="_abrirModalPlantillaParams()"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--borde,#d1d5db);background:var(--bg-input,#fff);cursor:pointer;font-size:13px;color:var(--text,#111);text-align:left;">
+                    <i class="bi bi-list-check" style="color:var(--verde,#2e7d32);font-size:15px;"></i>
+                    <span id="plantillaParamContador">Sin parámetros seleccionados</span>
+                </button>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
+                <button type="button" class="btn-cancelar-custom"
+                        onclick="document.getElementById('plantillaFormOverlay').classList.remove('visible')">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-guardar-custom" id="btnGuardarPlantilla"
+                        style="width:auto;margin-top:0;">
+                    <i class="bi bi-check-lg"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: selección de parámetros para plantilla -->
+<div class="params-overlay" id="plantillaParamsOverlay" onclick="_cerrarModalPlantillaParams(event)">
+    <div class="params-modal" style="max-width:760px;width:95%;">
+        <div class="params-modal-header">
+            <h5><i class="bi bi-list-check"></i> Seleccionar parámetros</h5>
+            <button class="params-modal-close" onclick="document.getElementById('plantillaParamsOverlay').classList.remove('visible')" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="params-modal-body" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0;">
+                <!-- Columna izquierda: todos los parámetros -->
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted,#6b7280);text-transform:uppercase;letter-spacing:.04em;">
+                        Todos los parámetros
+                    </div>
+                    <input type="text" id="plantillaFiltroParam" class="form-control-custom"
+                           placeholder="Filtrar..." autocomplete="off" style="height:34px;">
+                    <div id="plantillaParamLista"
+                         style="height:360px;overflow-y:auto;border:1px solid var(--borde,#d1d5db);border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:1px;">
+                    </div>
+                </div>
+                <!-- Columna derecha: seleccionados -->
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="font-size:12px;font-weight:600;color:var(--text-muted,#6b7280);text-transform:uppercase;letter-spacing:.04em;">
+                            Seleccionados
+                        </div>
+                        <small id="plantillaParamContadorModal" style="font-size:12px;color:var(--verde,#2e7d32);font-weight:600;"></small>
+                    </div>
+                    <div id="plantillaSeleccionadosLista"
+                         style="height:400px;overflow-y:auto;border:1px solid var(--borde,#d1d5db);border-radius:6px;padding:6px;display:flex;flex-direction:column;gap:4px;background:var(--bg-subtle,#f9fafb);">
+                        <p style="font-size:13px;color:var(--text-muted,#9ca3af);padding:8px;text-align:center;margin:auto 0;">
+                            Ningún parámetro seleccionado
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px;">
+                <button type="button" class="btn-cancelar-custom"
+                        onclick="document.getElementById('plantillaParamsOverlay').classList.remove('visible')">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-guardar-custom" onclick="_confirmarModalPlantillaParams()"
+                        style="width:auto;margin-top:0;">
+                    <i class="bi bi-check-lg"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: parámetros de resolución -->
 <div class="params-overlay" id="paramsOverlay" onclick="cerrarModalParams(event)">

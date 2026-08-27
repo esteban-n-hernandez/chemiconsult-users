@@ -140,6 +140,23 @@
     background: var(--verde-oscuro);
 }
 
+.btn-cancelar-custom {
+    padding: 9px 18px;
+    background: transparent;
+    border: 1px solid var(--borde, #d1d5db);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted, #6b7280);
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-cancelar-custom:hover {
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text, #111827);
+}
+
 /* ── Tablas de Consulta Estilo Muestras ── */
 .tabla-config {
     width: 100%;
