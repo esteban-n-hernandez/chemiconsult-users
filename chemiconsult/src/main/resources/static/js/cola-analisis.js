@@ -469,6 +469,23 @@
         }
     }
 
+    function esLimiteAusenciaModal(tipo, texto) {
+        if (tipo === 'AUSENCIA') return true;
+        if (tipo === 'TEXTO' && texto && texto.trim().toLowerCase() === 'ausente') return true;
+        return false;
+    }
+
+    function parsearRangoTextoModal(texto) {
+        if (!texto) return null;
+        const parts = texto.replace(/\s/g, '').split('/');
+        if (parts.length === 2) {
+            const min = parseFloat(parts[0].replace(',', '.'));
+            const max = parseFloat(parts[1].replace(',', '.'));
+            if (!isNaN(min) && !isNaN(max)) return { min, max };
+        }
+        return null;
+    }
+
     function renderModalLimites(limites) {
         const container = $('mcModalLimites');
         if (!limites || limites.length === 0) {
@@ -479,59 +496,111 @@
             <table class="mc-limites-tabla">
                 <thead>
                     <tr>
-                        <th class="limite-indicador-cell"></th>
                         <th>Normativa</th>
-                        <th>Tipo</th>
-                        <th>Mínimo</th>
-                        <th>Máximo</th>
-                        <th>Valor límite</th>
+                        <th>Límite</th>
+                        <th class="limite-estado-th">Estado</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${limites.map(l => `
-                        <tr data-min="${l.limiteMin ?? ''}" data-max="${l.limiteMax ?? ''}">
-                            <td class="limite-indicador-cell"><span class="limite-indicador"></span></td>
+                    ${limites.map(l => {
+                        const esAus = esLimiteAusenciaModal(l.tipoLimite, l.limiteTexto);
+                        let limiteStr;
+                        if (esAus) limiteStr = 'Ausente';
+                        else if (l.tipoLimite === 'MAX') limiteStr = `≤ ${l.limiteMax}`;
+                        else if (l.tipoLimite === 'MIN') limiteStr = `≥ ${l.limiteMin}`;
+                        else if (l.tipoLimite === 'RANGO' && l.limiteMin != null && l.limiteMax != null) limiteStr = `${l.limiteMin} – ${l.limiteMax}`;
+                        else limiteStr = l.limiteTexto || '—';
+                        return `
+                        <tr data-tipo="${esAus ? 'AUSENCIA' : (l.tipoLimite || '')}"
+                            data-min="${l.limiteMin ?? ''}"
+                            data-max="${l.limiteMax ?? ''}"
+                            data-texto="${l.limiteTexto ?? ''}">
                             <td>${esc(l.origenNombre || '—')}</td>
-                            <td>${esc(l.tipoLimite   || '—')}</td>
-                            <td>${esc(l.limiteMin    || '—')}</td>
-                            <td>${esc(l.limiteMax    || '—')}</td>
-                            <td>${esc(l.limiteTexto  || '—')}</td>
-                        </tr>`).join('')}
+                            <td>${esc(limiteStr)}</td>
+                            <td class="limite-estado-td"><span class="limite-estado-badge">—</span></td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>`;
         validarLimitesModal();
     }
 
     function validarLimitesModal() {
-        const rawVal = $('mcModalResultado').value.trim();
-        const valor  = parseFloat(rawVal.replace(',', '.'));
-        const rows   = $('mcModalLimites')?.querySelectorAll('tbody tr[data-min]') || [];
+        const rawVal = ($('mcModalResultado').value || '').trim();
+        const vLower = rawVal.toLowerCase();
+        const rows   = $('mcModalLimites')?.querySelectorAll('tbody tr[data-tipo]') || [];
+
         rows.forEach(tr => {
-            const dot    = tr.querySelector('.limite-indicador');
-            if (!dot) return;
+            const badge  = tr.querySelector('.limite-estado-badge');
+            if (!badge) return;
+
+            const tipo   = tr.dataset.tipo;
+            const texto  = tr.dataset.texto;
             const minStr = tr.dataset.min;
             const maxStr = tr.dataset.max;
-            const hasMin = minStr !== '';
-            const hasMax = maxStr !== '';
-            if (!hasMin && !hasMax) { dot.className = 'limite-indicador'; return; }
-            if (rawVal === '' || isNaN(valor)) { dot.className = 'limite-indicador'; return; }
-            const min    = hasMin ? parseFloat(minStr.replace(',', '.')) : -Infinity;
-            const max    = hasMax ? parseFloat(maxStr.replace(',', '.')) : Infinity;
-            dot.className = `limite-indicador ${valor >= min && valor <= max ? 'cumple' : 'no-cumple'}`;
+
+            if (!rawVal) {
+                badge.className = 'limite-estado-badge nd';
+                badge.textContent = '—';
+                return;
+            }
+
+            let cumple = null;
+
+            if (tipo === 'AUSENCIA') {
+                if (vLower === 'ausente') cumple = true;
+                else if (vLower === 'presente' || vLower === 'presencia') cumple = false;
+                else { const n = parseFloat(rawVal.replace(',', '.')); if (!isNaN(n)) cumple = false; }
+            } else if (tipo === 'TEXTO') {
+                const rango = parsearRangoTextoModal(texto);
+                if (rango) {
+                    if (vLower === 'presencia' || vLower === 'presente') { cumple = false; }
+                    else { const n = parseFloat(rawVal.replace(',', '.')); cumple = isNaN(n) ? null : (n >= rango.min && n <= rango.max); }
+                }
+            } else {
+                if (vLower === 'presencia' || vLower === 'presente') {
+                    cumple = false;
+                } else {
+                    const valor  = parseFloat(rawVal.replace(',', '.'));
+                    if (!isNaN(valor)) {
+                        const min = minStr !== '' ? parseFloat(minStr.replace(',', '.')) : -Infinity;
+                        const max = maxStr !== '' ? parseFloat(maxStr.replace(',', '.')) : Infinity;
+                        if (tipo === 'MAX')   cumple = valor <= max;
+                        else if (tipo === 'MIN')   cumple = valor >= min;
+                        else if (tipo === 'RANGO') cumple = valor >= min && valor <= max;
+                    }
+                }
+            }
+
+            badge.className = cumple === true  ? 'limite-estado-badge si'
+                            : cumple === false ? 'limite-estado-badge no'
+                            :                   'limite-estado-badge nd';
+            badge.textContent = cumple === true ? 'Cumple' : cumple === false ? 'No cumple' : 'Sin evaluar';
         });
     }
 
     function renderModalMetodologias(metodologias, currentId) {
-        const sel = $('mcModalMetodo');
-        sel.innerHTML = '<option value="">Sin metodología</option>';
-        (metodologias || []).forEach(m => {
-            const opt = document.createElement('option');
-            opt.value       = m.id;
-            opt.textContent = m.nombre || m.name || String(m.id);
-            if (String(m.id) === String(currentId)) opt.selected = true;
-            console.log(m.id, m.nombre)
-            sel.appendChild(opt);
-        });
+        const wrap = $('mcModalMetodo').parentElement;
+        const sel  = $('mcModalMetodo');
+        const lista = metodologias || [];
+
+        if (lista.length <= 1) {
+            const nombre = lista.length === 1 ? (lista[0].nombre || lista[0].name || '—') : 'Sin metodología';
+            const id     = lista.length === 1 ? lista[0].id : '';
+            wrap.innerHTML = `
+                <label>Metodología</label>
+                <div class="form-control-custom" style="opacity:.8;cursor:default;user-select:text;">${esc(nombre)}</div>
+                <input type="hidden" id="mcModalMetodo" value="${id}">`;
+        } else {
+            sel.innerHTML = '<option value="">Sin metodología</option>';
+            lista.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value       = m.id;
+                opt.textContent = m.nombre || m.name || String(m.id);
+                if (String(m.id) === String(currentId)) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
     }
 
     function cerrarModalConfirmar() {

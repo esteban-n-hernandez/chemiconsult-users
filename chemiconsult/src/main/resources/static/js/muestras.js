@@ -424,6 +424,18 @@ function vincularEventos() {
             paramCard.querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
                 actualizarBadge(badge, e.target.value);
             });
+
+            // Sincronizar botones Aus/Pres con el valor escrito
+            const v = e.target.value.toLowerCase().trim();
+            paramCard.querySelectorAll(".btn-ausente, .btn-presencia").forEach(b => {
+                const activo = b.dataset.valor && b.dataset.valor.toLowerCase() === v;
+                b.style.background = activo
+                    ? (b.classList.contains("btn-ausente") ? "#d1fae5" : "#fee2e2")
+                    : "";
+                b.style.borderColor = activo
+                    ? (b.classList.contains("btn-ausente") ? "#16a34a" : "#dc2626")
+                    : "";
+            });
             
             // Actualizar color del input basado en cumplimiento de límites
             const badges = paramCard.querySelectorAll(".badge-cumple");
@@ -508,12 +520,13 @@ function vincularEventos() {
     contParam.addEventListener("input", onResultadoChange);
     contParam.addEventListener("change", onResultadoChange);
     contParam.addEventListener("click", e => {
-        const btnAus = e.target.closest(".btn-ausente");
-        if (btnAus) {
-            const id = btnAus.dataset.parametroId;
+        const btnAusPres = e.target.closest(".btn-ausente, .btn-presencia");
+        if (btnAusPres) {
+            const id    = btnAusPres.dataset.parametroId;
+            const valor = btnAusPres.dataset.valor;
             const input = contParam.querySelector(`.param-resultado-input[data-parametro-id="${id}"]`);
             if (input) {
-                input.value = "Ausente";
+                input.value = input.value.toLowerCase() === valor.toLowerCase() ? "" : valor;
                 input.dispatchEvent(new Event("input", { bubbles: true }));
             }
             return;
@@ -1953,7 +1966,8 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
                    ${bloqueado ? 'readonly style="opacity:.6;cursor:default' + (tieneNoConforme ? ';color:#dc3545;font-weight:600' : todosCumplen ? ';color:#2e7d32;font-weight:600' : '') + '"' : ''}>`;
 
         const btnAusente = soloAusencia && !bloqueado
-            ? `<button type="button" class="btn-ausente" data-parametro-id="${p.id}">Ausente</button>`
+            ? `<button type="button" class="btn-ausente" data-parametro-id="${p.id}" data-valor="Ausente"><span class="btn-dot"></span>Aus</button>
+               <button type="button" class="btn-presencia" data-parametro-id="${p.id}" data-valor="Presencia"><span class="btn-dot"></span>Pres</button>`
             : "";
 
         const hayLimites = p.limites && p.limites.length > 0;
@@ -1998,6 +2012,24 @@ function renderizarDetalleMuestra(d, metodCatalog = new Map()) {
             </div>
         `;
         contParametros.appendChild(card);
+    });
+
+    // Re-evaluar colores client-side para parámetros con valor ya cargado
+    // (el servidor puede devolver l.cumple=null para valores como "Presencia")
+    contParametros.querySelectorAll(".param-resultado-input").forEach(input => {
+        if (!input.value || !input.value.trim()) return;
+        const paramCard = input.closest(".param-card");
+        if (!paramCard) return;
+        paramCard.querySelectorAll(".badge-cumple[data-tipo]").forEach(badge => {
+            actualizarBadge(badge, input.value);
+        });
+        const badges = paramCard.querySelectorAll(".badge-cumple");
+        const noCumplen = Array.from(badges).filter(b => b.classList.contains("badge-cumple-no")).length;
+        const cumplen   = Array.from(badges).filter(b => b.classList.contains("badge-cumple-si")).length;
+        const color = noCumplen > 0 ? "#dc3545" : cumplen > 0 ? "#2e7d32" : "";
+        const weight = color ? "600" : "";
+        [input, paramCard.querySelector(".param-card-metodo"), paramCard.querySelector(".param-norma-count")]
+            .forEach(el => { if (el) { el.style.color = color; el.style.fontWeight = weight; } });
     });
 }
 
@@ -2054,7 +2086,7 @@ function actualizarBadge(badge, valorStr) {
         const v = valorStr.trim().toLowerCase();
         let cumple = null;
         if (v === "ausente") cumple = true;
-        else if (v === "presente") cumple = false;
+        else if (v === "presente" || v === "presencia") cumple = false;
         else { const n = parseFloat(valorStr.replace(",", ".")); if (!isNaN(n)) cumple = false; }
         badge.className = cumple === true  ? "badge-cumple badge-cumple-si"
                         : cumple === false ? "badge-cumple badge-cumple-no"
@@ -2099,6 +2131,13 @@ function actualizarBadge(badge, valorStr) {
             aplicarCumpleBadge(badge, cumple);
             return;
         }
+    }
+
+    // "presencia"/"presente" en un límite numérico → implica detección → No cumple
+    const vLower = valorStr.trim().toLowerCase();
+    if (vLower === "presencia" || vLower === "presente") {
+        aplicarCumpleBadge(badge, false);
+        return;
     }
 
     const valor = parseFloat(valorStr.replace(",", ".").trim());

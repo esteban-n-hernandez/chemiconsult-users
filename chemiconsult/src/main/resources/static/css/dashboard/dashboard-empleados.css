@@ -670,6 +670,22 @@
     box-shadow: 0 2px 6px rgba(94, 165, 4, 0.3);
 }
 
+.pag-select {
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border-tertiary);
+    background: var(--bg-surface);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.pag-select:focus {
+    outline: none;
+    border-color: var(--verde);
+}
+
 button.btn-nueva-muestra-btn {
     font-size: 13px;
 }
@@ -1372,6 +1388,28 @@ button.btn-nueva-muestra-btn {
 
 .btn-eliminar-confirm:hover {
     background: #b02a37;
+    transform: translateY(-1px);
+}
+
+/* ── Botón confirmar acción positiva (confirm modal) ── */
+.btn-primary-action {
+    padding: 9px 20px;
+    background: var(--verde);
+    border: none;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(94, 165, 4, 0.3);
+    transition: all 0.2s;
+}
+
+.btn-primary-action:hover {
+    background: var(--verde-oscuro);
     transform: translateY(-1px);
 }
 

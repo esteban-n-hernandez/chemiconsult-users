@@ -38,7 +38,7 @@ let allEstudios = [];
 let allMuestras = [];
 let filteredMuestras = [];
 let currentPage = 1;
-const PER_PAGE = 10; // máximo por página
+let perPage = 5;
 const ESTADOS_VISIBLES = new Set([
     "PENDIENTE",
     "EN_PROCESO",
@@ -713,7 +713,75 @@ const SIGUIENTE_ESTADO = {
     DEMORADA: "EN_PROCESO",
 };
 
+// Modal de confirmación "Marcar completo"
+let _completarPendiente = null;
+
+const modalConfirmarCompleto = document.getElementById("modalConfirmarCompleto");
+document.getElementById("modalConfirmarCompletoClose").addEventListener("click", cerrarModalConfirmarCompleto);
+document.getElementById("btnConfirmarCompletoVolver").addEventListener("click", cerrarModalConfirmarCompleto);
+modalConfirmarCompleto.addEventListener("click", e => { if (e.target === modalConfirmarCompleto) cerrarModalConfirmarCompleto(); });
+document.getElementById("btnConfirmarCompletoOk").addEventListener("click", () => {
+    if (_completarPendiente) {
+        const { id, estadoActual, btn } = _completarPendiente;
+        cerrarModalConfirmarCompleto();
+        _ejecutarAvanzarEstado(id, estadoActual, btn);
+    }
+});
+
+function cerrarModalConfirmarCompleto() {
+    modalConfirmarCompleto.classList.remove("visible");
+    _completarPendiente = null;
+    document.getElementById("btnConfirmarCompletoOk").style.display = "";
+    document.getElementById("btnConfirmarCompletoVolver").textContent = "Cancelar";
+}
+
 async function avanzarEstado(id, estadoActual, btn) {
+    if (estadoActual === "EN_PROCESO") {
+        // Validar que todos los parámetros tengan resultado antes de permitir el avance
+        if (btn) { btn.disabled = true; btn.innerHTML = `<i class="bi bi-hourglass-split"></i>`; }
+        try {
+            const token = localStorage.getItem("token");
+            const resp = await fetch(`${API_BASE}/api/estudios/${id}/detalle`, {
+                headers: token ? { Authorization: "Bearer " + token } : {},
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const d = await resp.json();
+
+            const params = d.parametros || [];
+            const faltantes = params.filter(p => !p.valorResultado || p.valorResultado.trim() === "");
+
+            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-check2-circle"></i>`; }
+
+            if (faltantes.length > 0) {
+                const lista = faltantes.map(p => `• ${p.nombre}`).join("\n");
+                document.getElementById("modalConfirmarCompletoMsg").innerHTML =
+                    `<strong style="color:#dc3545">Faltan resultados en ${faltantes.length} parámetro${faltantes.length > 1 ? "s" : ""}:</strong>` +
+                    `<ul style="margin:.5rem 0 0 1rem;font-size:13px;color:var(--color-text-secondary);">` +
+                    faltantes.map(p => `<li>${p.nombre}</li>`).join("") +
+                    `</ul>`;
+                document.getElementById("btnConfirmarCompletoOk").style.display = "none";
+                document.getElementById("btnConfirmarCompletoVolver").textContent = "Cerrar";
+                modalConfirmarCompleto.classList.add("visible");
+                return;
+            }
+
+            _completarPendiente = { id, estadoActual, btn };
+            document.getElementById("modalConfirmarCompletoMsg").innerHTML =
+                "¿Confirmar que el análisis fue completado? El estado pasará a <strong>Analizado</strong>.";
+            document.getElementById("btnConfirmarCompletoOk").style.display = "";
+            document.getElementById("btnConfirmarCompletoVolver").textContent = "Cancelar";
+            modalConfirmarCompleto.classList.add("visible");
+        } catch (err) {
+            console.error("Error validando resultados:", err);
+            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-check2-circle"></i>`; }
+            mostrarToast("Error al verificar los resultados del análisis");
+        }
+        return;
+    }
+    _ejecutarAvanzarEstado(id, estadoActual, btn);
+}
+
+async function _ejecutarAvanzarEstado(id, estadoActual, btn) {
     const siguiente = SIGUIENTE_ESTADO[estadoActual];
     if (!siguiente) return;
 
@@ -1307,11 +1375,11 @@ function renderPage() {
     if (!tablaBody || !pagInfo || !pagControls) return;
 
     const total = filteredMuestras.length;
-    const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
     if (currentPage > totalPages) currentPage = totalPages;
 
-    const start = (currentPage - 1) * PER_PAGE;
-    const end = Math.min(start + PER_PAGE, total);
+    const start = (currentPage - 1) * perPage;
+    const end = Math.min(start + perPage, total);
 
     tablaBody.innerHTML = "";
     if (total === 0) {
@@ -1414,6 +1482,12 @@ function renderPage() {
     });
     pagControls.appendChild(next);
 }
+
+document.getElementById("selectPorPaginaEmpleado").addEventListener("change", function () {
+    perPage = parseInt(this.value, 10);
+    currentPage = 1;
+    renderPage();
+});
 
 // Subir documento usando fetch + FormData
 async function subirDocumento(id, file, triggerBtn) {

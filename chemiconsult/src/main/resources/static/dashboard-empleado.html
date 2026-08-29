@@ -272,7 +272,17 @@
                     >
                         Mostrando 0–0 de 0
                     </div>
-                    <div id="pagControlsEmpleado"></div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--color-text-secondary);">
+                            <span>Filas:</span>
+                            <select id="selectPorPaginaEmpleado" class="pag-select">
+                                <option value="5" selected>5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                            </select>
+                        </div>
+                        <div id="pagControlsEmpleado"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -624,6 +634,25 @@
             <button type="button" class="btn-cancelar" id="btnCancelarCancelar">Volver</button>
             <button type="button" class="btn-eliminar-confirm" id="btnConfirmarCancelar">
                 <i class="bi bi-x-circle"></i> Confirmar cancelación
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR COMPLETAR MUESTRA -->
+<div class="modal-overlay" id="modalConfirmarCompleto">
+    <div class="modal-box modal-box-sm">
+        <div class="modal-header">
+            <h5 style="color:var(--verde-oscuro)"><i class="bi bi-check2-circle"></i> Marcar como completo</h5>
+            <button class="modal-close" id="modalConfirmarCompletoClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <p id="modalConfirmarCompletoMsg" style="margin-bottom:0;color:var(--color-text-secondary);font-size:14px;"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="btnConfirmarCompletoVolver">Cancelar</button>
+            <button type="button" class="btn-primary-action" id="btnConfirmarCompletoOk">
+                <i class="bi bi-check2-circle"></i> Confirmar
             </button>
         </div>
     </div>
