@@ -4,6 +4,14 @@
     const API = '/api/mensajes';
     const API_GRUPO = '/api/mensajes/grupo';
     const POLL_INTERVAL = 15000;
+    const HORARIO = { inicio: 9, fin: 17 }; // lunes a viernes
+
+    function enHorarioLaboral() {
+        const ahora = new Date();
+        const dia = ahora.getDay(); // 0=dom, 6=sab
+        const hora = ahora.getHours();
+        return dia >= 1 && dia <= 5 && hora >= HORARIO.inicio && hora < HORARIO.fin;
+    }
     const LIMITE_MSGS = 10;
     const GRUPO_LAST_KEY = 'chatGrupoLastMsgId';
 
@@ -536,6 +544,7 @@
     function iniciarPolling() {
         detenerPolling();
         pollTimer = setInterval(async () => {
+            if (!enHorarioLaboral()) return;
             if (vistaActual === 'conv' && (convActual || modoGrupo)) {
                 await pollMensajesNuevos();
                 await pollEstadoLeido();
@@ -555,8 +564,8 @@
         if (!token()) return;
 
         // El badge polling puede arrancar ya (tiene guard para el elemento ausente)
-        actualizarBadge();
-        setInterval(actualizarBadge, POLL_INTERVAL);
+        if (enHorarioLaboral()) actualizarBadge();
+        setInterval(() => { if (enHorarioLaboral()) actualizarBadge(); }, POLL_INTERVAL);
 
         // Inyectar HTML y bindear eventos sólo después de que el CSS esté listo,
         // para evitar el flash del panel sin estilos durante la carga inicial.

@@ -253,8 +253,14 @@ async function cargarDatosEmpresa() {
         document.getElementById("empTelefono").textContent = c.celular || c.telefono || "—";
         document.getElementById("empEmail").textContent    = c.email || "—";
         document.getElementById("empDireccion").textContent = c.direccion || "—";
-        document.getElementById("empLocalidad").textContent = [c.localidad, c.provincia]
+        const fmtProvincia = p => p ? p.replace(/_/g, " ").replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : null;
+        document.getElementById("empLocalidad").textContent = [c.localidad, fmtProvincia(c.provincia)]
             .filter(Boolean).join(", ") || "—";
+
+        if (c.tipoCliente !== "EMPRESA") {
+            document.getElementById("empresaPanelTitulo").innerHTML =
+                '<i class="bi bi-person me-2 panel-title-icon-green"></i>Mis datos';
+        }
 
         document.getElementById("empresaLoading").classList.add("d-none");
         document.getElementById("empresaData").classList.remove("d-none");

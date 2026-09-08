@@ -68,12 +68,15 @@ public class AnalisisService {
 
     @Transactional(readOnly = true)
     public List<EstudioTO> getEstudiosByID(Long userId) {
-        ClienteDE cliente = clienteRepository.findByUser_Id(userId)
-                .orElseGet(() -> {
-                    com.chemiconsult.entity.ClienteContactoDE contacto = contactoRepository.findByUser_Id(userId)
-                            .orElseThrow(() -> new RuntimeException("No se encontró un cliente asociado a este usuario"));
-                    return contacto.getCliente();
-                });
+        Optional<ClienteDE> clienteOpt = clienteRepository.findByUser_Id(userId);
+        if (clienteOpt.isEmpty()) {
+            clienteOpt = contactoRepository.findByUser_Id(userId)
+                    .map(com.chemiconsult.entity.ClienteContactoDE::getCliente);
+        }
+        if (clienteOpt.isEmpty()) {
+            return List.of();
+        }
+        ClienteDE cliente = clienteOpt.get();
 
         List<EstudioTO> tos = analisisRepository.findAllByCliente(cliente)
                 .stream()
