@@ -78,7 +78,7 @@ public class FacturaDE {
     private Long presupuestoId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago", nullable = false, columnDefinition = "VARCHAR(50) DEFAULT 'PENDIENTE'")
+    @Column(name = "estado_pago")
     private EstadoPagoEnum estadoPago = EstadoPagoEnum.PENDIENTE;
 
     @Column(name = "es_externa", columnDefinition = "BOOLEAN DEFAULT FALSE")
