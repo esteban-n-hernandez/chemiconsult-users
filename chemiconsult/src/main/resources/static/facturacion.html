@@ -341,69 +341,131 @@
             <button class="modal-close" id="detBtnCerrar"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="modal-body">
-            <div class="fact-detail-grid" style="margin-bottom:12px;">
-                <div class="fact-detail-field">
-                    <label>Receptor</label>
-                    <span id="detCliente">—</span>
+            <!-- Vista (read-only) -->
+            <div id="detViewContent">
+                <div class="fact-detail-grid" style="margin-bottom:12px;">
+                    <div class="fact-detail-field">
+                        <label>Receptor</label>
+                        <span id="detCliente">—</span>
+                    </div>
+                    <div class="fact-detail-field">
+                        <label>CUIT</label>
+                        <span id="detCuit">—</span>
+                    </div>
+                    <div class="fact-detail-field">
+                        <label>Condición IVA</label>
+                        <span id="detCondIVA">—</span>
+                    </div>
+                    <div class="fact-detail-field">
+                        <label>Fecha emisión</label>
+                        <span id="detFecha">—</span>
+                    </div>
+                    <div class="fact-detail-field">
+                        <label>Estado</label>
+                        <span id="detEstado">—</span>
+                    </div>
+                    <div class="fact-detail-field">
+                        <label>Vencimiento CAE</label>
+                        <span id="detVtoCAE">—</span>
+                    </div>
                 </div>
-                <div class="fact-detail-field">
-                    <label>CUIT</label>
-                    <span id="detCuit">—</span>
+
+                <div style="text-align:center;margin:10px 0 16px;">
+                    <label style="font-size:.75rem;color:var(--text-secondary);display:block;margin-bottom:4px;">CAE</label>
+                    <span class="fact-detail-cae" id="detCAE">—</span>
                 </div>
-                <div class="fact-detail-field">
-                    <label>Condición IVA</label>
-                    <span id="detCondIVA">—</span>
+
+                <!-- Tabla ítems -->
+                <div class="fact-items-wrap">
+                    <table class="fact-items-table">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Cant.</th>
+                                <th>Precio unit.</th>
+                                <th>IVA %</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detItemsBody"></tbody>
+                    </table>
                 </div>
-                <div class="fact-detail-field">
-                    <label>Fecha emisión</label>
-                    <span id="detFecha">—</span>
-                </div>
-                <div class="fact-detail-field">
-                    <label>Estado</label>
-                    <span id="detEstado">—</span>
-                </div>
-                <div class="fact-detail-field">
-                    <label>Vencimiento CAE</label>
-                    <span id="detVtoCAE">—</span>
+
+                <div class="fact-totales" style="margin-top:10px;">
+                    <div class="fact-totales-row" id="detRowSubtotal">
+                        <span>Subtotal neto</span><span id="detSubtotal">—</span>
+                    </div>
+                    <div class="fact-totales-row" id="detRowIVA">
+                        <span>IVA</span><span id="detIva">—</span>
+                    </div>
+                    <div class="fact-totales-row total">
+                        <span>Total</span><span id="detTotal">—</span>
+                    </div>
                 </div>
             </div>
 
-            <div style="text-align:center;margin:10px 0 16px;">
-                <label style="font-size:.75rem;color:var(--text-secondary);display:block;margin-bottom:4px;">CAE</label>
-                <span class="fact-detail-cae" id="detCAE">—</span>
-            </div>
-
-            <!-- Tabla ítems -->
-            <div class="fact-items-wrap">
-                <table class="fact-items-table">
-                    <thead>
-                        <tr>
-                            <th>Descripción</th>
-                            <th>Cant.</th>
-                            <th>Precio unit.</th>
-                            <th>IVA %</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detItemsBody"></tbody>
-                </table>
-            </div>
-
-            <div class="fact-totales" style="margin-top:10px;">
-                <div class="fact-totales-row" id="detRowSubtotal">
-                    <span>Subtotal neto</span><span id="detSubtotal">—</span>
+            <!-- Edición (solo facturas externas) -->
+            <div id="detEditForm" style="display:none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de comprobante</label>
+                        <select id="editTipo" class="form-control-custom">
+                            <option value="A">Factura A</option>
+                            <option value="B">Factura B</option>
+                            <option value="C">Factura C</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de emisión</label>
+                        <input type="date" id="editFecha" class="form-control-custom"/>
+                    </div>
                 </div>
-                <div class="fact-totales-row" id="detRowIVA">
-                    <span>IVA</span><span id="detIva">—</span>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Punto de venta</label>
+                        <input type="number" id="editPuntoVenta" class="form-control-custom" min="0"/>
+                    </div>
+                    <div class="form-group">
+                        <label>N° comprobante</label>
+                        <input type="number" id="editNumero" class="form-control-custom" min="0"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Total</label>
+                        <input type="number" id="editTotal" class="form-control-custom" step="0.01" min="0"/>
+                    </div>
                 </div>
-                <div class="fact-totales-row total">
-                    <span>Total</span><span id="detTotal">—</span>
+                <div class="form-group">
+                    <label>Descripción / concepto</label>
+                    <input type="text" id="editDescripcion" class="form-control-custom"
+                           placeholder="Ej: Análisis de agua potable"/>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Condición IVA receptor</label>
+                        <select id="editCondIVA" class="form-control-custom">
+                            <option value="RESPONSABLE_INSCRIPTO">Resp. Inscripto</option>
+                            <option value="MONOTRIBUTISTA">Monotributista</option>
+                            <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+                            <option value="EXENTO">Exento</option>
+                            <option value="NO_RESPONSABLE">No responsable</option>
+                        </select>
+                    </div>
+                    <div class="form-group"></div>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn-cancelar" id="detBtnAnular" style="color:#ef4444;border-color:#fecaca;">
                 <i class="bi bi-slash-circle"></i> Anular
+            </button>
+            <button class="btn-cancelar" id="detBtnEditar" style="display:none;">
+                <i class="bi bi-pencil"></i> Editar
+            </button>
+            <button class="btn-cancelar" id="detBtnCancelEdit" style="display:none;">
+                <i class="bi bi-x"></i> Cancelar
+            </button>
+            <button class="btn-guardar" id="detBtnGuardar" style="display:none;">
+                <i class="bi bi-check-lg"></i> Guardar
             </button>
             <button class="btn-guardar" id="detBtnPDF">
                 <i class="bi bi-file-pdf"></i> Descargar PDF

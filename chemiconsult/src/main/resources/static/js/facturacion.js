@@ -367,8 +367,13 @@ function abrirDetalle(id) {
             `<tr><td colspan="5" style="text-align:center;color:var(--color-text-secondary);">Sin ítems</td></tr>`;
     }
 
-    document.getElementById("detBtnAnular").style.display = f.estado === "AUTORIZADA" ? "" : "none";
-    document.getElementById("detBtnPDF").style.display    = (f.esExterna && !f.archivoNombre) ? "none" : "";
+    document.getElementById("detBtnAnular").style.display    = f.estado === "AUTORIZADA" ? "" : "none";
+    document.getElementById("detBtnPDF").style.display       = (f.esExterna && !f.archivoNombre) ? "none" : "";
+    document.getElementById("detBtnEditar").style.display    = f.esExterna ? "" : "none";
+    document.getElementById("detBtnCancelEdit").style.display = "none";
+    document.getElementById("detBtnGuardar").style.display   = "none";
+    document.getElementById("detViewContent").style.display  = "";
+    document.getElementById("detEditForm").style.display     = "none";
 
     document.getElementById("modalDetalle").classList.add("visible");
 }
@@ -400,6 +405,71 @@ document.getElementById("detBtnAnular").addEventListener("click", async () => {
         await cargarFacturas();
     } catch {
         toast("Error al anular la factura", "error");
+    }
+});
+
+document.getElementById("detBtnEditar").addEventListener("click", () => {
+    const f = factDetalleActual;
+    if (!f) return;
+    document.getElementById("editTipo").value        = f.tipoComprobante || "B";
+    document.getElementById("editFecha").value       = f.fechaEmision    || "";
+    document.getElementById("editPuntoVenta").value  = f.puntoVenta      ?? 0;
+    document.getElementById("editNumero").value      = f.numero          ?? 0;
+    document.getElementById("editTotal").value       = f.total           ?? "";
+    document.getElementById("editCondIVA").value     = f.clienteCondicionIVA || "CONSUMIDOR_FINAL";
+    document.getElementById("editDescripcion").value =
+        (f.items && f.items.length > 0 ? f.items[0].descripcion : "") || "";
+
+    document.getElementById("detViewContent").style.display   = "none";
+    document.getElementById("detEditForm").style.display      = "";
+    document.getElementById("detBtnEditar").style.display     = "none";
+    document.getElementById("detBtnAnular").style.display     = "none";
+    document.getElementById("detBtnPDF").style.display        = "none";
+    document.getElementById("detBtnCancelEdit").style.display = "";
+    document.getElementById("detBtnGuardar").style.display    = "";
+});
+
+document.getElementById("detBtnCancelEdit").addEventListener("click", () => {
+    const f = factDetalleActual;
+    if (!f) return;
+    document.getElementById("detViewContent").style.display   = "";
+    document.getElementById("detEditForm").style.display      = "none";
+    document.getElementById("detBtnEditar").style.display     = f.esExterna ? "" : "none";
+    document.getElementById("detBtnAnular").style.display     = f.estado === "AUTORIZADA" ? "" : "none";
+    document.getElementById("detBtnPDF").style.display        = (f.esExterna && !f.archivoNombre) ? "none" : "";
+    document.getElementById("detBtnCancelEdit").style.display = "none";
+    document.getElementById("detBtnGuardar").style.display    = "none";
+});
+
+document.getElementById("detBtnGuardar").addEventListener("click", async () => {
+    if (!factDetalleActual) return;
+    const puntoVentaVal = parseInt(document.getElementById("editPuntoVenta").value);
+    const numeroVal     = parseInt(document.getElementById("editNumero").value);
+    const totalVal      = parseFloat(document.getElementById("editTotal").value);
+    const body = {
+        tipoComprobante:    document.getElementById("editTipo").value || null,
+        fechaEmision:       document.getElementById("editFecha").value || null,
+        puntoVenta:         isNaN(puntoVentaVal) ? null : puntoVentaVal,
+        numero:             isNaN(numeroVal)     ? null : numeroVal,
+        total:              isNaN(totalVal)      ? null : totalVal,
+        clienteCondicionIVA: document.getElementById("editCondIVA").value || null,
+        descripcion:        document.getElementById("editDescripcion").value.trim() || null,
+    };
+    try {
+        const res = await apiFetch(`${API_BASE}/api/factura/${factDetalleActual.id}/externo`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error();
+        const updated = await res.json();
+        const idx = todasFacturas.findIndex(f => f.id === factDetalleActual.id);
+        if (idx >= 0) todasFacturas[idx] = updated;
+        toast("Factura actualizada");
+        cerrarDetalle();
+        await cargarFacturas();
+    } catch {
+        toast("Error al guardar los cambios", "error");
     }
 });
 

@@ -60,7 +60,7 @@
 /* ── KPI Cards ── */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
     flex: 1;
 }
@@ -94,6 +94,14 @@
     border-left-color: #fd7e14;
 }
 
+.kpi-card.amarillo {
+    border-left-color: #f59e0b;
+}
+
+.kpi-card.verde-suave {
+    border-left-color: #5EA504;
+}
+
 .kpi-icon {
     width: 48px;
     height: 48px;
@@ -118,6 +126,16 @@
 .kpi-icon.naranja {
     background: #fff0e0;
     color: #fd7e14;
+}
+
+.kpi-icon.amarillo {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.kpi-icon.verde-suave {
+    background: #eaf5d3;
+    color: #5EA504;
 }
 
 .kpi-data h3 {
@@ -385,7 +403,7 @@
     }
 
     .kpi-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -477,6 +495,104 @@
     height: 100%;
     border: none;
     display: none;
+}
+
+/* ══ Panel Facturas — stats strip ══ */
+.fact-stats-strip {
+    display: flex;
+    border-bottom: 1px solid var(--borde, #e8f2ec);
+}
+
+.fact-stat {
+    flex: 1;
+    padding: 14px 20px;
+    border-right: 1px solid var(--borde, #e8f2ec);
+}
+
+.fact-stat:last-child {
+    border-right: none;
+}
+
+.fact-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--gris);
+    margin-bottom: 4px;
+}
+
+.fact-stat-value {
+    font-family: monospace;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-main, #1a1a1a);
+    font-variant-numeric: tabular-nums;
+}
+
+.fact-stat-value.fact-stat-warn { color: #d97706; }
+.fact-stat-value.fact-stat-good { color: var(--verde, #5EA504); }
+
+/* ── Tabs ── */
+.fact-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 4px;
+    border-bottom: 1px solid var(--borde, #e8f2ec);
+    background: var(--bg-surface, #fff);
+}
+
+.fact-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px 11px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gris);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    transition: color .15s;
+    white-space: nowrap;
+}
+
+.fact-tab:hover { color: var(--verde, #5EA504); }
+
+.fact-tab.active {
+    color: var(--verde, #5EA504);
+    border-bottom-color: var(--verde, #5EA504);
+    font-weight: 600;
+}
+
+.fact-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #f0f0f0;
+    color: #666;
+}
+
+.fact-tab.active .fact-tab-count {
+    background: #eaf5d3;
+    color: var(--verde, #5EA504);
+}
+
+/* ── Borde lateral por estado de pago ── */
+.tabla-muestras tbody tr.fact-row-pend td:first-child {
+    border-left: 3px solid #f59e0b;
+}
+
+.tabla-muestras tbody tr.fact-row-paid td:first-child {
+    border-left: 3px solid var(--verde, #5EA504);
 }
 
 /* ── Barra de selección de archivos en el modal ── */

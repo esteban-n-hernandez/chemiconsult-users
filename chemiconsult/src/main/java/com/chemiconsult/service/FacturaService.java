@@ -9,6 +9,7 @@ import com.chemiconsult.enums.TipoComprobanteEnum;
 import com.chemiconsult.repository.ClienteRepository;
 import com.chemiconsult.repository.FacturaRepository;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
+import com.chemiconsult.to.FacturaExternaEditTO;
 import com.chemiconsult.to.FacturaItemTO;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
@@ -272,6 +273,46 @@ public class FacturaService {
     public FacturaResumenTO marcarPago(Long id, EstadoPagoEnum estadoPago) {
         FacturaDE factura = findOrThrow(id);
         factura.setEstadoPago(estadoPago);
+        return toResumen(facturaRepository.save(factura));
+    }
+
+    // ── Actualizar externa ──
+
+    @Transactional
+    public FacturaResumenTO actualizarExterna(Long id, FacturaExternaEditTO req) {
+        FacturaDE factura = findOrThrow(id);
+        if (!factura.isEsExterna()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Solo se pueden editar facturas adjuntadas externamente");
+        }
+        if (req.getFechaEmision()        != null) factura.setFechaEmision(req.getFechaEmision());
+        if (req.getTipoComprobante()     != null) factura.setTipoComprobante(TipoComprobanteEnum.valueOf(req.getTipoComprobante()));
+        if (req.getPuntoVenta()          != null) factura.setPuntoVenta(req.getPuntoVenta());
+        if (req.getNumero()              != null) factura.setNumero(req.getNumero());
+        if (req.getClienteNombre()       != null) factura.setClienteNombre(req.getClienteNombre().toUpperCase());
+        if (req.getClienteCuit()         != null) factura.setClienteCuit(req.getClienteCuit());
+        if (req.getClienteCondicionIVA() != null) factura.setClienteCondicionIVA(CondicionIVAEnum.valueOf(req.getClienteCondicionIVA()));
+        if (req.getTotal()               != null) {
+            factura.setTotal(req.getTotal());
+            factura.setSubtotal(req.getTotal());
+        }
+        if (req.getDescripcion() != null) {
+            factura.getItems().clear();
+            if (!req.getDescripcion().isBlank()) {
+                FacturaItemDE item = new FacturaItemDE();
+                item.setFactura(factura);
+                item.setOrden(1);
+                item.setDescripcion(req.getDescripcion());
+                item.setCantidad(1.0);
+                double t = req.getTotal() != null ? req.getTotal() : 0.0;
+                item.setPrecioUnitario(t);
+                item.setAlicuotaIva(0.0);
+                item.setSubtotal(t);
+                item.setImporteIva(0.0);
+                item.setTotal(t);
+                factura.getItems().add(item);
+            }
+        }
         return toResumen(facturaRepository.save(factura));
     }
 

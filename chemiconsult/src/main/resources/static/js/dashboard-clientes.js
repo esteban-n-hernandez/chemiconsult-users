@@ -404,6 +404,92 @@ function nroFmtFact(pv, num) {
     return `${String(pv || 0).padStart(4,"0")}-${String(num).padStart(8,"0")}`;
 }
 
+let todasLasFacturas = [];
+
+function factRowHtml(f) {
+    const estadoBadge = f.estado === "AUTORIZADA"
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+             font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;">
+             <i class="bi bi-check-circle-fill"></i> Autorizada</span>`
+        : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+             font-size:.75rem;font-weight:600;background:#fee2e2;color:#991b1b;">
+             Rechazada</span>`;
+
+    const pagoBadge = f.estadoPago === "PAGADO"
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+             font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;">
+             <i class="bi bi-check-circle-fill"></i> Pagado</span>`
+        : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+             font-size:.75rem;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;">
+             <i class="bi bi-clock"></i> Pendiente</span>`;
+
+    const tipoBadge = `<span style="display:inline-flex;align-items:center;justify-content:center;
+        width:26px;height:26px;border-radius:6px;font-weight:800;font-size:.85rem;
+        ${f.tipoComprobante === 'A' ? 'background:#dbeafe;color:#1e40af;'
+        : f.tipoComprobante === 'C' ? 'background:#fef9c3;color:#854d0e;'
+        : 'background:#dcfce7;color:#166534;'}">${f.tipoComprobante}</span>`;
+
+    const nroCol = f.esExterna
+        ? (f.numero && f.numero > 0
+            ? `<span style="font-family:monospace;font-size:.82rem;">${nroFmtFact(f.puntoVenta, f.numero)}</span>
+               <i class="bi bi-paperclip" title="Adjuntada" style="font-size:.7rem;color:#9ca3af;margin-left:3px;"></i>`
+            : `<span style="color:#9ca3af;">—</span>
+               <i class="bi bi-paperclip" title="Adjuntada" style="font-size:.7rem;color:#9ca3af;margin-left:3px;"></i>`)
+        : `<span style="font-family:monospace;font-size:.82rem;">${nroFmtFact(f.puntoVenta, f.numero)}</span>`;
+
+    let pdfCell = `<span style="color:var(--gris);font-size:13px;">—</span>`;
+    if (f.esExterna && f.archivoNombre) {
+        pdfCell = `<button class="btn-descargar fact-pdf-btn" data-id="${f.id}" data-externa="true">
+            <i class="bi bi-file-earmark-pdf"></i> Ver</button>`;
+    } else if (!f.esExterna) {
+        pdfCell = `<button class="btn-descargar fact-pdf-btn" data-id="${f.id}" data-externa="false">
+            <i class="bi bi-file-earmark-pdf"></i> PDF</button>`;
+    }
+
+    const rowClass = f.estadoPago === "PAGADO" ? "fact-row-paid" : "fact-row-pend";
+    return `<tr class="${rowClass}">
+        <td>${tipoBadge}</td>
+        <td>${nroCol}</td>
+        <td>${formatFechaFact(f.fechaEmision)}</td>
+        <td style="font-weight:600;">${formatPrecioFact(f.total)}</td>
+        <td>${estadoBadge}</td>
+        <td>${pagoBadge}</td>
+        <td>${pdfCell}</td>
+    </tr>`;
+}
+
+function renderTablaFacturas(lista) {
+    const tbody   = document.getElementById("tablaFacturasBody");
+    const sinFact = document.getElementById("sinFacturas");
+    if (!lista.length) {
+        tbody.innerHTML = "";
+        sinFact.style.display = "";
+        return;
+    }
+    sinFact.style.display = "none";
+    tbody.innerHTML = lista.map(factRowHtml).join("");
+
+    tbody.querySelectorAll(".fact-pdf-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.dataset.id;
+            const esExterna = btn.dataset.externa === "true";
+            const url = esExterna
+                ? `${API_CLIENTES_BASE}/factura/${id}/archivo`
+                : `${API_CLIENTES_BASE}/factura/${id}/pdf`;
+            try {
+                const r = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+                if (!r.ok) throw new Error();
+                const blob = await r.blob();
+                const objUrl = URL.createObjectURL(blob);
+                window.open(objUrl, "_blank");
+                setTimeout(() => URL.revokeObjectURL(objUrl), 30000);
+            } catch {
+                alert("No se pudo abrir el archivo.");
+            }
+        });
+    });
+}
+
 async function cargarFacturas() {
     const tbody = document.getElementById("tablaFacturasBody");
     try {
@@ -411,106 +497,67 @@ async function cargarFacturas() {
             headers: { "Authorization": `Bearer ${token}` }
         });
         if (!res.ok) throw new Error();
-        const facturas = await res.json();
+        const data = await res.json();
 
-        if (!facturas.length) {
-            tbody.innerHTML = "";
+        // Las facturas ANULADAS no se muestran al cliente
+        todasLasFacturas = data.filter(f => f.estado !== "ANULADA");
+
+        if (!todasLasFacturas.length) {
             document.getElementById("sinFacturas").style.display = "";
             return;
         }
-        document.getElementById("sinFacturas").style.display = "none";
 
-        // Banner deuda: facturas AUTORIZADA + PENDIENTE de pago
-        const deudaFacturas = facturas.filter(f => f.estado === "AUTORIZADA" && f.estadoPago !== "PAGADO");
-        const deudaTotal = deudaFacturas.reduce((s, f) => s + (f.total || 0), 0);
-        const banner = document.getElementById("deuda-banner");
-        if (deudaTotal > 0) {
-            document.getElementById("deuda-cantidad").textContent = deudaFacturas.length;
-            document.getElementById("deuda-total").textContent = "$" + deudaTotal.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            banner.style.display = "flex";
-            banner.hidden = false;
+        // ── Stats ──
+        const pendientes  = todasLasFacturas.filter(f => f.estado === "AUTORIZADA" && f.estadoPago !== "PAGADO");
+        const pagadas     = todasLasFacturas.filter(f => f.estadoPago === "PAGADO");
+        const totalFact   = todasLasFacturas.reduce((s, f) => s + (f.total || 0), 0);
+        const totalPend   = pendientes.reduce((s, f) => s + (f.total || 0), 0);
+        const totalPagado = pagadas.reduce((s, f) => s + (f.total || 0), 0);
+        const fmt = v => "$" + v.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        document.getElementById("stat-total-fact").textContent = fmt(totalFact);
+        document.getElementById("stat-pendiente").textContent  = totalPend > 0 ? fmt(totalPend) : "Sin deuda";
+        document.getElementById("stat-pagado").textContent     = fmt(totalPagado);
+
+        // ── Tab counts ──
+        document.getElementById("tab-count-todas").textContent = todasLasFacturas.length;
+        document.getElementById("tab-count-pend").textContent  = pendientes.length;
+        document.getElementById("tab-count-paid").textContent  = pagadas.length;
+
+        // ── KPI card de deuda ──
+        const kpiCard  = document.getElementById("kpi-deuda-card");
+        const kpiIcon  = document.getElementById("kpi-deuda-icon");
+        const kpiVal   = document.getElementById("kpi-deuda");
+        const kpiLabel = document.getElementById("kpi-deuda-label");
+        if (totalPend > 0) {
+            kpiCard.classList.add("amarillo");
+            kpiIcon.classList.add("amarillo");
+            kpiVal.textContent  = "$" + totalPend.toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            kpiVal.style.fontSize = "1.2rem";
+            kpiLabel.textContent = `Deuda (${pendientes.length} fact.)`;
         } else {
-            banner.hidden = true;
+            kpiCard.classList.add("verde-suave");
+            kpiIcon.classList.add("verde-suave");
+            kpiIcon.innerHTML = '<i class="bi bi-check-circle"></i>';
+            kpiVal.textContent  = "Al día";
+            kpiVal.style.fontSize = "1.4rem";
+            kpiLabel.textContent = "Sin deuda";
         }
 
-        tbody.innerHTML = facturas.map(f => {
-            const badge = f.estado === "AUTORIZADA"
-                ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
-                     font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;">
-                     <i class="bi bi-check-circle-fill"></i> Autorizada</span>`
-                : f.estado === "ANULADA"
-                ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
-                     font-size:.75rem;font-weight:600;background:#f3f4f6;color:#6b7280;text-decoration:line-through;">
-                     Anulada</span>`
-                : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
-                     font-size:.75rem;font-weight:600;background:#fee2e2;color:#991b1b;">
-                     Rechazada</span>`;
-
-            const pagoBadge = f.estadoPago === "PAGADO"
-                ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
-                     font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;">
-                     <i class="bi bi-check-circle-fill"></i> Pagado</span>`
-                : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
-                     font-size:.75rem;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;">
-                     <i class="bi bi-clock"></i> Pendiente</span>`;
-
-            const tipoBadge = `<span style="display:inline-flex;align-items:center;justify-content:center;
-                width:26px;height:26px;border-radius:6px;font-weight:800;font-size:.85rem;
-                ${f.tipoComprobante === 'A' ? 'background:#dbeafe;color:#1e40af;'
-                : f.tipoComprobante === 'C' ? 'background:#fef9c3;color:#854d0e;'
-                : 'background:#dcfce7;color:#166534;'}">${f.tipoComprobante}</span>`;
-
-            const nroCol = f.esExterna
-                ? (f.numero && f.numero > 0
-                    ? `<span style="font-family:monospace;font-size:.82rem;">${nroFmtFact(f.puntoVenta, f.numero)}</span>
-                       <i class="bi bi-paperclip" title="Adjuntada" style="font-size:.7rem;color:#9ca3af;margin-left:3px;"></i>`
-                    : `<span style="color:#9ca3af;">—</span>
-                       <i class="bi bi-paperclip" title="Adjuntada" style="font-size:.7rem;color:#9ca3af;margin-left:3px;"></i>`)
-                : `<span style="font-family:monospace;font-size:.82rem;">${nroFmtFact(f.puntoVenta, f.numero)}</span>`;
-
-            let pdfCell = "—";
-            if (f.esExterna && f.archivoNombre) {
-                pdfCell = `<button class="btn-informe fact-pdf-btn" data-id="${f.id}" data-externa="true"
-                    style="padding:4px 10px;font-size:.78rem;">
-                    <i class="bi bi-file-pdf-fill"></i> Ver
-                </button>`;
-            } else if (!f.esExterna) {
-                pdfCell = `<button class="btn-informe fact-pdf-btn" data-id="${f.id}" data-externa="false"
-                    style="padding:4px 10px;font-size:.78rem;">
-                    <i class="bi bi-download"></i> PDF
-                </button>`;
-            }
-
-            return `<tr>
-                <td>${tipoBadge}</td>
-                <td>${nroCol}</td>
-                <td>${formatFechaFact(f.fechaEmision)}</td>
-                <td style="font-weight:600;">${formatPrecioFact(f.total)}</td>
-                <td>${badge}</td>
-                <td>${pagoBadge}</td>
-                <td>${pdfCell}</td>
-            </tr>`;
-        }).join("");
-
-        document.querySelectorAll(".fact-pdf-btn").forEach(btn => {
-            btn.addEventListener("click", async () => {
-                const id = btn.dataset.id;
-                const esExterna = btn.dataset.externa === "true";
-                const url = esExterna
-                    ? `${API_CLIENTES_BASE}/factura/${id}/archivo`
-                    : `${API_CLIENTES_BASE}/factura/${id}/pdf`;
-                try {
-                    const r = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
-                    if (!r.ok) throw new Error();
-                    const blob = await r.blob();
-                    const objUrl = URL.createObjectURL(blob);
-                    window.open(objUrl, "_blank");
-                    setTimeout(() => URL.revokeObjectURL(objUrl), 30000);
-                } catch {
-                    alert("No se pudo abrir el archivo.");
-                }
+        // ── Tabs ──
+        document.querySelectorAll(".fact-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".fact-tab").forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                const filtro = tab.dataset.tab;
+                const lista = filtro === "pendientes" ? pendientes
+                            : filtro === "pagadas"    ? pagadas
+                            : todasLasFacturas;
+                renderTablaFacturas(lista);
             });
         });
+
+        renderTablaFacturas(todasLasFacturas);
 
     } catch {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#ef4444;padding:20px;">
