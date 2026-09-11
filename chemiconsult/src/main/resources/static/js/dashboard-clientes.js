@@ -566,8 +566,17 @@ async function cargarFacturas() {
         const totalPagado = pagadas.reduce((s, f) => s + (f.total || 0), 0);
         const fmt = v => "$" + v.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        document.getElementById("stat-pendiente").textContent  = totalPend > 0 ? fmt(totalPend) : "Sin deuda";
-        document.getElementById("stat-pagado").textContent     = fmt(totalPagado);
+        const statEl    = document.getElementById("stat-pendiente");
+        const statLabel = document.getElementById("stat-pendiente-label");
+        if (totalPend > 0) {
+            statEl.textContent    = fmt(totalPend);
+            statEl.className      = "fact-stat-value fact-stat-warn";
+            statLabel.textContent = "Pendiente de pago";
+        } else {
+            statEl.textContent    = "Sin deuda";
+            statEl.className      = "fact-stat-value fact-stat-good";
+            statLabel.textContent = "Estado de cuenta";
+        }
 
         // ── Tab counts ──
         document.getElementById("tab-count-todas").textContent = todasLasFacturas.length;
