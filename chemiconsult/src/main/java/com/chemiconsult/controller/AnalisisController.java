@@ -61,6 +61,16 @@ public class AnalisisController {
         return analisisService.getEstudiosTO();
     }
 
+    @GetMapping("/activas")
+    public List<EstudioTO> getEstudiosActivos() {
+        return analisisService.getEstudiosActivos();
+    }
+
+    @GetMapping("/kpi-mes")
+    public Map<String, Long> getKpiMes(@RequestParam int year, @RequestParam int month) {
+        return analisisService.getKpiMes(year, month);
+    }
+
     @GetMapping("/user/{userId}")
     public List<EstudioTO> getEstudiosByID(@PathVariable Long userId,
                                             @AuthenticationPrincipal UserDetails principal) {

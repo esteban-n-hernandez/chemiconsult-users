@@ -1011,7 +1011,7 @@ async function cargarEstudios() {
     const token = localStorage.getItem("token");
 
     try {
-        const resp = await fetch(`${API_BASE}/api/estudios/all`, {
+        const resp = await fetch(`${API_BASE}/api/estudios/activas`, {
             method: "GET",
             headers: token ? {Authorization: "Bearer " + token} : {},
         });
@@ -1120,42 +1120,36 @@ function actualizarKPIs() {
 
 let _graficoOffset = 0; // 0 = mes actual, -1 = mes anterior, etc.
 
-function renderGraficoMes() {
+async function renderGraficoMes() {
     const ahora = new Date();
     const target = new Date(ahora.getFullYear(), ahora.getMonth() + _graficoOffset, 1);
     const mes  = target.getMonth();
     const anio = target.getFullYear();
 
-    const delMes = allEstudios.filter(m => {
-        const f = parseFecha(m.fechaAlta);
-        return f && f.getMonth() === mes && f.getFullYear() === anio;
-    });
-
-    const grupos = { "Pendientes": 0, "En proceso": 0, "OK": 0, "Canceladas": 0 };
-    delMes.forEach(m => {
-        const est = normalizarEstado(m.estado);
-        if      (est === "PENDIENTE")                                                          grupos["Pendientes"]++;
-        else if (est === "EN_PROCESO" || est === "DEMORADA" || est === "COMPLETO_SIN_INFORME") grupos["En proceso"]++;
-        else if (est === "COMPLETO")                                                            grupos["OK"]++;
-        else                                                                                    grupos["Canceladas"]++;
-    });
-
     const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
     const elLabel = document.getElementById("graficoMesLabel");
     if (elLabel) elLabel.textContent = `${MESES[mes]} ${anio}`;
 
-    const elTotal = document.getElementById("graficoTotal");
-    if (elTotal) elTotal.textContent = delMes.length;
-
-    // deshabilitar "siguiente" cuando ya estamos en el mes actual
     const btnSig = document.getElementById("btnGraficoSiguiente");
     if (btnSig) btnSig.disabled = _graficoOffset >= 0;
 
     const canvas = document.getElementById("graficoEstados");
     if (!canvas) return;
 
-    const labels = Object.keys(grupos);
-    const data   = Object.values(grupos);
+    let kpi = { pendientes: 0, enProceso: 0, completadas: 0, canceladas: 0, total: 0 };
+    try {
+        const token = localStorage.getItem("token");
+        const r = await fetch(`${API_BASE}/api/estudios/kpi-mes?year=${anio}&month=${mes + 1}`, {
+            headers: token ? { Authorization: "Bearer " + token } : {},
+        });
+        if (r.ok) kpi = await r.json();
+    } catch (_) {}
+
+    const elTotal = document.getElementById("graficoTotal");
+    if (elTotal) elTotal.textContent = kpi.total ?? 0;
+
+    const data   = [kpi.pendientes, kpi.enProceso, kpi.completadas, kpi.canceladas];
+    const labels = ["Pendientes", "En proceso", "OK", "Canceladas"];
     const colors = ["#f59e0b", "#3b82f6", "#5EA504", "#9ca3af"];
 
     if (window._graficoMes) {
