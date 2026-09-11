@@ -4,11 +4,14 @@ import com.chemiconsult.entity.UserDE;
 import com.chemiconsult.enums.ModuloEnum;
 import com.chemiconsult.repository.UserRepository;
 import com.chemiconsult.security.JwtUtil;
+import com.chemiconsult.security.LoginRateLimiter;
 import com.chemiconsult.service.JwtUserDetailsService;
 import com.chemiconsult.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,9 +35,16 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final LoginRateLimiter rateLimiter;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
+    public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password,
+                                   HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        if (!rateLimiter.intentoPermitido(ip)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Demasiados intentos. Esperá un minuto e intentá de nuevo.");
+        }
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
@@ -88,11 +98,13 @@ public class AuthController {
     @Autowired
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUserDetailsService jwtUserDetailsService, JwtUtil jwtUtil,
-                          UserRepository userRepository, UserService userService) {
+                          UserRepository userRepository, UserService userService,
+                          LoginRateLimiter rateLimiter) {
         this.authenticationManager = authenticationManager;
         this.jwtUserDetailsService = jwtUserDetailsService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.userService = userService;
+        this.rateLimiter = rateLimiter;
     }
 }
