@@ -60,6 +60,23 @@ function badgeEstado(estado) {
     return `<span class="badge-fact ${cls}"><i class="bi ${ico}"></i> ${estado}</span>`;
 }
 
+function badgePago(estadoPago, factId) {
+    if (estadoPago === "PAGADO") {
+        return `<button class="btn-pago-fact" data-id="${factId}" data-pago="PAGADO"
+            style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+            font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;border:none;cursor:pointer;"
+            title="Marcar como pendiente">
+            <i class="bi bi-check-circle-fill"></i> Pagado
+        </button>`;
+    }
+    return `<button class="btn-pago-fact" data-id="${factId}" data-pago="PENDIENTE"
+        style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+        font-size:.75rem;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;cursor:pointer;"
+        title="Marcar como pagado">
+        <i class="bi bi-clock"></i> Pendiente
+    </button>`;
+}
+
 function tipoBadge(tipo) {
     return `<span class="tipo-badge tipo-${tipo}">${tipo}</span>`;
 }
@@ -97,7 +114,7 @@ async function cargarFacturas() {
         renderTabla();
     } catch {
         document.getElementById("factTablaBody").innerHTML =
-            `<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:20px;">Error al cargar facturas</td></tr>`;
+            `<tr><td colspan="9" style="text-align:center;color:#ef4444;padding:20px;">Error al cargar facturas</td></tr>`;
     }
 }
 
@@ -108,7 +125,7 @@ function renderTabla() {
         : todasFacturas;
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-secondary);">Sin comprobantes</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-secondary);">Sin comprobantes</td></tr>`;
         renderPaginacion(0);
         return;
     }
@@ -154,13 +171,14 @@ function renderTabla() {
             <td style="font-weight:600;">${f.total ? formatPrecio(f.total) : "—"}</td>
             <td class="cae-chip">${caeCol}</td>
             <td>${badgeEstado(f.estado)}</td>
+            <td>${badgePago(f.estadoPago, f.id)}</td>
             <td>${pdfBtn}</td>
         </tr>`;
     }).join("");
 
     tbody.querySelectorAll("tr[data-id]").forEach(tr => {
         tr.addEventListener("click", e => {
-            if (e.target.closest(".btn-pdf-fact")) return;
+            if (e.target.closest(".btn-pdf-fact") || e.target.closest(".btn-pago-fact")) return;
             abrirDetalle(+tr.dataset.id);
         });
     });
@@ -172,6 +190,29 @@ function renderTabla() {
                 abrirArchivoExterno(id);
             } else {
                 descargarPDF(id);
+            }
+        });
+    });
+
+    tbody.querySelectorAll(".btn-pago-fact").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id     = +btn.dataset.id;
+            const actual = btn.dataset.pago;
+            const nuevo  = actual === "PAGADO" ? "PENDIENTE" : "PAGADO";
+            try {
+                const res = await apiFetch(`${API_BASE}/api/factura/${id}/pago`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ estadoPago: nuevo })
+                });
+                if (!res.ok) throw new Error();
+                const updated = await res.json();
+                const idx = todasFacturas.findIndex(f => f.id === id);
+                if (idx !== -1) todasFacturas[idx].estadoPago = updated.estadoPago;
+                renderTabla();
+                toast(nuevo === "PAGADO" ? "Factura marcada como pagada" : "Factura marcada como pendiente");
+            } catch {
+                toast("No se pudo actualizar el estado de pago", "error");
             }
         });
     });

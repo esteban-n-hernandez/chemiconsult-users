@@ -420,6 +420,19 @@ async function cargarFacturas() {
         }
         document.getElementById("sinFacturas").style.display = "none";
 
+        // Banner deuda: facturas AUTORIZADA + PENDIENTE de pago
+        const deudaFacturas = facturas.filter(f => f.estado === "AUTORIZADA" && f.estadoPago !== "PAGADO");
+        const deudaTotal = deudaFacturas.reduce((s, f) => s + (f.total || 0), 0);
+        const banner = document.getElementById("deuda-banner");
+        if (deudaTotal > 0) {
+            document.getElementById("deuda-cantidad").textContent = deudaFacturas.length;
+            document.getElementById("deuda-total").textContent = "$" + deudaTotal.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            banner.style.display = "flex";
+            banner.hidden = false;
+        } else {
+            banner.hidden = true;
+        }
+
         tbody.innerHTML = facturas.map(f => {
             const badge = f.estado === "AUTORIZADA"
                 ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
@@ -432,6 +445,14 @@ async function cargarFacturas() {
                 : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
                      font-size:.75rem;font-weight:600;background:#fee2e2;color:#991b1b;">
                      Rechazada</span>`;
+
+            const pagoBadge = f.estadoPago === "PAGADO"
+                ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+                     font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;">
+                     <i class="bi bi-check-circle-fill"></i> Pagado</span>`
+                : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+                     font-size:.75rem;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;">
+                     <i class="bi bi-clock"></i> Pendiente</span>`;
 
             const tipoBadge = `<span style="display:inline-flex;align-items:center;justify-content:center;
                 width:26px;height:26px;border-radius:6px;font-weight:800;font-size:.85rem;
@@ -466,6 +487,7 @@ async function cargarFacturas() {
                 <td>${formatFechaFact(f.fechaEmision)}</td>
                 <td style="font-weight:600;">${formatPrecioFact(f.total)}</td>
                 <td>${badge}</td>
+                <td>${pagoBadge}</td>
                 <td>${pdfCell}</td>
             </tr>`;
         }).join("");
@@ -491,7 +513,7 @@ async function cargarFacturas() {
         });
 
     } catch {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:20px;">
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#ef4444;padding:20px;">
             Error al cargar las facturas.</td></tr>`;
     }
 }

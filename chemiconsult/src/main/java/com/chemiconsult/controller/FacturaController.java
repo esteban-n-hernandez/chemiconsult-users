@@ -1,5 +1,6 @@
 package com.chemiconsult.controller;
 
+import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.service.FacturaService;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
@@ -53,6 +54,14 @@ public class FacturaController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombre + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(r.pdf());
+    }
+
+    @PatchMapping("/{id}/pago")
+    public ResponseEntity<FacturaResumenTO> marcarPago(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        EstadoPagoEnum estadoPago = EstadoPagoEnum.valueOf(body.get("estadoPago"));
+        return ResponseEntity.ok(facturaService.marcarPago(id, estadoPago));
     }
 
     @PutMapping("/{id}/anular")

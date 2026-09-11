@@ -3,6 +3,7 @@ package com.chemiconsult.service;
 import com.chemiconsult.entity.FacturaDE;
 import com.chemiconsult.entity.FacturaItemDE;
 import com.chemiconsult.enums.CondicionIVAEnum;
+import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.enums.FacturaEstadoEnum;
 import com.chemiconsult.enums.TipoComprobanteEnum;
 import com.chemiconsult.repository.ClienteRepository;
@@ -265,6 +266,15 @@ public class FacturaService {
         return toResumen(findOrThrow(id));
     }
 
+    // ── Marcar pago ──
+
+    @Transactional
+    public FacturaResumenTO marcarPago(Long id, EstadoPagoEnum estadoPago) {
+        FacturaDE factura = findOrThrow(id);
+        factura.setEstadoPago(estadoPago);
+        return toResumen(facturaRepository.save(factura));
+    }
+
     // ── Anular ──
 
     @Transactional
@@ -316,6 +326,7 @@ public class FacturaService {
         r.setCae(e.getCae());
         r.setCaeFechaVencimiento(e.getCaeFechaVencimiento());
         r.setEstado(e.getEstado());
+        r.setEstadoPago(e.getEstadoPago() != null ? e.getEstadoPago() : EstadoPagoEnum.PENDIENTE);
         r.setMensajeError(e.getMensajeError());
         r.setCreatedAt(e.getCreatedAt());
         r.setEsExterna(e.isEsExterna());

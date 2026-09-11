@@ -1,6 +1,7 @@
 package com.chemiconsult.to;
 
 import com.chemiconsult.enums.CondicionIVAEnum;
+import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.enums.FacturaEstadoEnum;
 import com.chemiconsult.enums.TipoComprobanteEnum;
 import lombok.Data;
@@ -25,6 +26,7 @@ public class FacturaResumenTO {
     private String             cae;
     private LocalDate          caeFechaVencimiento;
     private FacturaEstadoEnum  estado;
+    private EstadoPagoEnum     estadoPago;
     private String             mensajeError;
     private LocalDateTime      createdAt;
     private List<ItemTO>       items;
