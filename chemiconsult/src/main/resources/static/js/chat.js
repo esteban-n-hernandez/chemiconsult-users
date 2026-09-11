@@ -7,6 +7,7 @@
     const HORARIO = { inicio: 9, fin: 17 }; // lunes a viernes
 
     function enHorarioLaboral() {
+        return false; // polling desactivado temporalmente
         const ahora = new Date();
         const dia = ahora.getDay(); // 0=dom, 6=sab
         const hora = ahora.getHours();
