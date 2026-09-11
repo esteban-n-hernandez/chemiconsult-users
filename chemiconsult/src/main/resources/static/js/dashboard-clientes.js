@@ -84,6 +84,7 @@ async function cargarEstudios() {
         document.getElementById("kpi-total").textContent   = todasLasMuestras.length;
         document.getElementById("kpi-proceso").textContent = todasLasMuestras.filter(m => m.estado === "EN_PROCESO" || m.estado === "DEMORADA").length;
         document.getElementById("kpi-listos").textContent  = todasLasMuestras.filter(m => m.informe).length;
+        document.getElementById("main-tab-count-estudios").textContent = todasLasMuestras.length;
 
         datosFiltrados = [...todasLasMuestras];
         aplicarFiltros();
@@ -404,7 +405,10 @@ function nroFmtFact(pv, num) {
     return `${String(pv || 0).padStart(4,"0")}-${String(num).padStart(8,"0")}`;
 }
 
-let todasLasFacturas = [];
+let todasLasFacturas  = [];
+let factListaActual   = [];
+let paginaFact        = 1;
+let POR_PAGINA_FACT   = 10;
 
 function factRowHtml(f) {
     const estadoBadge = f.estado === "AUTORIZADA"
@@ -459,27 +463,44 @@ function factRowHtml(f) {
 }
 
 function renderTablaFacturas(lista) {
-    const tbody   = document.getElementById("tablaFacturasBody");
-    const sinFact = document.getElementById("sinFacturas");
-    if (!lista.length) {
-        tbody.innerHTML = "";
+    factListaActual = lista;
+    paginaFact = 1;
+    renderPaginaFact();
+}
+
+function renderPaginaFact() {
+    const tbody      = document.getElementById("tablaFacturasBody");
+    const sinFact    = document.getElementById("sinFacturas");
+    const pagWrapper = document.getElementById("pag-fact-wrapper");
+
+    if (!factListaActual.length) {
+        tbody.innerHTML       = "";
         sinFact.style.display = "";
+        pagWrapper.style.display = "none";
         return;
     }
-    sinFact.style.display = "none";
-    tbody.innerHTML = lista.map(factRowHtml).join("");
+    sinFact.style.display    = "none";
+    pagWrapper.style.display = "";
+
+    const total     = factListaActual.length;
+    const totalPags = Math.ceil(total / POR_PAGINA_FACT);
+    const inicio    = (paginaFact - 1) * POR_PAGINA_FACT;
+    const fin       = Math.min(inicio + POR_PAGINA_FACT, total);
+    const slice     = factListaActual.slice(inicio, fin);
+
+    tbody.innerHTML = slice.map(factRowHtml).join("");
 
     tbody.querySelectorAll(".fact-pdf-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-            const id = btn.dataset.id;
+            const id        = btn.dataset.id;
             const esExterna = btn.dataset.externa === "true";
-            const url = esExterna
+            const url       = esExterna
                 ? `${API_CLIENTES_BASE}/factura/${id}/archivo`
                 : `${API_CLIENTES_BASE}/factura/${id}/pdf`;
             try {
                 const r = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
                 if (!r.ok) throw new Error();
-                const blob = await r.blob();
+                const blob   = await r.blob();
                 const objUrl = URL.createObjectURL(blob);
                 window.open(objUrl, "_blank");
                 setTimeout(() => URL.revokeObjectURL(objUrl), 30000);
@@ -488,6 +509,34 @@ function renderTablaFacturas(lista) {
             }
         });
     });
+
+    document.getElementById("pag-fact-info").textContent =
+        `Mostrando ${inicio + 1}–${fin} de ${total} factura${total !== 1 ? "s" : ""}`;
+
+    const pagBtns = document.getElementById("paginacion-btns-fact");
+    pagBtns.innerHTML = "";
+
+    const btnPrev = document.createElement("button");
+    btnPrev.className = "pag-btn";
+    btnPrev.innerHTML = `<i class="bi bi-chevron-left"></i>`;
+    btnPrev.disabled  = paginaFact === 1;
+    btnPrev.onclick   = () => { paginaFact--; renderPaginaFact(); };
+    pagBtns.appendChild(btnPrev);
+
+    for (let i = 1; i <= totalPags; i++) {
+        const btn = document.createElement("button");
+        btn.className = "pag-btn" + (i === paginaFact ? " active" : "");
+        btn.textContent = i;
+        btn.onclick = () => { paginaFact = i; renderPaginaFact(); };
+        pagBtns.appendChild(btn);
+    }
+
+    const btnNext = document.createElement("button");
+    btnNext.className = "pag-btn";
+    btnNext.innerHTML = `<i class="bi bi-chevron-right"></i>`;
+    btnNext.disabled  = paginaFact === totalPags;
+    btnNext.onclick   = () => { paginaFact++; renderPaginaFact(); };
+    pagBtns.appendChild(btnNext);
 }
 
 async function cargarFacturas() {
@@ -502,6 +551,8 @@ async function cargarFacturas() {
         // Las facturas ANULADAS no se muestran al cliente
         todasLasFacturas = data.filter(f => f.estado !== "ANULADA");
 
+        document.getElementById("main-tab-count-facturas").textContent = todasLasFacturas.length;
+
         if (!todasLasFacturas.length) {
             document.getElementById("sinFacturas").style.display = "";
             return;
@@ -515,7 +566,6 @@ async function cargarFacturas() {
         const totalPagado = pagadas.reduce((s, f) => s + (f.total || 0), 0);
         const fmt = v => "$" + v.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        document.getElementById("stat-total-fact").textContent = fmt(totalFact);
         document.getElementById("stat-pendiente").textContent  = totalPend > 0 ? fmt(totalPend) : "Sin deuda";
         document.getElementById("stat-pagado").textContent     = fmt(totalPagado);
 
@@ -564,6 +614,23 @@ async function cargarFacturas() {
             Error al cargar las facturas.</td></tr>`;
     }
 }
+
+document.getElementById("selectPorPaginaFact").addEventListener("change", function () {
+    POR_PAGINA_FACT = parseInt(this.value, 10);
+    paginaFact = 1;
+    renderPaginaFact();
+});
+
+// ── Tabs principales ──
+document.querySelectorAll(".main-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".main-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const pane = tab.dataset.tab;
+        document.getElementById("pane-estudios").style.display = pane === "estudios" ? "" : "none";
+        document.getElementById("pane-facturas").style.display = pane === "facturas"  ? "" : "none";
+    });
+});
 
 // ── Init ──
 cargarEstudios();

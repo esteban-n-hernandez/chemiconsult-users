@@ -77,135 +77,153 @@
         </div>
     </div>
 
-    <!-- Tabla -->
+    <!-- Panel principal con tabs -->
     <div class="panel">
-        <div class="panel-header">
-            <h5><i class="bi bi-list-check me-2" style="color:var(--verde);"></i>Mis análisis</h5>
-            <div class="panel-header-filtros">
-                <div class="search-wrapper">
+        <div class="main-tabs">
+            <button class="main-tab active" data-tab="estudios">
+                <i class="bi bi-list-check"></i> Análisis
+                <span class="main-tab-badge" id="main-tab-count-estudios"></span>
+            </button>
+            <button class="main-tab" data-tab="facturas">
+                <i class="bi bi-receipt"></i> Facturas
+                <span class="main-tab-badge" id="main-tab-count-facturas"></span>
+            </button>
+        </div>
+
+        <!-- ── Pane: Análisis ── -->
+        <div id="pane-estudios">
+            <div class="panel-header">
+                <h5><i class="bi bi-list-check me-2" style="color:var(--verde);"></i>Mis análisis</h5>
+                <div class="panel-header-filtros">
+                    <div class="search-wrapper">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="search-input" id="buscadorProtocolo"
+                               placeholder="Buscar por N° protocolo..." autocomplete="off">
+                    </div>
+                    <div class="filtros-fecha-inline">
+                        <label class="filtro-fecha-label">Desde</label>
+                        <input type="text" id="filtroDesde" class="filtro-fecha-input" placeholder="dd/mm/aaaa" maxlength="10">
+                        <label class="filtro-fecha-label">Hasta</label>
+                        <input type="text" id="filtroHasta" class="filtro-fecha-input" placeholder="dd/mm/aaaa" maxlength="10">
+                        <button id="btnLimpiarFecha" class="btn-limpiar-fecha" title="Limpiar fechas">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-body" style="padding:0;">
+                <table class="tabla-muestras" id="tablaMuestras">
+                    <thead>
+                    <tr>
+                        <th class="th-sortable" data-sort="codigo" onclick="ordenarPor('codigo')">
+                            N° Protocolo <i class="bi bi-chevron-expand sort-icon"></i>
+                        </th>
+                        <th>Tipo de análisis</th>
+                        <th class="th-sortable" data-sort="fechaRaw" onclick="ordenarPor('fechaRaw')">
+                            Fecha ingreso <i class="bi bi-chevron-expand sort-icon"></i>
+                        </th>
+                        <th>Estado</th>
+                        <th>Informe</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaBody"></tbody>
+                </table>
+
+                <div class="sin-resultados" id="sinResultados" style="display:none;">
                     <i class="bi bi-search"></i>
-                    <input type="text" class="search-input" id="buscadorProtocolo"
-                           placeholder="Buscar por N° protocolo..." autocomplete="off">
+                    No se encontraron resultados para ese número de protocolo.
                 </div>
-                <div class="filtros-fecha-inline">
-                    <label class="filtro-fecha-label">Desde</label>
-                    <input type="text" id="filtroDesde" class="filtro-fecha-input" placeholder="dd/mm/aaaa" maxlength="10">
-                    <label class="filtro-fecha-label">Hasta</label>
-                    <input type="text" id="filtroHasta" class="filtro-fecha-input" placeholder="dd/mm/aaaa" maxlength="10">
-                    <button id="btnLimpiarFecha" class="btn-limpiar-fecha" title="Limpiar fechas">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
+
+                <div id="errorState" style="display:none; padding:40px; text-align:center; color:#ef4444;">
+                    <i class="bi bi-exclamation-circle" style="font-size:32px;"></i>
+                    <p style="margin-top:8px;">No se pudieron cargar los estudios. Intentá recargar la página.</p>
                 </div>
             </div>
-        </div>
 
-        <div class="panel-body" style="padding:0;">
-            <table class="tabla-muestras" id="tablaMuestras">
-                <thead>
-                <tr>
-                    <th class="th-sortable" data-sort="codigo" onclick="ordenarPor('codigo')">
-                        N° Protocolo <i class="bi bi-chevron-expand sort-icon"></i>
-                    </th>
-                    <th>Tipo de análisis</th>
-                    <th class="th-sortable" data-sort="fechaRaw" onclick="ordenarPor('fechaRaw')">
-                        Fecha ingreso <i class="bi bi-chevron-expand sort-icon"></i>
-                    </th>
-                    <th>Estado</th>
-                    <th>Informe</th>
-                </tr>
-                </thead>
-                <tbody id="tablaBody"></tbody>
-            </table>
-
-            <div class="sin-resultados" id="sinResultados" style="display:none;">
-                <i class="bi bi-search"></i>
-                No se encontraron resultados para ese número de protocolo.
-            </div>
-
-            <!-- Error state -->
-            <div id="errorState" style="display:none; padding:40px; text-align:center; color:#ef4444;">
-                <i class="bi bi-exclamation-circle" style="font-size:32px;"></i>
-                <p style="margin-top:8px;">No se pudieron cargar los estudios. Intentá recargar la página.</p>
-            </div>
-        </div>
-
-        <div class="paginacion-wrapper">
-            <span id="pag-info">Mostrando 0 de 0 registros</span>
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gris);">
-                    <span>Filas:</span>
-                    <select id="selectPorPagina" class="filtro-fecha-input" style="width:60px;cursor:pointer;">
-                        <option value="5" selected>5</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                    </select>
+            <div class="paginacion-wrapper">
+                <span id="pag-info">Mostrando 0 de 0 registros</span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gris);">
+                        <span>Filas:</span>
+                        <select id="selectPorPagina" class="filtro-fecha-input" style="width:60px;cursor:pointer;">
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                    <div class="paginacion-btns" id="paginacion-btns"></div>
                 </div>
-                <div class="paginacion-btns" id="paginacion-btns"></div>
+            </div>
+
+            <div class="estudios-notice">
+                <i class="bi bi-info-circle"></i>
+                Los estudios y sus informes son almacenados durante 5 años.
             </div>
         </div>
 
-        <div class="estudios-notice">
-            <i class="bi bi-info-circle"></i>
-            Los estudios y sus informes son almacenados durante 5 años.
-        </div>
-    </div>
-
-    <!-- ══ Panel Facturas ══ -->
-    <div class="panel" style="margin-top:20px;">
-        <div class="panel-header">
-            <h5><i class="bi bi-receipt me-2" style="color:var(--verde);"></i>Mis facturas</h5>
-        </div>
-
-        <!-- Stats strip -->
-        <div class="fact-stats-strip">
-            <div class="fact-stat">
-                <div class="fact-stat-label">Total facturado</div>
-                <div class="fact-stat-value" id="stat-total-fact">—</div>
+        <!-- ── Pane: Facturas ── -->
+        <div id="pane-facturas" style="display:none;">
+            <div class="fact-stats-strip">
+                <div class="fact-stat">
+                    <div class="fact-stat-label">Pendiente de pago</div>
+                    <div class="fact-stat-value fact-stat-warn" id="stat-pendiente">—</div>
+                </div>
+                <div class="fact-stat">
+                    <div class="fact-stat-label">Abonado</div>
+                    <div class="fact-stat-value fact-stat-good" id="stat-pagado">—</div>
+                </div>
             </div>
-            <div class="fact-stat">
-                <div class="fact-stat-label">Pendiente de pago</div>
-                <div class="fact-stat-value fact-stat-warn" id="stat-pendiente">—</div>
+
+            <div class="fact-tabs">
+                <button class="fact-tab active" data-tab="todas">
+                    Todas <span class="fact-tab-count" id="tab-count-todas"></span>
+                </button>
+                <button class="fact-tab" data-tab="pendientes">
+                    Pendientes <span class="fact-tab-count" id="tab-count-pend"></span>
+                </button>
+                <button class="fact-tab" data-tab="pagadas">
+                    Pagadas <span class="fact-tab-count" id="tab-count-paid"></span>
+                </button>
             </div>
-            <div class="fact-stat">
-                <div class="fact-stat-label">Abonado</div>
-                <div class="fact-stat-value fact-stat-good" id="stat-pagado">—</div>
+
+            <div class="panel-body" style="padding:0;">
+                <table class="tabla-muestras" id="tablaFacturas">
+                    <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>N°</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Pago</th>
+                        <th>PDF</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaFacturasBody">
+                        <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gris);">Cargando…</td></tr>
+                    </tbody>
+                </table>
+
+                <div id="sinFacturas" style="display:none;padding:32px;text-align:center;color:var(--gris);">
+                    <i class="bi bi-receipt" style="font-size:28px;opacity:.4;"></i>
+                    <p style="margin:8px 0 0;font-size:13px;">No hay facturas registradas.</p>
+                </div>
             </div>
-        </div>
 
-        <!-- Tabs -->
-        <div class="fact-tabs">
-            <button class="fact-tab active" data-tab="todas">
-                Todas <span class="fact-tab-count" id="tab-count-todas"></span>
-            </button>
-            <button class="fact-tab" data-tab="pendientes">
-                Pendientes <span class="fact-tab-count" id="tab-count-pend"></span>
-            </button>
-            <button class="fact-tab" data-tab="pagadas">
-                Pagadas <span class="fact-tab-count" id="tab-count-paid"></span>
-            </button>
-        </div>
-
-        <div class="panel-body" style="padding:0;">
-            <table class="tabla-muestras" id="tablaFacturas">
-                <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>N°</th>
-                    <th>Fecha</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th>Pago</th>
-                    <th>PDF</th>
-                </tr>
-                </thead>
-                <tbody id="tablaFacturasBody">
-                    <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gris);">Cargando…</td></tr>
-                </tbody>
-            </table>
-
-            <div id="sinFacturas" style="display:none;padding:32px;text-align:center;color:var(--gris);">
-                <i class="bi bi-receipt" style="font-size:28px;opacity:.4;"></i>
-                <p style="margin:8px 0 0;font-size:13px;">No hay facturas registradas.</p>
+            <div class="paginacion-wrapper" id="pag-fact-wrapper" style="display:none;">
+                <span id="pag-fact-info">Mostrando 0 de 0 facturas</span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gris);">
+                        <span>Filas:</span>
+                        <select id="selectPorPaginaFact" class="filtro-fecha-input" style="width:60px;cursor:pointer;">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                    <div class="paginacion-btns" id="paginacion-btns-fact"></div>
+                </div>
             </div>
         </div>
     </div>
