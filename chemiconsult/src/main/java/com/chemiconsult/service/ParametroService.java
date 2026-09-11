@@ -1,6 +1,7 @@
 package com.chemiconsult.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.chemiconsult.entity.MetodologiaDE;
 import com.chemiconsult.entity.MatrizDE;
 import com.chemiconsult.entity.ParametroDE;
@@ -36,12 +37,14 @@ public class ParametroService {
     @Autowired
     private MatrizRepository matrizRepository;
 
+    @Transactional(readOnly = true)
     public List<ParametroDE> getParametros() {
-        return parametroRepository.findByActivoTrue();
+        return parametroRepository.findByActivoTrueWithResponsable();
     }
 
+    @Transactional(readOnly = true)
     public List<ParametroDE> getParametrosTodos() {
-        return parametroRepository.findAll();
+        return parametroRepository.findAllWithResponsable();
     }
 
     public Optional<ParametroDE> getParametro(Long id) {

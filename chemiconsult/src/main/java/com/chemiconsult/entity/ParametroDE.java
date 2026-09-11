@@ -23,7 +23,7 @@ public class ParametroDE {
     @Column(name = "ACTIVO")
     private Boolean activo = true;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RESPONSABLE_ID")
     @JsonIgnoreProperties({"password", "estudios", "modulos", "createdDate", "updateDate",
                             "hibernateLazyInitializer", "handler"})

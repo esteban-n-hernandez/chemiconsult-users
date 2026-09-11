@@ -389,7 +389,7 @@ function debounce(fn, ms) {
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-function makeClienteAutocomplete({ inputEl, dropEl, onSelect }) {
+function makeClienteAutocomplete({ inputEl, dropEl, onSelect, onClear }) {
     let abortCtrl = null;
 
     function showDrop(items) {
@@ -447,6 +447,7 @@ function makeClienteAutocomplete({ inputEl, dropEl, onSelect }) {
     const buscarDebounced = debounce(buscarClientes, 220);
 
     inputEl.addEventListener("input", () => {
+        if (onClear) onClear();
         const q = inputEl.value.trim();
         if (q.length < 2) { hideDrop(); return; }
         // Spinner visual
@@ -483,9 +484,14 @@ makeClienteAutocomplete({
     onSelect: c => {
         nfClienteId = c.id;
         nfClienteInput.value = c.label;
+        nfClienteInput.style.borderColor = "";
         document.getElementById("nfCuit").value         = c.cuit      || "";
         document.getElementById("nfDireccion").value    = c.direccion || "";
         document.getElementById("nfCondicionIVA").value = c.condIVA   || "CONSUMIDOR_FINAL";
+    },
+    onClear: () => {
+        nfClienteId = null;
+        nfClienteInput.style.borderColor = "";
     },
 });
 
@@ -603,6 +609,12 @@ document.getElementById("nfBtnEmitir").addEventListener("click", async () => {
         items.push({ descripcion: desc, cantidad: cant, precioUnitario: pu, alicuotaIva: aliq });
     });
 
+    if (!nfClienteId) {
+        toast("Seleccioná un cliente del listado", "error");
+        nfClienteInput.style.borderColor = "var(--color-error, #ef4444)";
+        return;
+    }
+
     if (!valido || items.length === 0) {
         toast("Completá todos los ítems (descripción y precio > 0)", "error");
         return;
@@ -663,6 +675,11 @@ makeClienteAutocomplete({
     onSelect: c => {
         adjClienteId = c.id;
         adjClienteInput.value = c.label;
+        adjClienteInput.style.borderColor = "";
+    },
+    onClear: () => {
+        adjClienteId = null;
+        adjClienteInput.style.borderColor = "";
     },
 });
 
@@ -742,11 +759,12 @@ function resetModalAdj() {
 
 // ── Guardar ──
 document.getElementById("adjBtnGuardar").addEventListener("click", async () => {
-    const clienteNombre = adjClienteInput.value.trim();
-    if (!clienteNombre) {
-        toast("Seleccioná o ingresá un cliente", "error");
+    if (!adjClienteId) {
+        toast("Seleccioná un cliente del listado", "error");
+        adjClienteInput.style.borderColor = "var(--color-error, #ef4444)";
         return;
     }
+    const clienteNombre = adjClienteInput.value.trim();
 
     const btn = document.getElementById("adjBtnGuardar");
     btn.disabled = true;

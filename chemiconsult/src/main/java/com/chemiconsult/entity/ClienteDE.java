@@ -3,6 +3,7 @@ package com.chemiconsult.entity;
 import com.chemiconsult.enums.CondicionIVAEnum;
 import com.chemiconsult.enums.ProvinciaEnum;
 import com.chemiconsult.enums.TipoClienteEnum;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -50,6 +51,7 @@ public class ClienteDE {
     // ── Relación con usuario ──
     @OneToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"password", "username", "email", "rol", "modulos", "estudios", "createdDate", "updateDate"})
     private UserDE user; // nullable, se asigna después
 
     // ── Sistema ──

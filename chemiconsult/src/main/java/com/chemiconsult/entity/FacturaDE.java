@@ -82,10 +82,6 @@ public class FacturaDE {
     @Column(name = "archivo_nombre", length = 255)
     private String archivoNombre;
 
-    @Lob
-    @Column(name = "archivo_pdf")
-    private byte[] archivoPdf;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

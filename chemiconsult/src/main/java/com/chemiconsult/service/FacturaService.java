@@ -5,7 +5,9 @@ import com.chemiconsult.entity.FacturaItemDE;
 import com.chemiconsult.enums.CondicionIVAEnum;
 import com.chemiconsult.enums.FacturaEstadoEnum;
 import com.chemiconsult.enums.TipoComprobanteEnum;
+import com.chemiconsult.repository.ClienteRepository;
 import com.chemiconsult.repository.FacturaRepository;
+import com.chemiconsult.supabase.service.SupabaseBucketService;
 import com.chemiconsult.to.FacturaItemTO;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
@@ -35,6 +37,8 @@ public class FacturaService {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+    private static final String BUCKET = "chemiconsult-bucket";
+
     private static final String LAB_NOMBRE    = "Laboratorio Chemiconsult";
     private static final String LAB_CUIT      = "30-71234567-0";
     private static final String LAB_DIRECCION = "San Isidro, Buenos Aires";
@@ -48,12 +52,17 @@ public class FacturaService {
             "Habilitado por el Organismo provincial para el desarrollo sostenible (OPDS) N°26",
     };
 
-    private final FacturaRepository facturaRepository;
-    private final WsmtxcaPort       wsmtxcaPort;
+    private final FacturaRepository    facturaRepository;
+    private final ClienteRepository    clienteRepository;
+    private final WsmtxcaPort          wsmtxcaPort;
+    private final SupabaseBucketService supabaseBucketService;
 
-    public FacturaService(FacturaRepository facturaRepository, WsmtxcaPort wsmtxcaPort) {
-        this.facturaRepository = facturaRepository;
-        this.wsmtxcaPort       = wsmtxcaPort;
+    public FacturaService(FacturaRepository facturaRepository, ClienteRepository clienteRepository,
+                          WsmtxcaPort wsmtxcaPort, SupabaseBucketService supabaseBucketService) {
+        this.facturaRepository    = facturaRepository;
+        this.clienteRepository    = clienteRepository;
+        this.wsmtxcaPort          = wsmtxcaPort;
+        this.supabaseBucketService = supabaseBucketService;
     }
 
     public record EmitirResult(long id, long numero, String cae, LocalDate caeFechaVencimiento, boolean autorizada) {}
@@ -208,15 +217,16 @@ public class FacturaService {
         f.setEstado(FacturaEstadoEnum.AUTORIZADA);
 
         if (archivo != null && !archivo.isEmpty()) {
-            try {
-                f.setArchivoPdf(archivo.getBytes());
-                f.setArchivoNombre(archivo.getOriginalFilename());
-            } catch (Exception e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al leer el archivo");
-            }
+            f.setArchivoNombre(archivo.getOriginalFilename());
         }
 
-        return facturaRepository.save(f).getId();
+        long id = facturaRepository.save(f).getId();
+
+        if (archivo != null && !archivo.isEmpty()) {
+            supabaseBucketService.subirArchivo(BUCKET, "facturas/" + id + ".pdf", archivo);
+        }
+
+        return id;
     }
 
     // ── Listar ──
@@ -230,21 +240,22 @@ public class FacturaService {
     // ── Listar por cliente ──
 
     @Transactional(readOnly = true)
-    public List<FacturaResumenTO> listarPorCliente(Long clienteId) {
-        return facturaRepository.findByClienteIdOrderByFechaEmisionDescNumeroDesc(clienteId)
-                .stream().map(this::toResumen).toList();
+    public List<FacturaResumenTO> listarPorCliente(Long userId) {
+        return clienteRepository.findByUser_Id(userId)
+                .map(c -> facturaRepository.findByClienteIdOrderByFechaEmisionDescNumeroDesc(c.getId())
+                        .stream().map(this::toResumen).toList())
+                .orElse(List.of());
     }
 
     // ── Obtener archivo adjunto ──
 
-    @Transactional(readOnly = true)
     public ArchivoFactura getArchivo(Long id) {
         FacturaDE f = findOrThrow(id);
-        if (!f.isEsExterna() || f.getArchivoPdf() == null) {
+        if (!f.isEsExterna() || f.getArchivoNombre() == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Esta factura no tiene archivo adjunto");
         }
-        String nombre = f.getArchivoNombre() != null ? f.getArchivoNombre() : "factura-" + id + ".pdf";
-        return new ArchivoFactura(f.getArchivoPdf(), nombre);
+        byte[] datos = supabaseBucketService.descargarArchivo(BUCKET, "facturas/" + id + ".pdf");
+        return new ArchivoFactura(datos, f.getArchivoNombre());
     }
 
     // ── Detalle ──

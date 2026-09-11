@@ -39,13 +39,14 @@ public class AnalisisService {
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final ClienteContactoRepository contactoRepository;
 
+    @Transactional(readOnly = true)
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
     }
 
     @Transactional
     public List<EstudioTO> getEstudiosTO() {
-        List<AnalisisDE> all = analisisRepository.findAll();
+        List<AnalisisDE> all = analisisRepository.findAllWithAssociations();
         LocalDate hoy = LocalDate.now();
         List<AnalisisDE> vencidas = all.stream()
                 .filter(a -> a.getFechaEntrega() != null
@@ -77,7 +78,7 @@ public class AnalisisService {
 
     @Transactional
     public List<EstudioTO> getEstudiosActivos() {
-        List<AnalisisDE> activos = analisisRepository.findAllByEstadoIn(ESTADOS_ACTIVOS);
+        List<AnalisisDE> activos = analisisRepository.findAllByEstadoInWithAssociations(ESTADOS_ACTIVOS);
         LocalDate hoy = LocalDate.now();
         List<AnalisisDE> vencidas = activos.stream()
                 .filter(a -> a.getFechaEntrega() != null
@@ -136,7 +137,7 @@ public class AnalisisService {
         }
         ClienteDE cliente = clienteOpt.get();
 
-        List<EstudioTO> tos = analisisRepository.findAllByCliente(cliente)
+        List<EstudioTO> tos = analisisRepository.findAllByClienteWithAssociations(cliente)
                 .stream()
                 .map(estudiosMapper::mapEntityToEstudioTO)
                 .collect(Collectors.toList());
