@@ -64,10 +64,19 @@ public interface MensajeRepository extends JpaRepository<MensajeDE, Long> {
 
     @Query("""
         SELECT m FROM MensajeDE m
+        JOIN FETCH m.emisor
+        JOIN FETCH m.receptor
         WHERE m.emisor.id = :userId OR m.receptor.id = :userId
-        ORDER BY m.fechaEnvio DESC
+        ORDER BY m.id DESC
         """)
     List<MensajeDE> findTodosDelUsuario(@Param("userId") Long userId);
+
+    @Query("""
+        SELECT m.emisor.id, COUNT(m) FROM MensajeDE m
+        WHERE m.receptor.id = :receptorId AND m.leido = false
+        GROUP BY m.emisor.id
+        """)
+    List<Object[]> countNoLeidosPorEmisor(@Param("receptorId") Long receptorId);
 
     // ID del último mensaje enviado por emisorId a receptorId que fue leído
     @Query("""
@@ -76,8 +85,8 @@ public interface MensajeRepository extends JpaRepository<MensajeDE, Long> {
         """)
     Long findUltimoLeidoId(@Param("emisorId") Long emisorId, @Param("receptorId") Long receptorId);
 
-    // Para limpieza programada: mensajes leídos más viejos que la fecha dada
+    // Para limpieza programada: todos los mensajes más viejos que la fecha dada
     @Modifying
-    @Query("DELETE FROM MensajeDE m WHERE m.leido = true AND m.fechaEnvio < :limite")
+    @Query("DELETE FROM MensajeDE m WHERE m.fechaEnvio < :limite")
     void deleteViejos(@Param("limite") LocalDateTime limite);
 }

@@ -3,9 +3,13 @@ package com.chemiconsult.service;
 import com.chemiconsult.entity.FacturaDE;
 import com.chemiconsult.entity.FacturaItemDE;
 import com.chemiconsult.enums.CondicionIVAEnum;
+import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.enums.FacturaEstadoEnum;
 import com.chemiconsult.enums.TipoComprobanteEnum;
+import com.chemiconsult.repository.ClienteRepository;
 import com.chemiconsult.repository.FacturaRepository;
+import com.chemiconsult.supabase.service.SupabaseBucketService;
+import com.chemiconsult.to.FacturaExternaEditTO;
 import com.chemiconsult.to.FacturaItemTO;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
@@ -35,6 +39,8 @@ public class FacturaService {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+    private static final String BUCKET = "chemiconsult-bucket";
+
     private static final String LAB_NOMBRE    = "Laboratorio Chemiconsult";
     private static final String LAB_CUIT      = "30-71234567-0";
     private static final String LAB_DIRECCION = "San Isidro, Buenos Aires";
@@ -48,12 +54,17 @@ public class FacturaService {
             "Habilitado por el Organismo provincial para el desarrollo sostenible (OPDS) N°26",
     };
 
-    private final FacturaRepository facturaRepository;
-    private final WsmtxcaPort       wsmtxcaPort;
+    private final FacturaRepository    facturaRepository;
+    private final ClienteRepository    clienteRepository;
+    private final WsmtxcaPort          wsmtxcaPort;
+    private final SupabaseBucketService supabaseBucketService;
 
-    public FacturaService(FacturaRepository facturaRepository, WsmtxcaPort wsmtxcaPort) {
-        this.facturaRepository = facturaRepository;
-        this.wsmtxcaPort       = wsmtxcaPort;
+    public FacturaService(FacturaRepository facturaRepository, ClienteRepository clienteRepository,
+                          WsmtxcaPort wsmtxcaPort, SupabaseBucketService supabaseBucketService) {
+        this.facturaRepository    = facturaRepository;
+        this.clienteRepository    = clienteRepository;
+        this.wsmtxcaPort          = wsmtxcaPort;
+        this.supabaseBucketService = supabaseBucketService;
     }
 
     public record EmitirResult(long id, long numero, String cae, LocalDate caeFechaVencimiento, boolean autorizada) {}
@@ -208,15 +219,16 @@ public class FacturaService {
         f.setEstado(FacturaEstadoEnum.AUTORIZADA);
 
         if (archivo != null && !archivo.isEmpty()) {
-            try {
-                f.setArchivoPdf(archivo.getBytes());
-                f.setArchivoNombre(archivo.getOriginalFilename());
-            } catch (Exception e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al leer el archivo");
-            }
+            f.setArchivoNombre(archivo.getOriginalFilename());
         }
 
-        return facturaRepository.save(f).getId();
+        long id = facturaRepository.save(f).getId();
+
+        if (archivo != null && !archivo.isEmpty()) {
+            supabaseBucketService.subirArchivo(BUCKET, "facturas/" + id + ".pdf", archivo);
+        }
+
+        return id;
     }
 
     // ── Listar ──
@@ -230,21 +242,22 @@ public class FacturaService {
     // ── Listar por cliente ──
 
     @Transactional(readOnly = true)
-    public List<FacturaResumenTO> listarPorCliente(Long clienteId) {
-        return facturaRepository.findByClienteIdOrderByFechaEmisionDescNumeroDesc(clienteId)
-                .stream().map(this::toResumen).toList();
+    public List<FacturaResumenTO> listarPorCliente(Long userId) {
+        return clienteRepository.findByUser_Id(userId)
+                .map(c -> facturaRepository.findByClienteIdOrderByFechaEmisionDescNumeroDesc(c.getId())
+                        .stream().map(this::toResumen).toList())
+                .orElse(List.of());
     }
 
     // ── Obtener archivo adjunto ──
 
-    @Transactional(readOnly = true)
     public ArchivoFactura getArchivo(Long id) {
         FacturaDE f = findOrThrow(id);
-        if (!f.isEsExterna() || f.getArchivoPdf() == null) {
+        if (!f.isEsExterna() || f.getArchivoNombre() == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Esta factura no tiene archivo adjunto");
         }
-        String nombre = f.getArchivoNombre() != null ? f.getArchivoNombre() : "factura-" + id + ".pdf";
-        return new ArchivoFactura(f.getArchivoPdf(), nombre);
+        byte[] datos = supabaseBucketService.descargarArchivo(BUCKET, "facturas/" + id + ".pdf");
+        return new ArchivoFactura(datos, f.getArchivoNombre());
     }
 
     // ── Detalle ──
@@ -252,6 +265,55 @@ public class FacturaService {
     @Transactional(readOnly = true)
     public FacturaResumenTO getDetalle(Long id) {
         return toResumen(findOrThrow(id));
+    }
+
+    // ── Marcar pago ──
+
+    @Transactional
+    public FacturaResumenTO marcarPago(Long id, EstadoPagoEnum estadoPago) {
+        FacturaDE factura = findOrThrow(id);
+        factura.setEstadoPago(estadoPago);
+        return toResumen(facturaRepository.save(factura));
+    }
+
+    // ── Actualizar externa ──
+
+    @Transactional
+    public FacturaResumenTO actualizarExterna(Long id, FacturaExternaEditTO req) {
+        FacturaDE factura = findOrThrow(id);
+        if (!factura.isEsExterna()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Solo se pueden editar facturas adjuntadas externamente");
+        }
+        if (req.getFechaEmision()        != null) factura.setFechaEmision(req.getFechaEmision());
+        if (req.getTipoComprobante()     != null) factura.setTipoComprobante(TipoComprobanteEnum.valueOf(req.getTipoComprobante()));
+        if (req.getPuntoVenta()          != null) factura.setPuntoVenta(req.getPuntoVenta());
+        if (req.getNumero()              != null) factura.setNumero(req.getNumero());
+        if (req.getClienteNombre()       != null) factura.setClienteNombre(req.getClienteNombre().toUpperCase());
+        if (req.getClienteCuit()         != null) factura.setClienteCuit(req.getClienteCuit());
+        if (req.getClienteCondicionIVA() != null) factura.setClienteCondicionIVA(CondicionIVAEnum.valueOf(req.getClienteCondicionIVA()));
+        if (req.getTotal()               != null) {
+            factura.setTotal(req.getTotal());
+            factura.setSubtotal(req.getTotal());
+        }
+        if (req.getDescripcion() != null) {
+            factura.getItems().clear();
+            if (!req.getDescripcion().isBlank()) {
+                FacturaItemDE item = new FacturaItemDE();
+                item.setFactura(factura);
+                item.setOrden(1);
+                item.setDescripcion(req.getDescripcion());
+                item.setCantidad(1.0);
+                double t = req.getTotal() != null ? req.getTotal() : 0.0;
+                item.setPrecioUnitario(t);
+                item.setAlicuotaIva(0.0);
+                item.setSubtotal(t);
+                item.setImporteIva(0.0);
+                item.setTotal(t);
+                factura.getItems().add(item);
+            }
+        }
+        return toResumen(facturaRepository.save(factura));
     }
 
     // ── Anular ──
@@ -305,6 +367,7 @@ public class FacturaService {
         r.setCae(e.getCae());
         r.setCaeFechaVencimiento(e.getCaeFechaVencimiento());
         r.setEstado(e.getEstado());
+        r.setEstadoPago(e.getEstadoPago() != null ? e.getEstadoPago() : EstadoPagoEnum.PENDIENTE);
         r.setMensajeError(e.getMensajeError());
         r.setCreatedAt(e.getCreatedAt());
         r.setEsExterna(e.isEsExterna());

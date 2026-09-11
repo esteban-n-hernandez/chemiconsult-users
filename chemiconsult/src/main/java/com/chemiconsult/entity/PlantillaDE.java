@@ -26,7 +26,7 @@ public class PlantillaDE {
     @Column(name = "ACTIVO")
     private Boolean activo = true;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "PLANTILLA_PARAMETRO",
             joinColumns = @JoinColumn(name = "PLANTILLA_ID"),

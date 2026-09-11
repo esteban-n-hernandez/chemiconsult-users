@@ -1,6 +1,8 @@
 package com.chemiconsult.controller;
 
+import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.service.FacturaService;
+import com.chemiconsult.to.FacturaExternaEditTO;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
 import org.springframework.http.HttpHeaders;
@@ -53,6 +55,21 @@ public class FacturaController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombre + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(r.pdf());
+    }
+
+    @PatchMapping("/{id}/pago")
+    public ResponseEntity<FacturaResumenTO> marcarPago(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        EstadoPagoEnum estadoPago = EstadoPagoEnum.valueOf(body.get("estadoPago"));
+        return ResponseEntity.ok(facturaService.marcarPago(id, estadoPago));
+    }
+
+    @PutMapping("/{id}/externo")
+    public ResponseEntity<FacturaResumenTO> actualizarExterna(
+            @PathVariable Long id,
+            @RequestBody FacturaExternaEditTO req) {
+        return ResponseEntity.ok(facturaService.actualizarExterna(id, req));
     }
 
     @PutMapping("/{id}/anular")

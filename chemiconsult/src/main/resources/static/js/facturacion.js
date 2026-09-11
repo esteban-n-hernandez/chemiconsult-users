@@ -60,6 +60,23 @@ function badgeEstado(estado) {
     return `<span class="badge-fact ${cls}"><i class="bi ${ico}"></i> ${estado}</span>`;
 }
 
+function badgePago(estadoPago, factId) {
+    if (estadoPago === "PAGADO") {
+        return `<button class="btn-pago-fact" data-id="${factId}" data-pago="PAGADO"
+            style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+            font-size:.75rem;font-weight:600;background:#d1fae5;color:#065f46;border:none;cursor:pointer;"
+            title="Marcar como pendiente">
+            <i class="bi bi-check-circle-fill"></i> Pagado
+        </button>`;
+    }
+    return `<button class="btn-pago-fact" data-id="${factId}" data-pago="PENDIENTE"
+        style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+        font-size:.75rem;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;cursor:pointer;"
+        title="Marcar como pagado">
+        <i class="bi bi-clock"></i> Pendiente
+    </button>`;
+}
+
 function tipoBadge(tipo) {
     return `<span class="tipo-badge tipo-${tipo}">${tipo}</span>`;
 }
@@ -97,7 +114,7 @@ async function cargarFacturas() {
         renderTabla();
     } catch {
         document.getElementById("factTablaBody").innerHTML =
-            `<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:20px;">Error al cargar facturas</td></tr>`;
+            `<tr><td colspan="9" style="text-align:center;color:#ef4444;padding:20px;">Error al cargar facturas</td></tr>`;
     }
 }
 
@@ -108,7 +125,7 @@ function renderTabla() {
         : todasFacturas;
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-secondary);">Sin comprobantes</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-secondary);">Sin comprobantes</td></tr>`;
         renderPaginacion(0);
         return;
     }
@@ -154,13 +171,14 @@ function renderTabla() {
             <td style="font-weight:600;">${f.total ? formatPrecio(f.total) : "—"}</td>
             <td class="cae-chip">${caeCol}</td>
             <td>${badgeEstado(f.estado)}</td>
+            <td>${badgePago(f.estadoPago, f.id)}</td>
             <td>${pdfBtn}</td>
         </tr>`;
     }).join("");
 
     tbody.querySelectorAll("tr[data-id]").forEach(tr => {
         tr.addEventListener("click", e => {
-            if (e.target.closest(".btn-pdf-fact")) return;
+            if (e.target.closest(".btn-pdf-fact") || e.target.closest(".btn-pago-fact")) return;
             abrirDetalle(+tr.dataset.id);
         });
     });
@@ -172,6 +190,29 @@ function renderTabla() {
                 abrirArchivoExterno(id);
             } else {
                 descargarPDF(id);
+            }
+        });
+    });
+
+    tbody.querySelectorAll(".btn-pago-fact").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id     = +btn.dataset.id;
+            const actual = btn.dataset.pago;
+            const nuevo  = actual === "PAGADO" ? "PENDIENTE" : "PAGADO";
+            try {
+                const res = await apiFetch(`${API_BASE}/api/factura/${id}/pago`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ estadoPago: nuevo })
+                });
+                if (!res.ok) throw new Error();
+                const updated = await res.json();
+                const idx = todasFacturas.findIndex(f => f.id === id);
+                if (idx !== -1) todasFacturas[idx].estadoPago = updated.estadoPago;
+                renderTabla();
+                toast(nuevo === "PAGADO" ? "Factura marcada como pagada" : "Factura marcada como pendiente");
+            } catch {
+                toast("No se pudo actualizar el estado de pago", "error");
             }
         });
     });
@@ -326,8 +367,13 @@ function abrirDetalle(id) {
             `<tr><td colspan="5" style="text-align:center;color:var(--color-text-secondary);">Sin ítems</td></tr>`;
     }
 
-    document.getElementById("detBtnAnular").style.display = f.estado === "AUTORIZADA" ? "" : "none";
-    document.getElementById("detBtnPDF").style.display    = (f.esExterna && !f.archivoNombre) ? "none" : "";
+    document.getElementById("detBtnAnular").style.display    = f.estado === "AUTORIZADA" ? "" : "none";
+    document.getElementById("detBtnPDF").style.display       = (f.esExterna && !f.archivoNombre) ? "none" : "";
+    document.getElementById("detBtnEditar").style.display    = f.esExterna ? "" : "none";
+    document.getElementById("detBtnCancelEdit").style.display = "none";
+    document.getElementById("detBtnGuardar").style.display   = "none";
+    document.getElementById("detViewContent").style.display  = "";
+    document.getElementById("detEditForm").style.display     = "none";
 
     document.getElementById("modalDetalle").classList.add("visible");
 }
@@ -362,6 +408,71 @@ document.getElementById("detBtnAnular").addEventListener("click", async () => {
     }
 });
 
+document.getElementById("detBtnEditar").addEventListener("click", () => {
+    const f = factDetalleActual;
+    if (!f) return;
+    document.getElementById("editTipo").value        = f.tipoComprobante || "B";
+    document.getElementById("editFecha").value       = f.fechaEmision    || "";
+    document.getElementById("editPuntoVenta").value  = f.puntoVenta      ?? 0;
+    document.getElementById("editNumero").value      = f.numero          ?? 0;
+    document.getElementById("editTotal").value       = f.total           ?? "";
+    document.getElementById("editCondIVA").value     = f.clienteCondicionIVA || "CONSUMIDOR_FINAL";
+    document.getElementById("editDescripcion").value =
+        (f.items && f.items.length > 0 ? f.items[0].descripcion : "") || "";
+
+    document.getElementById("detViewContent").style.display   = "none";
+    document.getElementById("detEditForm").style.display      = "";
+    document.getElementById("detBtnEditar").style.display     = "none";
+    document.getElementById("detBtnAnular").style.display     = "none";
+    document.getElementById("detBtnPDF").style.display        = "none";
+    document.getElementById("detBtnCancelEdit").style.display = "";
+    document.getElementById("detBtnGuardar").style.display    = "";
+});
+
+document.getElementById("detBtnCancelEdit").addEventListener("click", () => {
+    const f = factDetalleActual;
+    if (!f) return;
+    document.getElementById("detViewContent").style.display   = "";
+    document.getElementById("detEditForm").style.display      = "none";
+    document.getElementById("detBtnEditar").style.display     = f.esExterna ? "" : "none";
+    document.getElementById("detBtnAnular").style.display     = f.estado === "AUTORIZADA" ? "" : "none";
+    document.getElementById("detBtnPDF").style.display        = (f.esExterna && !f.archivoNombre) ? "none" : "";
+    document.getElementById("detBtnCancelEdit").style.display = "none";
+    document.getElementById("detBtnGuardar").style.display    = "none";
+});
+
+document.getElementById("detBtnGuardar").addEventListener("click", async () => {
+    if (!factDetalleActual) return;
+    const puntoVentaVal = parseInt(document.getElementById("editPuntoVenta").value);
+    const numeroVal     = parseInt(document.getElementById("editNumero").value);
+    const totalVal      = parseFloat(document.getElementById("editTotal").value);
+    const body = {
+        tipoComprobante:    document.getElementById("editTipo").value || null,
+        fechaEmision:       document.getElementById("editFecha").value || null,
+        puntoVenta:         isNaN(puntoVentaVal) ? null : puntoVentaVal,
+        numero:             isNaN(numeroVal)     ? null : numeroVal,
+        total:              isNaN(totalVal)      ? null : totalVal,
+        clienteCondicionIVA: document.getElementById("editCondIVA").value || null,
+        descripcion:        document.getElementById("editDescripcion").value.trim() || null,
+    };
+    try {
+        const res = await apiFetch(`${API_BASE}/api/factura/${factDetalleActual.id}/externo`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error();
+        const updated = await res.json();
+        const idx = todasFacturas.findIndex(f => f.id === factDetalleActual.id);
+        if (idx >= 0) todasFacturas[idx] = updated;
+        toast("Factura actualizada");
+        cerrarDetalle();
+        await cargarFacturas();
+    } catch {
+        toast("Error al guardar los cambios", "error");
+    }
+});
+
 // ================================================================
 // AUTOCOMPLETE CLIENTE — búsqueda live con debounce
 // ================================================================
@@ -389,7 +500,7 @@ function debounce(fn, ms) {
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-function makeClienteAutocomplete({ inputEl, dropEl, onSelect }) {
+function makeClienteAutocomplete({ inputEl, dropEl, onSelect, onClear }) {
     let abortCtrl = null;
 
     function showDrop(items) {
@@ -447,6 +558,7 @@ function makeClienteAutocomplete({ inputEl, dropEl, onSelect }) {
     const buscarDebounced = debounce(buscarClientes, 220);
 
     inputEl.addEventListener("input", () => {
+        if (onClear) onClear();
         const q = inputEl.value.trim();
         if (q.length < 2) { hideDrop(); return; }
         // Spinner visual
@@ -483,9 +595,14 @@ makeClienteAutocomplete({
     onSelect: c => {
         nfClienteId = c.id;
         nfClienteInput.value = c.label;
+        nfClienteInput.style.borderColor = "";
         document.getElementById("nfCuit").value         = c.cuit      || "";
         document.getElementById("nfDireccion").value    = c.direccion || "";
         document.getElementById("nfCondicionIVA").value = c.condIVA   || "CONSUMIDOR_FINAL";
+    },
+    onClear: () => {
+        nfClienteId = null;
+        nfClienteInput.style.borderColor = "";
     },
 });
 
@@ -603,6 +720,12 @@ document.getElementById("nfBtnEmitir").addEventListener("click", async () => {
         items.push({ descripcion: desc, cantidad: cant, precioUnitario: pu, alicuotaIva: aliq });
     });
 
+    if (!nfClienteId) {
+        toast("Seleccioná un cliente del listado", "error");
+        nfClienteInput.style.borderColor = "var(--color-error, #ef4444)";
+        return;
+    }
+
     if (!valido || items.length === 0) {
         toast("Completá todos los ítems (descripción y precio > 0)", "error");
         return;
@@ -663,6 +786,11 @@ makeClienteAutocomplete({
     onSelect: c => {
         adjClienteId = c.id;
         adjClienteInput.value = c.label;
+        adjClienteInput.style.borderColor = "";
+    },
+    onClear: () => {
+        adjClienteId = null;
+        adjClienteInput.style.borderColor = "";
     },
 });
 
@@ -742,11 +870,12 @@ function resetModalAdj() {
 
 // ── Guardar ──
 document.getElementById("adjBtnGuardar").addEventListener("click", async () => {
-    const clienteNombre = adjClienteInput.value.trim();
-    if (!clienteNombre) {
-        toast("Seleccioná o ingresá un cliente", "error");
+    if (!adjClienteId) {
+        toast("Seleccioná un cliente del listado", "error");
+        adjClienteInput.style.borderColor = "var(--color-error, #ef4444)";
         return;
     }
+    const clienteNombre = adjClienteInput.value.trim();
 
     const btn = document.getElementById("adjBtnGuardar");
     btn.disabled = true;

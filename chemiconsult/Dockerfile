@@ -18,4 +18,4 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Xmx400m", "-XX:MaxMetaspaceSize=200m", "-XX:+UseSerialGC", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx220m", "-Xms64m", "-XX:MaxMetaspaceSize=120m", "-XX:ReservedCodeCacheSize=64m", "-XX:+UseSerialGC", "-jar", "app.jar"]

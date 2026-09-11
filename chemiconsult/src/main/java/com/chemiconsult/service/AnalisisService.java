@@ -17,6 +17,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @Log4j2
@@ -37,13 +39,14 @@ public class AnalisisService {
     private final AnalisisArchivoRepository analisisArchivoRepository;
     private final ClienteContactoRepository contactoRepository;
 
+    @Transactional(readOnly = true)
     public List<AnalisisDE> getEstudios() {
         return analisisRepository.findAll();
     }
 
     @Transactional
     public List<EstudioTO> getEstudiosTO() {
-        List<AnalisisDE> all = analisisRepository.findAll();
+        List<AnalisisDE> all = analisisRepository.findAllWithAssociations();
         LocalDate hoy = LocalDate.now();
         List<AnalisisDE> vencidas = all.stream()
                 .filter(a -> a.getFechaEntrega() != null
@@ -66,6 +69,62 @@ public class AnalisisService {
         return tos;
     }
 
+    private static final List<EstadoMuestraEnum> ESTADOS_ACTIVOS = List.of(
+            EstadoMuestraEnum.PENDIENTE,
+            EstadoMuestraEnum.EN_PROCESO,
+            EstadoMuestraEnum.DEMORADA,
+            EstadoMuestraEnum.COMPLETO_SIN_INFORME
+    );
+
+    @Transactional
+    public List<EstudioTO> getEstudiosActivos() {
+        List<AnalisisDE> activos = analisisRepository.findAllByEstadoInWithAssociations(ESTADOS_ACTIVOS);
+        LocalDate hoy = LocalDate.now();
+        List<AnalisisDE> vencidas = activos.stream()
+                .filter(a -> a.getFechaEntrega() != null
+                        && a.getFechaEntrega().isBefore(hoy)
+                        && (EstadoMuestraEnum.PENDIENTE.equals(a.getEstado())
+                         || EstadoMuestraEnum.EN_PROCESO.equals(a.getEstado())))
+                .collect(Collectors.toList());
+        if (!vencidas.isEmpty()) {
+            vencidas.forEach(a -> {
+                a.setEstado(EstadoMuestraEnum.DEMORADA);
+                a.setUpdateDate(hoy);
+            });
+            analisisRepository.saveAll(vencidas);
+            log.info("Marcadas {} muestra(s) como DEMORADA por fecha vencida.", vencidas.size());
+        }
+        List<EstudioTO> tos = activos.stream()
+                .map(estudiosMapper::mapEntityToEstudioTO)
+                .collect(Collectors.toList());
+        poblarTieneFactura(tos);
+        return tos;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> getKpiMes(int year, int month) {
+        LocalDate desde = LocalDate.of(year, month, 1);
+        LocalDate hasta = desde.withDayOfMonth(desde.lengthOfMonth());
+        List<Object[]> rows = analisisRepository.countByEstadoInMonth(desde, hasta);
+        Map<String, Long> kpi = new HashMap<>(Map.of(
+                "pendientes", 0L, "enProceso", 0L, "completadas", 0L, "canceladas", 0L
+        ));
+        for (Object[] row : rows) {
+            EstadoMuestraEnum estado = (EstadoMuestraEnum) row[0];
+            long count = (Long) row[1];
+            switch (estado) {
+                case PENDIENTE                          -> kpi.merge("pendientes", count, Long::sum);
+                case EN_PROCESO, DEMORADA,
+                     COMPLETO_SIN_INFORME,
+                     INFORME_PENDIENTE_REVISION        -> kpi.merge("enProceso",  count, Long::sum);
+                case COMPLETO                          -> kpi.merge("completadas", count, Long::sum);
+                case CANCELADO                         -> kpi.merge("canceladas", count, Long::sum);
+            }
+        }
+        kpi.put("total", kpi.values().stream().mapToLong(Long::longValue).sum());
+        return kpi;
+    }
+
     @Transactional(readOnly = true)
     public List<EstudioTO> getEstudiosByID(Long userId) {
         Optional<ClienteDE> clienteOpt = clienteRepository.findByUser_Id(userId);
@@ -78,7 +137,7 @@ public class AnalisisService {
         }
         ClienteDE cliente = clienteOpt.get();
 
-        List<EstudioTO> tos = analisisRepository.findAllByCliente(cliente)
+        List<EstudioTO> tos = analisisRepository.findAllByClienteWithAssociations(cliente)
                 .stream()
                 .map(estudiosMapper::mapEntityToEstudioTO)
                 .collect(Collectors.toList());

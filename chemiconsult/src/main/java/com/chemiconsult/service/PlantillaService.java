@@ -7,6 +7,7 @@ import com.chemiconsult.repository.PlantillaRepository;
 import com.chemiconsult.to.PlantillaTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,12 +19,14 @@ public class PlantillaService {
     @Autowired private PlantillaRepository plantillaRepository;
     @Autowired private ParametroRepository parametroRepository;
 
+    @Transactional(readOnly = true)
     public List<PlantillaDE> getPlantillas() {
-        return plantillaRepository.findByActivoTrue();
+        return plantillaRepository.findByActivoTrueWithParametros();
     }
 
+    @Transactional(readOnly = true)
     public List<PlantillaDE> getPlantillasTodas() {
-        return plantillaRepository.findAll();
+        return plantillaRepository.findAllWithParametros();
     }
 
     public Optional<PlantillaDE> getPlantilla(Long id) {

@@ -1,6 +1,7 @@
 package com.chemiconsult.entity;
 
 import com.chemiconsult.enums.CondicionIVAEnum;
+import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.enums.FacturaEstadoEnum;
 import com.chemiconsult.enums.TipoComprobanteEnum;
 import jakarta.persistence.*;
@@ -76,15 +77,15 @@ public class FacturaDE {
     @Column(name = "presupuesto_id")
     private Long presupuestoId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_pago")
+    private EstadoPagoEnum estadoPago = EstadoPagoEnum.PENDIENTE;
+
     @Column(name = "es_externa", columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean esExterna = false;
 
     @Column(name = "archivo_nombre", length = 255)
     private String archivoNombre;
-
-    @Lob
-    @Column(name = "archivo_pdf")
-    private byte[] archivoPdf;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

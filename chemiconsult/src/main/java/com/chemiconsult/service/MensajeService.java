@@ -47,8 +47,15 @@ public class MensajeService {
                 .stream().map(this::toTO).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ConversacionTO> getConversaciones(Long miId) {
         List<MensajeDE> todos = mensajeRepository.findTodosDelUsuario(miId);
+
+        // No-leidos por emisor en una sola query
+        Map<Long, Long> noLeidosPorEmisor = new HashMap<>();
+        for (Object[] row : mensajeRepository.countNoLeidosPorEmisor(miId)) {
+            noLeidosPorEmisor.put((Long) row[0], (Long) row[1]);
+        }
 
         Map<Long, MensajeDE> ultimoPorContacto = new LinkedHashMap<>();
         for (MensajeDE m : todos) {
@@ -71,7 +78,7 @@ public class MensajeService {
             c.setOtroUserNombre(otro.getUsername());
             c.setUltimoMensaje(ultimo.getContenido());
             c.setFechaUltimo(ultimo.getFechaEnvio());
-            c.setNoLeidos((int) mensajeRepository.countNoLeidosDe(miId, otroId));
+            c.setNoLeidos(noLeidosPorEmisor.getOrDefault(otroId, 0L).intValue());
             result.add(c);
         }
         return result;
