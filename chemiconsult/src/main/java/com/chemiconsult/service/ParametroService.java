@@ -2,11 +2,13 @@ package com.chemiconsult.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.chemiconsult.entity.GrupoInformeDE;
 import com.chemiconsult.entity.MetodologiaDE;
 import com.chemiconsult.entity.MatrizDE;
 import com.chemiconsult.entity.ParametroDE;
 import com.chemiconsult.entity.ParametroMetodologiaDE;
 import com.chemiconsult.mapper.ParametroMapper;
+import com.chemiconsult.repository.GrupoInformeRepository;
 import com.chemiconsult.repository.MatrizRepository;
 import com.chemiconsult.repository.MetodologiaRepository;
 import com.chemiconsult.repository.ParametroMetodologiaRepository;
@@ -36,6 +38,9 @@ public class ParametroService {
 
     @Autowired
     private MatrizRepository matrizRepository;
+
+    @Autowired
+    private GrupoInformeRepository grupoInformeRepository;
 
     @Transactional(readOnly = true)
     public List<ParametroDE> getParametros() {
@@ -105,7 +110,7 @@ public class ParametroService {
         return pmRepository.findByParametroId(parametroId);
     }
 
-    public ParametroMetodologiaDE addMetodologia(Long parametroId, Long metodologiaId, Long matrizId, String tipoAnalisis) {
+    public ParametroMetodologiaDE addMetodologia(Long parametroId, Long metodologiaId, Long matrizId, String tipoAnalisis, Long grupoInformeId) {
         ParametroDE parametro = parametroRepository.findById(parametroId)
                 .orElseThrow(() -> new RuntimeException("Parámetro no encontrado: " + parametroId));
         MetodologiaDE metodologia = metodologiaRepository.findById(metodologiaId)
@@ -127,16 +132,28 @@ public class ParametroService {
                     .orElseThrow(() -> new RuntimeException("Matriz no encontrada: " + matrizId));
             pm.setMatriz(matriz);
         }
+        if (grupoInformeId != null) {
+            GrupoInformeDE grupo = grupoInformeRepository.findById(grupoInformeId)
+                    .orElseThrow(() -> new RuntimeException("Grupo de informe no encontrado: " + grupoInformeId));
+            pm.setGrupoInforme(grupo);
+        }
         return pmRepository.save(pm);
     }
 
-    public ParametroMetodologiaDE updateMetodologiaTipo(Long parametroId, Long pmId, String tipoAnalisis) {
+    public ParametroMetodologiaDE updateMetodologia(Long parametroId, Long pmId, String tipoAnalisis, Long grupoInformeId) {
         ParametroMetodologiaDE pm = pmRepository.findById(pmId)
                 .orElseThrow(() -> new RuntimeException("Asociación no encontrada: " + pmId));
         if (!pmRepository.existsByIdAndParametroId(pmId, parametroId)) {
             throw new RuntimeException("La asociación no pertenece al parámetro indicado.");
         }
         pm.setTipoAnalisis(tipoAnalisis != null && !tipoAnalisis.isBlank() ? tipoAnalisis : null);
+        if (grupoInformeId != null) {
+            GrupoInformeDE grupo = grupoInformeRepository.findById(grupoInformeId)
+                    .orElseThrow(() -> new RuntimeException("Grupo de informe no encontrado: " + grupoInformeId));
+            pm.setGrupoInforme(grupo);
+        } else {
+            pm.setGrupoInforme(null);
+        }
         return pmRepository.save(pm);
     }
 

@@ -33,4 +33,8 @@ public class ParametroMetodologiaDE {
 
     @Column(name = "TIPO_ANALISIS")
     private String tipoAnalisis;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "GRUPO_INFORME_ID")
+    private GrupoInformeDE grupoInforme;
 }
