@@ -1,6 +1,8 @@
 package com.chemiconsult.repository;
 
 import com.chemiconsult.entity.FacturaDE;
+import com.chemiconsult.enums.EstadoPagoEnum;
+import com.chemiconsult.enums.FacturaEstadoEnum;
 import com.chemiconsult.enums.TipoComprobanteEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,4 +18,15 @@ public interface FacturaRepository extends JpaRepository<FacturaDE, Long> {
 
     @Query("SELECT COALESCE(MAX(f.numero), 0) FROM FacturaDE f WHERE f.puntoVenta = :pv AND f.tipoComprobante = :tipo AND f.esExterna = false")
     long findUltimoNumero(@Param("pv") int puntoVenta, @Param("tipo") TipoComprobanteEnum tipo);
+
+    List<FacturaDE> findByClienteIdAndEstadoPagoAndEstadoNotOrderByFechaEmisionDescNumeroDesc(
+            Long clienteId, EstadoPagoEnum estadoPago, FacturaEstadoEnum estado);
+
+    @Query("SELECT f.clienteId, MAX(f.clienteNombre), MAX(f.clienteCuit), SUM(f.total), COUNT(f.id) " +
+           "FROM FacturaDE f " +
+           "WHERE f.estadoPago = :pendiente AND f.estado != :anulada " +
+           "GROUP BY f.clienteId " +
+           "ORDER BY SUM(f.total) DESC")
+    List<Object[]> findDeudoresPendientes(@Param("pendiente") EstadoPagoEnum pendiente,
+                                          @Param("anulada") FacturaEstadoEnum anulada);
 }

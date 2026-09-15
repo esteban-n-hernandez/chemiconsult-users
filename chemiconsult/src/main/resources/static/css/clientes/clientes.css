@@ -764,3 +764,125 @@
     font-size: 12.5px;
     cursor: pointer;
 }
+/* ══════════════════════════════════════════
+   TABS
+══════════════════════════════════════════ */
+.page-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--color-border-tertiary);
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: color 0.2s, border-color 0.2s;
+    border-radius: 6px 6px 0 0;
+}
+
+.tab-btn:hover {
+    color: var(--verde);
+    background: var(--verde-light);
+}
+
+.tab-btn.active {
+    color: var(--verde);
+    border-bottom-color: var(--verde);
+    font-weight: 600;
+}
+
+.tab-badge {
+    background: #dc3545;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════
+   TABLA DEUDORES
+══════════════════════════════════════════ */
+
+.tabla-detalle-deuda tfoot td {
+    padding: 11px 14px;
+    border-top: 2px solid var(--color-border-tertiary);
+    background: var(--bg-subtle);
+    font-size: 13px;
+    color: var(--text-main);
+}
+
+.detalle-total-row td:nth-child(2) strong {
+    color: #dc3545;
+    font-size: 15px;
+}
+
+.btn-marcar-pagado {
+    background: none;
+    border: 1px solid var(--verde);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--verde);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s;
+}
+
+.btn-marcar-pagado:hover:not(:disabled) {
+    background: var(--verde);
+    color: white;
+}
+
+.btn-marcar-pagado:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.detalle-deuda-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 2.5rem 1rem;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.badge-deuda {
+    background: #fff0f0;
+    color: #dc3545;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.deudores-loading {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 0.8s linear infinite; }

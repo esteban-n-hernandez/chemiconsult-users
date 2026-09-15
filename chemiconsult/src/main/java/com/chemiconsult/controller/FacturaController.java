@@ -2,6 +2,7 @@ package com.chemiconsult.controller;
 
 import com.chemiconsult.enums.EstadoPagoEnum;
 import com.chemiconsult.service.FacturaService;
+import com.chemiconsult.to.DeudorResumenTO;
 import com.chemiconsult.to.FacturaExternaEditTO;
 import com.chemiconsult.to.FacturaResumenTO;
 import com.chemiconsult.to.FacturaSolicitudTO;
@@ -85,15 +86,25 @@ public class FacturaController {
             @RequestParam(required = false) String clienteCuit,
             @RequestParam(required = false) String clienteDireccion,
             @RequestParam(required = false) String condicionIva,
-            @RequestParam(required = false) String tipo,
+            @RequestParam String tipo,
             @RequestParam(required = false) String fechaEmision,
-            @RequestParam(required = false) Long numero,
-            @RequestParam(required = false) Integer puntoVenta,
+            @RequestParam Long numero,
+            @RequestParam Integer puntoVenta,
             @RequestParam(required = false) Double total,
             @RequestParam(required = false) MultipartFile archivo) {
         long id = facturaService.adjuntar(clienteId, clienteNombre, clienteCuit, clienteDireccion,
                 condicionIva, tipo, fechaEmision, numero, puntoVenta, total, archivo);
         return ResponseEntity.ok(Map.of("id", id));
+    }
+
+    @GetMapping("/deudores")
+    public List<DeudorResumenTO> listarDeudores() {
+        return facturaService.listarDeudores();
+    }
+
+    @GetMapping("/deudores/{clienteId}")
+    public List<FacturaResumenTO> detalleDeuda(@PathVariable Long clienteId) {
+        return facturaService.listarPendientesPorClienteId(clienteId);
     }
 
     @GetMapping("/cliente/{clienteId}")

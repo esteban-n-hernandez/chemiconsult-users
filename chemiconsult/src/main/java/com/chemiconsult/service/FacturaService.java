@@ -9,6 +9,7 @@ import com.chemiconsult.enums.TipoComprobanteEnum;
 import com.chemiconsult.repository.ClienteRepository;
 import com.chemiconsult.repository.FacturaRepository;
 import com.chemiconsult.supabase.service.SupabaseBucketService;
+import com.chemiconsult.to.DeudorResumenTO;
 import com.chemiconsult.to.FacturaExternaEditTO;
 import com.chemiconsult.to.FacturaItemTO;
 import com.chemiconsult.to.FacturaResumenTO;
@@ -198,7 +199,16 @@ public class FacturaService {
         if (clienteNombre == null || clienteNombre.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nombre del cliente requerido");
         }
-        TipoComprobanteEnum tipoEnum = tipo != null ? TipoComprobanteEnum.valueOf(tipo) : TipoComprobanteEnum.B;
+        if (tipo == null || tipo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de comprobante requerido");
+        }
+        if (numero == null || numero <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número de comprobante requerido");
+        }
+        if (puntoVenta == null || puntoVenta <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Punto de venta requerido");
+        }
+        TipoComprobanteEnum tipoEnum = TipoComprobanteEnum.valueOf(tipo);
         LocalDate fecha = (fechaEmisionStr != null && !fechaEmisionStr.isBlank())
                 ? LocalDate.parse(fechaEmisionStr) : LocalDate.now();
 
@@ -211,8 +221,8 @@ public class FacturaService {
         f.setClienteCondicionIVA(condicionIva != null ? CondicionIVAEnum.valueOf(condicionIva) : null);
         f.setTipoComprobante(tipoEnum);
         f.setFechaEmision(fecha);
-        f.setNumero(numero != null ? numero : 0L);
-        f.setPuntoVenta(puntoVenta != null ? puntoVenta : 0);
+        f.setNumero(numero);
+        f.setPuntoVenta(puntoVenta);
         f.setTotal(total);
         f.setSubtotal(null);
         f.setTotalIva(null);
@@ -236,6 +246,32 @@ public class FacturaService {
     @Transactional(readOnly = true)
     public List<FacturaResumenTO> listar() {
         return facturaRepository.findAllByOrderByFechaEmisionDescNumeroDesc()
+                .stream().map(this::toResumen).toList();
+    }
+
+    // ── Deudores ──
+
+    @Transactional(readOnly = true)
+    public List<DeudorResumenTO> listarDeudores() {
+        return facturaRepository.findDeudoresPendientes(EstadoPagoEnum.PENDIENTE, FacturaEstadoEnum.ANULADA)
+                .stream().map(row -> {
+                    DeudorResumenTO d = new DeudorResumenTO();
+                    d.setClienteId(row[0] != null ? ((Number) row[0]).longValue() : null);
+                    d.setClienteNombre((String) row[1]);
+                    d.setClienteCuit((String) row[2]);
+                    d.setTotalDeuda(row[3] != null ? ((Number) row[3]).doubleValue() : 0.0);
+                    d.setCantidadFacturas(row[4] != null ? ((Number) row[4]).longValue() : 0L);
+                    return d;
+                }).toList();
+    }
+
+    // ── Facturas pendientes de un cliente (por clienteId) ──
+
+    @Transactional(readOnly = true)
+    public List<FacturaResumenTO> listarPendientesPorClienteId(Long clienteId) {
+        return facturaRepository
+                .findByClienteIdAndEstadoPagoAndEstadoNotOrderByFechaEmisionDescNumeroDesc(
+                        clienteId, EstadoPagoEnum.PENDIENTE, FacturaEstadoEnum.ANULADA)
                 .stream().map(this::toResumen).toList();
     }
 

@@ -506,12 +506,14 @@
             <!-- Tipo + Fecha -->
             <div class="form-row">
                 <div class="form-group">
-                    <label>Tipo de comprobante</label>
+                    <label>Tipo de comprobante <span class="required">*</span></label>
                     <select id="adjTipo" class="form-control-custom">
+                        <option value="">— Seleccionar —</option>
                         <option value="A">Factura A</option>
-                        <option value="B" selected>Factura B</option>
+                        <option value="B">Factura B</option>
                         <option value="C">Factura C</option>
                     </select>
+                    <span class="field-error" id="errAdjTipo" style="display:none;">Campo requerido</span>
                 </div>
                 <div class="form-group">
                     <label>Fecha de emisión</label>
@@ -522,14 +524,16 @@
             <!-- N° / Punto de venta / Total -->
             <div class="form-row-3">
                 <div class="form-group">
-                    <label>Punto de venta <span class="task-opt">(opcional)</span></label>
+                    <label>Punto de venta <span class="required">*</span></label>
                     <input type="number" id="adjPuntoVenta" class="form-control-custom"
-                           placeholder="0001" min="0"/>
+                           placeholder="0001" min="1"/>
+                    <span class="field-error" id="errAdjPuntoVenta" style="display:none;">Campo requerido</span>
                 </div>
                 <div class="form-group">
-                    <label>N° comprobante <span class="task-opt">(opcional)</span></label>
+                    <label>N° comprobante <span class="required">*</span></label>
                     <input type="number" id="adjNumero" class="form-control-custom"
-                           placeholder="00000001" min="0"/>
+                           placeholder="00000001" min="1"/>
+                    <span class="field-error" id="errAdjNumero" style="display:none;">Campo requerido</span>
                 </div>
                 <div class="form-group">
                     <label>Total <span class="task-opt">(opcional)</span></label>

@@ -856,7 +856,8 @@ function resetModalAdj() {
     adjClienteId   = null;
     adjArchivoFile = null;
     adjClienteInput.value = "";
-    document.getElementById("adjTipo").value        = "B";
+    adjClienteInput.style.borderColor = "";
+    document.getElementById("adjTipo").value        = "";
     document.getElementById("adjFecha").value       = new Date().toISOString().split("T")[0];
     document.getElementById("adjPuntoVenta").value  = "";
     document.getElementById("adjNumero").value      = "";
@@ -866,15 +867,42 @@ function resetModalAdj() {
     adjDropzone.style.display = "";
     adjDropzone.style.borderColor = "";
     adjDropzone.style.background  = "";
+    ["adjTipo","adjPuntoVenta","adjNumero"].forEach(id => {
+        document.getElementById(id).style.borderColor = "";
+    });
+    ["errAdjTipo","errAdjPuntoVenta","errAdjNumero"].forEach(id => {
+        document.getElementById(id).style.display = "none";
+    });
 }
 
 // ── Guardar ──
 document.getElementById("adjBtnGuardar").addEventListener("click", async () => {
+    // Validación
+    let valido = true;
+    const markErr = (id, errId, cond) => {
+        const el  = document.getElementById(id);
+        const err = document.getElementById(errId);
+        if (cond) { el.style.borderColor = "var(--color-error, #ef4444)"; err.style.display = ""; valido = false; }
+        else       { el.style.borderColor = ""; err.style.display = "none"; }
+    };
+
     if (!adjClienteId) {
         toast("Seleccioná un cliente del listado", "error");
         adjClienteInput.style.borderColor = "var(--color-error, #ef4444)";
-        return;
+        valido = false;
+    } else {
+        adjClienteInput.style.borderColor = "";
     }
+
+    const tipoVal  = document.getElementById("adjTipo").value;
+    const pvVal    = document.getElementById("adjPuntoVenta").value;
+    const numVal   = document.getElementById("adjNumero").value;
+    markErr("adjTipo",       "errAdjTipo",       !tipoVal);
+    markErr("adjPuntoVenta", "errAdjPuntoVenta",  !pvVal || Number(pvVal) <= 0);
+    markErr("adjNumero",     "errAdjNumero",      !numVal || Number(numVal) <= 0);
+
+    if (!valido) return;
+
     const clienteNombre = adjClienteInput.value.trim();
 
     const btn = document.getElementById("adjBtnGuardar");
@@ -885,15 +913,13 @@ document.getElementById("adjBtnGuardar").addEventListener("click", async () => {
         const fd = new FormData();
         if (adjClienteId)   fd.append("clienteId",    adjClienteId);
         fd.append("clienteNombre", clienteNombre);
-        fd.append("tipo",          document.getElementById("adjTipo").value);
+        fd.append("tipo",          tipoVal);
         fd.append("fechaEmision",  document.getElementById("adjFecha").value);
+        fd.append("puntoVenta",    pvVal);
+        fd.append("numero",        numVal);
 
-        const pv  = document.getElementById("adjPuntoVenta").value;
-        const num = document.getElementById("adjNumero").value;
         const tot = document.getElementById("adjTotal").value;
-        if (pv)  fd.append("puntoVenta", pv);
-        if (num) fd.append("numero",     num);
-        if (tot) fd.append("total",      tot);
+        if (tot) fd.append("total", tot);
         if (adjArchivoFile) fd.append("archivo", adjArchivoFile);
 
         const res = await apiFetch(`${API_BASE}/api/factura/adjuntar`, {

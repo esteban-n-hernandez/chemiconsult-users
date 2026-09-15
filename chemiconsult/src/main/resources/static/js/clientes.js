@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inicializarHeader();
     cargarClientes();
+    actualizarBadgeDeudores();
     initModalBaja();
     initModalReactivar();
     initModal();
@@ -35,6 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
         ITEMS_POR_PAGINA = parseInt(e.target.value);
         paginaActual = 1;
         renderTabla();
+    });
+
+    document.getElementById('selectDeudoresPageSize')?.addEventListener('change', e => {
+        ITEMS_DEUDORES = parseInt(e.target.value);
+        paginaDeudores = 1;
+        renderTablaDeudores();
+    });
+
+    // Modal detalle deuda
+    const cerrarDetalleDeuda = () => document.getElementById('modalDetalleDeuda').classList.remove('visible');
+    document.getElementById('modalDetalleDeudaClose').addEventListener('click', cerrarDetalleDeuda);
+    document.getElementById('btnCerrarDetalleDeuda').addEventListener('click', cerrarDetalleDeuda);
+    document.getElementById('modalDetalleDeuda').addEventListener('click', e => {
+        if (e.target === e.currentTarget) cerrarDetalleDeuda();
     });
 });
 
@@ -1133,4 +1148,251 @@ async function desactivarContacto(id) {
 function formatProvincia(val) {
     if (!val) return '';
     return val.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+}
+// ══════════════════════════════════════════
+//  BADGE DEUDORES (carga silenciosa al inicio)
+// ══════════════════════════════════════════
+async function actualizarBadgeDeudores() {
+    try {
+        const res = await fetch(`${API_BASE}/api/factura/deudores`, {
+            headers: { 'Authorization': `Bearer ${TOKEN()}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const badge = document.getElementById('tabBadgeDeudores');
+        badge.textContent   = data.length || '';
+        badge.style.display = data.length > 0 ? '' : 'none';
+    } catch { /* silencioso */ }
+}
+
+// ══════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════
+let tabActual = 'clientes';
+
+function cambiarTab(tab) {
+    tabActual = tab;
+    document.getElementById('tabBtnClientes').classList.toggle('active', tab === 'clientes');
+    document.getElementById('tabBtnDeudores').classList.toggle('active', tab === 'deudores');
+    document.getElementById('vistaClientes').style.display = tab === 'clientes' ? '' : 'none';
+    document.getElementById('vistaDeudores').style.display = tab === 'deudores' ? '' : 'none';
+    document.getElementById('btnNuevoCliente').style.display = tab === 'clientes' ? '' : 'none';
+
+    if (tab === 'deudores') cargarDeudores();
+}
+
+// ══════════════════════════════════════════
+//  DEUDORES
+// ══════════════════════════════════════════
+let todosLosDeudores  = [];
+let paginaDeudores    = 1;
+let ITEMS_DEUDORES    = 5;
+
+async function cargarDeudores() {
+    const sinEl   = document.getElementById('sinDeudores');
+    const loading = document.getElementById('deudoresLoading');
+
+    sinEl.style.display   = 'none';
+    loading.style.display = 'flex';
+    document.getElementById('tablaDeudores').innerHTML = '';
+    document.getElementById('paginacionDeudores').innerHTML = '';
+    document.getElementById('infoDeudoresPag').textContent = '';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/factura/deudores`, {
+            headers: { 'Authorization': `Bearer ${TOKEN()}` }
+        });
+        if (!res.ok) throw new Error();
+        todosLosDeudores = await res.json();
+
+        loading.style.display = 'none';
+
+        const badge = document.getElementById('tabBadgeDeudores');
+        badge.textContent   = todosLosDeudores.length || '';
+        badge.style.display = todosLosDeudores.length > 0 ? '' : 'none';
+
+        paginaDeudores = 1;
+        renderTablaDeudores();
+
+    } catch {
+        loading.style.display = 'none';
+        mostrarToast('Error al cargar deudores', 'danger');
+    }
+}
+
+function renderTablaDeudores() {
+    const tbody  = document.getElementById('tablaDeudores');
+    const sinEl  = document.getElementById('sinDeudores');
+    const inicio = (paginaDeudores - 1) * ITEMS_DEUDORES;
+    const fin    = inicio + ITEMS_DEUDORES;
+    const pagina = todosLosDeudores.slice(inicio, fin);
+
+    if (todosLosDeudores.length === 0) {
+        tbody.innerHTML = '';
+        sinEl.style.display = 'block';
+        document.getElementById('infoDeudoresPag').textContent = 'Sin resultados';
+        document.getElementById('paginacionDeudores').innerHTML = '';
+        return;
+    }
+
+    sinEl.style.display = 'none';
+
+    tbody.innerHTML = pagina.map((d, i) => {
+        const nombre = d.clienteNombre || '—';
+        const cuit   = d.clienteCuit   || '—';
+        const total  = d.totalDeuda != null
+            ? `$ ${d.totalDeuda.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : '—';
+        const cant   = d.cantidadFacturas ?? 0;
+        const btnVer = d.clienteId
+            ? `<button class="btn-accion" title="Ver detalle"
+                       onclick="verDetalleDeuda(${d.clienteId}, '${nombre.replace(/'/g, "\\'")}')">
+                   <i class="bi bi-eye"></i> Ver detalle
+               </button>`
+            : '';
+        return `
+            <tr>
+                <td>${inicio + i + 1}</td>
+                <td><strong>${nombre}</strong></td>
+                <td><small>${cuit}</small></td>
+                <td><span class="badge-tipo badge-persona">${cant} factura${cant !== 1 ? 's' : ''}</span></td>
+                <td><span class="badge-deuda">${total}</span></td>
+                <td>${btnVer}</td>
+            </tr>`;
+    }).join('');
+
+    document.getElementById('infoDeudoresPag').textContent =
+        `Mostrando ${inicio + 1}–${Math.min(fin, todosLosDeudores.length)} de ${todosLosDeudores.length} deudores`;
+
+    renderPaginacionDeudores();
+}
+
+function renderPaginacionDeudores() {
+    const total    = Math.ceil(todosLosDeudores.length / ITEMS_DEUDORES);
+    const controles = document.getElementById('paginacionDeudores');
+    controles.innerHTML = '';
+    if (total <= 1) return;
+
+    const mkBtn = (label, onClick, disabled, active) => {
+        const b = document.createElement('button');
+        b.className = 'pag-btn' + (disabled ? ' pag-btn-disabled' : '') + (active ? ' pag-btn-active' : '');
+        b.innerHTML = label;
+        b.disabled  = disabled;
+        if (!disabled && !active) b.addEventListener('click', onClick);
+        return b;
+    };
+
+    controles.appendChild(mkBtn('<i class="bi bi-chevron-left"></i>',
+        () => { paginaDeudores--; renderTablaDeudores(); }, paginaDeudores === 1, false));
+    for (let p = 1; p <= total; p++) {
+        controles.appendChild(mkBtn(p,
+            () => { paginaDeudores = p; renderTablaDeudores(); }, false, p === paginaDeudores));
+    }
+    controles.appendChild(mkBtn('<i class="bi bi-chevron-right"></i>',
+        () => { paginaDeudores++; renderTablaDeudores(); }, paginaDeudores === total, false));
+}
+
+// ══════════════════════════════════════════
+//  MODAL — Detalle de deuda
+// ══════════════════════════════════════════
+let _detalleClienteId   = null;
+let _detalleClienteNombre = null;
+
+async function verDetalleDeuda(clienteId, nombre) {
+    _detalleClienteId     = clienteId;
+    _detalleClienteNombre = nombre;
+
+    const modal   = document.getElementById('modalDetalleDeuda');
+    const loading = document.getElementById('detalleDeudaLoading');
+    const content = document.getElementById('detalleDeudaContent');
+    const tbody   = document.getElementById('tablaDetalleDeuda');
+
+    document.getElementById('detalleDeudaNombre').textContent = nombre;
+    loading.style.display = 'flex';
+    content.style.display = 'none';
+    tbody.innerHTML = '';
+    document.getElementById('detalleDeudaTotal').textContent = '—';
+    modal.classList.add('visible');
+
+    try {
+        const res = await fetch(`${API_BASE}/api/factura/deudores/${clienteId}`, {
+            headers: { 'Authorization': `Bearer ${TOKEN()}` }
+        });
+        if (!res.ok) throw new Error();
+        const facturas = await res.json();
+
+        loading.style.display = 'none';
+        content.style.display = '';
+
+        const fmt = (n) => n != null
+            ? `$ ${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : '—';
+
+        const fmtFecha = (iso) => {
+            if (!iso) return '—';
+            const [y, m, d] = iso.split('-');
+            return `${d}/${m}/${y}`;
+        };
+
+        const fmtNumero = (f) => {
+            if (f.esExterna) return f.archivoNombre || 'Factura externa';
+            if (!f.numero && !f.puntoVenta) return '—';
+            const pv  = String(f.puntoVenta  ?? 0).padStart(4, '0');
+            const num = String(f.numero ?? 0).padStart(8, '0');
+            const tipo = f.tipoComprobante ? `${f.tipoComprobante} ` : '';
+            return `${tipo}${pv}-${num}`;
+        };
+
+        if (facturas.length === 0) {
+            content.style.display = 'none';
+            document.getElementById('sinDeudores').style.display = 'block';
+            document.getElementById('detalleDeudaTotal').textContent = fmt(0);
+            await actualizarBadgeDeudores();
+            await cargarDeudores();
+            return;
+        }
+
+        tbody.innerHTML = facturas.map(f => `
+            <tr id="detalleRow-${f.id}">
+                <td>${fmtNumero(f)}</td>
+                <td>${fmtFecha(f.fechaEmision)}</td>
+                <td>${fmt(f.subtotal)}</td>
+                <td>${fmt(f.totalIva)}</td>
+                <td><strong>${fmt(f.total)}</strong></td>
+                <td>
+                    <button class="btn-marcar-pagado" onclick="marcarPagadoDesdeDetalle(${f.id})">
+                        <i class="bi bi-check2"></i> Pagado
+                    </button>
+                </td>
+            </tr>`).join('');
+
+        const sumaTotal = facturas.reduce((acc, f) => acc + (f.total ?? 0), 0);
+        document.getElementById('detalleDeudaTotal').textContent = fmt(sumaTotal);
+
+    } catch {
+        loading.style.display = 'none';
+        modal.classList.remove('visible');
+        mostrarToast('Error al cargar el detalle de deuda', 'danger');
+    }
+}
+
+async function marcarPagadoDesdeDetalle(facturaId) {
+    const btn = document.querySelector(`#detalleRow-${facturaId} .btn-marcar-pagado`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i>'; }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/factura/${facturaId}/pago`, {
+            method:  'PATCH',
+            headers: { 'Authorization': `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ estadoPago: 'PAGADO' })
+        });
+        if (!res.ok) throw new Error();
+        mostrarToast('Factura marcada como pagada ✓', 'success');
+        await verDetalleDeuda(_detalleClienteId, _detalleClienteNombre);
+        await actualizarBadgeDeudores();
+        if (tabActual === 'deudores') await cargarDeudores();
+    } catch {
+        mostrarToast('Error al actualizar el estado de pago', 'danger');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check2"></i> Pagado'; }
+    }
 }

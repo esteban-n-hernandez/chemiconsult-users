@@ -40,6 +40,20 @@
         </button>
     </div>
 
+    <!-- Tabs -->
+    <div class="page-tabs">
+        <button class="tab-btn active" id="tabBtnClientes" onclick="cambiarTab('clientes')">
+            <i class="bi bi-people"></i> Clientes
+        </button>
+        <button class="tab-btn" id="tabBtnDeudores" onclick="cambiarTab('deudores')">
+            <i class="bi bi-exclamation-circle"></i> Deudores
+            <span class="tab-badge" id="tabBadgeDeudores" style="display:none;"></span>
+        </button>
+    </div>
+
+    <!-- ══ VISTA CLIENTES ══ -->
+    <div id="vistaClientes">
+
     <!-- Filtros -->
     <div class="card-filtros">
         <div class="filtros-row">
@@ -108,6 +122,52 @@
             </div>
         </div>
     </div>
+
+    </div><!-- /vistaClientes -->
+
+    <!-- ══ VISTA DEUDORES ══ -->
+    <div id="vistaDeudores" style="display:none;">
+
+        <div class="panel">
+            <table class="tabla-clientes">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>CUIT</th>
+                    <th>Facturas pendientes</th>
+                    <th>Total adeudado</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody id="tablaDeudores"></tbody>
+            </table>
+
+            <div class="sin-resultados" id="sinDeudores" style="display:none;">
+                <i class="bi bi-check-circle" style="color:var(--verde)"></i>
+                <p>Sin deudores — todos los clientes al día</p>
+            </div>
+
+            <div class="deudores-loading" id="deudoresLoading">
+                <i class="bi bi-arrow-repeat spin"></i> Cargando...
+            </div>
+
+            <div class="panel-footer">
+                <small id="infoDeudoresPag">Mostrando 0 deudores</small>
+                <div id="paginacionDeudores" class="pag-controls"></div>
+                <div class="pag-page-size">
+                    <label for="selectDeudoresPageSize">Por página:</label>
+                    <select id="selectDeudoresPageSize">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /vistaDeudores -->
 
 </div>
 
@@ -583,6 +643,62 @@
                 </button>
             </div>
         </form>
+
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL — Detalle de deuda
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalDetalleDeuda">
+    <div class="modal-box modal-box-detalle">
+
+        <div class="modal-header">
+            <div class="mh-icon"><i class="bi bi-receipt"></i></div>
+            <div class="mh-info">
+                <div class="mh-eyebrow">Facturas pendientes</div>
+                <h5 id="detalleDeudaNombre">—</h5>
+            </div>
+            <button class="modal-close" id="modalDetalleDeudaClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-body" style="padding:0; gap:0;">
+
+            <div class="detalle-deuda-loading" id="detalleDeudaLoading">
+                <i class="bi bi-arrow-repeat spin"></i> Cargando facturas...
+            </div>
+
+            <div id="detalleDeudaContent" style="display:none;">
+                <table class="tabla-clientes tabla-detalle-deuda">
+                    <thead>
+                    <tr>
+                        <th>N° Factura</th>
+                        <th>Fecha</th>
+                        <th>Subtotal</th>
+                        <th>IVA</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaDetalleDeuda"></tbody>
+                    <tfoot>
+                    <tr class="detalle-total-row">
+                        <td colspan="4"><strong>Total adeudado</strong></td>
+                        <td><strong id="detalleDeudaTotal">—</strong></td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancelar" id="btnCerrarDetalleDeuda">Cerrar</button>
+        </div>
 
     </div>
 </div>
