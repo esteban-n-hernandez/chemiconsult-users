@@ -3,77 +3,14 @@
 
 
 
-.btn-nuevo-item {
-    background: var(--verde);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.2s;
-}
-
-.btn-nuevo-item:hover { background: var(--verde-oscuro); }
 
 /* ── KPI ── */
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.kpi-card {
-    background: var(--bg-surface);
-    border-radius: 14px;
-    padding: 1.25rem 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    border-left: 4px solid transparent;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.kpi-grid { grid-template-columns: repeat(3, 1fr); }
+.kpi-card { display:flex; align-items:center; gap:1rem; padding:1.25rem 1.5rem; border-left:4px solid transparent; }
 .kpi-card.verde  { border-left-color: #5EA504; }
 .kpi-card.naranja{ border-left-color: #fd7e14; }
 .kpi-card.rojo   { border-left-color: #dc3545; }
-
-.kpi-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-}
-
-.kpi-icon.verde  { background: #eaf5d3; color: #5EA504; }
-.kpi-icon.naranja{ background: #fff0e0; color: #fd7e14; }
 .kpi-icon.rojo   { background: #fde8ea; color: #dc3545; }
-
-.kpi-data h3 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin: 0;
-    line-height: 1;
-}
-
-.kpi-data p {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    margin: 4px 0 0;
-}
-
 
 /* ── Filtros ── */
 .filtros {
@@ -264,62 +201,6 @@
 .paginacion li button:disabled { opacity: 0.35; cursor: not-allowed; }
 
 
-/* ── Formulario ── */
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.form-group label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.form-group label span.required { color: #dc3545; margin-left: 2px; }
-
-.form-control-custom {
-    padding: 8px 12px;
-    border: 1px solid var(--color-border-tertiary);
-    border-radius: 8px;
-    font-size: 13px;
-    color: var(--text-main);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    width: 100%;
-    background: var(--bg-surface);
-}
-
-.form-control-custom:focus {
-    border-color: var(--verde);
-    box-shadow: 0 0 0 3px rgba(94,165,4,0.12);
-}
-
-.form-control-custom.error {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 3px rgba(220,53,69,0.1);
-}
-
-.textarea-vertical { resize: vertical; }
-
-.field-error {
-    font-size: 11px;
-    color: #dc3545;
-    display: none;
-    margin-top: 2px;
-}
-
-.field-error.visible { display: block; }
-
 /* ── Selector de nivel ── */
 .nivel-selector {
     display: flex;
@@ -360,37 +241,6 @@
 .nivel-option:has(input[value="ALTO"]:checked)  { background: #eaf5d3; border-color: #5EA504; color: #3b6d11; }
 .nivel-option:has(input[value="MEDIO"]:checked) { background: #fff3cd; border-color: #fd7e14; color: #856404; }
 .nivel-option:has(input[value="BAJO"]:checked)  { background: #f8d7da; border-color: #dc3545; color: #842029; }
-
-/* ── Botones footer ── */
-.btn-cancelar {
-    padding: 8px 20px;
-    border: 1px solid var(--color-border-tertiary);
-    background: var(--bg-surface);
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--color-text-secondary);
-    transition: all 0.2s;
-}
-
-.btn-cancelar:hover { background: var(--bg-subtle); }
-
-.btn-guardar {
-    padding: 8px 22px;
-    background: var(--verde);
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.2s;
-}
-
-.btn-guardar:hover { background: var(--verde-oscuro); }
 
 .btn-eliminar {
     padding: 8px 22px;

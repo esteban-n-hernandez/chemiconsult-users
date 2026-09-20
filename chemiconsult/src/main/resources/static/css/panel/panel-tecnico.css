@@ -715,3 +715,10 @@
         grid-column: 1 / -1;
     }
 }
+
+/* ── Modificadores ── */
+.panel-body-flush { padding: 0; }
+.required-mark { color: #dc2626; }
+.params-modal-sm { max-width: 480px; }
+.params-modal-body-form { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.form-group-flush { margin: 0; }

@@ -163,7 +163,7 @@ function renderBotonesEstado(id, estadoActual) {
     container.innerHTML = opciones
         .filter(o => o.valor !== estadoActual)
         .map(o => `
-            <button class="btn btn-sm estado-badge estado-${o.valor} border-0"
+            <button class="estado-badge estado-${o.valor}"
                     onclick="cambiarEstado(${id}, '${o.valor}')">
                 ${o.label}
             </button>`)
@@ -177,7 +177,7 @@ async function cambiarEstado(id, estado) {
         calendar.refetchEvents();
         mostrarToast('Estado actualizado');
     } catch {
-        mostrarToast('Error al actualizar estado', true);
+        mostrarToast('Error al actualizar estado', 'danger');
     }
 }
 
@@ -287,13 +287,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tipoVal = document.querySelector('input[name="form-tipo"]:checked')?.value || 'MUESTREO';
         const clienteId = document.getElementById('form-cliente').value;
-        if (tipoVal === 'MUESTREO' && !clienteId) { mostrarToast('Seleccioná un cliente', true); return; }
+        if (tipoVal === 'MUESTREO' && !clienteId) { mostrarToast('Seleccioná un cliente', 'danger'); return; }
         if (tipoVal === 'VENCIMIENTO' && !document.getElementById('form-documentacion').value.trim()) {
-            mostrarToast('Ingresá la documentación', true); return;
+            mostrarToast('Ingresá la documentación', 'danger'); return;
         }
 
         const fechaRaw = document.getElementById('form-fecha').value;
-        if (!fechaRaw) { mostrarToast('Ingresá la fecha y hora', true); return; }
+        if (!fechaRaw) { mostrarToast('Ingresá la fecha y hora', 'danger'); return; }
 
         const sucursalVal    = document.getElementById('form-sucursal').value;
         const responsableVal = document.getElementById('form-responsable').value;
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cerrarModal('formModal');
             calendar.refetchEvents();
         } catch (err) {
-            mostrarToast(err.message || 'Error al guardar', true);
+            mostrarToast(err.message || 'Error al guardar', 'danger');
         }
     });
 });
@@ -349,7 +349,7 @@ async function eliminarMuestreo(id) {
         calendar.refetchEvents();
         mostrarToast('Muestreo eliminado');
     } catch {
-        mostrarToast('Error al eliminar', true);
+        mostrarToast('Error al eliminar', 'danger');
     }
 }
 
@@ -390,13 +390,5 @@ function labelEstado(e) {
     return { PENDIENTE: 'Pendiente', CONFIRMADO: 'Confirmado', REALIZADO: 'Realizado', CANCELADO: 'Cancelado' }[e] || e;
 }
 
-function abrirModal(id)  { bootstrap.Modal.getOrCreateInstance(document.getElementById(id)).show(); }
-function cerrarModal(id) { bootstrap.Modal.getInstance(document.getElementById(id))?.hide(); }
-
-function mostrarToast(msg, error = false) {
-    const toast = document.getElementById('agendaToast');
-    if (!toast) return;
-    toast.querySelector('.toast-body').textContent = msg;
-    toast.className = `toast align-items-center border-0 ${error ? 'bg-danger text-white' : 'bg-success text-white'}`;
-    bootstrap.Toast.getOrCreateInstance(toast, { delay: 3000 }).show();
-}
+function abrirModal(id)  { document.getElementById(id)?.classList.add('visible'); }
+function cerrarModal(id) { document.getElementById(id)?.classList.remove('visible'); }

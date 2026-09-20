@@ -710,7 +710,7 @@ modalDetalle.addEventListener("click", e => { if (e.target === modalDetalle) mod
 const SIGUIENTE_ESTADO = {
     PENDIENTE: "EN_PROCESO",
     EN_PROCESO: "COMPLETO_SIN_INFORME",
-    DEMORADA: "EN_PROCESO",
+    DEMORADA:   "COMPLETO_SIN_INFORME",
 };
 
 // Modal de confirmación "Marcar completo"
@@ -736,7 +736,7 @@ function cerrarModalConfirmarCompleto() {
 }
 
 async function avanzarEstado(id, estadoActual, btn) {
-    if (estadoActual === "EN_PROCESO") {
+    if (estadoActual === "EN_PROCESO" || estadoActual === "DEMORADA") {
         // Validar que todos los parámetros tengan resultado antes de permitir el avance
         if (btn) { btn.disabled = true; btn.innerHTML = `<i class="bi bi-hourglass-split"></i>`; }
         try {
@@ -1036,11 +1036,14 @@ async function cargarEstudios() {
 
 function badgeHTML(estado) {
     const e = normalizarEstado(estado || "");
+    if (e === "DEMORADA") {
+        return `<span class="badge-estado badge-proceso"><span class="badge-dot"></span>En proceso</span>` +
+               `<span class="badge-estado badge-demorada badge-demorada-chip"><i class="bi bi-clock"></i> Demorada</span>`;
+    }
     const classMap = {
         PENDIENTE:            "badge-pendiente",
         EN_PROCESO:           "badge-proceso",
         COMPLETO_SIN_INFORME: "badge-completo-sin-informe",
-        DEMORADA:             "badge-demorada",
         COMPLETO:             "badge-informe",
         CANCELADO:            "badge-cancelado",
     };
@@ -1388,25 +1391,14 @@ function renderPage() {
             );
 
             const AVANZAR_MAP = {
-                PENDIENTE: { label: "Iniciar análisis", icono: "bi-play-circle" },
-                EN_PROCESO: { label: "Marcar completo", icono: "bi-check2-circle" },
+                PENDIENTE: { label: "Iniciar análisis",   icono: "bi-play-circle" },
+                EN_PROCESO: { label: "Marcar completo",   icono: "bi-check2-circle" },
+                DEMORADA:   { label: "Marcar completo",    icono: "bi-check2-circle" },
             };
             if (AVANZAR_MAP[estadoNorm]) {
                 const av = AVANZAR_MAP[estadoNorm];
                 acciones.push(
                     `<button class="btn-accion btn-avanzar" data-id="${m.id}" data-estado="${estadoNorm}" title="${av.label}"><i class="bi ${av.icono}"></i></button>`,
-                );
-            }
-
-            if (estadoNorm === "COMPLETO_SIN_INFORME" || estadoNorm === "COMPLETO") {
-                acciones.push(
-                    `<button class="btn-accion btn-accion-gris btn-archivos" data-id="${m.id}" data-codigo="${m.codigo}" title="Archivos"><i class="bi bi-paperclip"></i></button>`,
-                );
-            }
-
-            if (estadoNorm === "COMPLETO_SIN_INFORME") {
-                acciones.push(
-                    `<button class="btn-accion btn-accion-verde btn-pdf" data-id="${m.id}" title="Generar informe PDF"><i class="bi bi-file-earmark-pdf"></i></button>`,
                 );
             }
 

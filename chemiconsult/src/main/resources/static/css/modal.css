@@ -69,20 +69,6 @@
 
 .modal-header h5 i { color: var(--verde); }
 
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #adb5bd;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    line-height: 1;
-    transition: all .2s;
-}
-
-.modal-close:hover { background: var(--bg-subtle); color: var(--color-text-secondary); }
-
 .modal-body {
     padding: 1.5rem;
     display: flex;
@@ -118,7 +104,6 @@
     border-top: 3px solid var(--verde);
 }
 
-/* ── Header — Opción B ── */
 .modal-box .modal-header {
     display: flex;
     align-items: center;
@@ -483,3 +468,44 @@
 
     .modal-box { max-width: 95vw !important; }
 }
+
+/* ── Footer split (botones en extremos opuestos) ── */
+.modal-footer-split { justify-content: space-between; }
+
+/* ── Botón peligro (eliminar en modal) ── */
+.btn-modal-danger {
+    padding: 7px 14px;
+    background: transparent;
+    border: 1.5px solid #fca5a5;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #dc2626;
+    transition: background .15s, border-color .15s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+}
+.btn-modal-danger:hover { background: #fee2e2; border-color: #dc2626; }
+
+/* ── Botón secundario (editar en modal) ── */
+.btn-modal-secondary {
+    padding: 7px 14px;
+    background: transparent;
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: background .15s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+}
+.btn-modal-secondary:hover { background: var(--bg-subtle); }

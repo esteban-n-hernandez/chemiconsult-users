@@ -102,17 +102,6 @@
     flex-shrink: 0;
 }
 
-/* ── Botón nuevo presupuesto + header ── */
-
-.btn-nuevo-pres {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--verde); color: #fff;
-    border: none; border-radius: 8px;
-    padding: 9px 18px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: background .15s;
-    white-space: nowrap;
-}
-.btn-nuevo-pres:hover { background: var(--verde-hover, #4a8303); }
 
 .btn-pres-secondary {
     display: flex; align-items: center; gap: 6px;

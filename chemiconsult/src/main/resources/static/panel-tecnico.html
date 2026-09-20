@@ -114,7 +114,7 @@
                         <input type="text" id="filtroResoluciones" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -173,7 +173,7 @@
                         <input type="text" id="filtroParametros" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -225,7 +225,7 @@
                         <input type="text" id="filtroMetodologias" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -277,7 +277,7 @@
                         <input type="text" id="filtroTiposMuestra" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -364,7 +364,7 @@
                         <input type="text" id="filtroGruposInforme" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -394,7 +394,7 @@
                 <div class="panel-body-custom">
                     <form id="formEquipo">
                         <div class="form-group-custom">
-                            <label>Nombre <span style="color:red">*</span></label>
+                            <label>Nombre <span class="required-mark">*</span></label>
                             <input type="text" id="equipoNombre" class="form-control-custom"
                                    placeholder="Ej: pHímetro, Conductímetro" required>
                         </div>
@@ -435,7 +435,7 @@
                         <input type="text" id="filtroEquipos" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -499,7 +499,7 @@
                 <div class="panel-body-custom">
                     <form id="formPrecio">
                         <div class="form-group-custom">
-                            <label>Nombre del servicio <span style="color:red">*</span></label>
+                            <label>Nombre del servicio <span class="required-mark">*</span></label>
                             <input type="text" id="precioNombre" class="form-control-custom"
                                    placeholder="Ej: Análisis fisicoquímico de agua" required>
                         </div>
@@ -509,7 +509,7 @@
                                       placeholder="Opcional — detalle del servicio"></textarea>
                         </div>
                         <div class="form-group-custom">
-                            <label>Precio s/imp. (ARS) <span style="color:red">*</span></label>
+                            <label>Precio s/imp. (ARS) <span class="required-mark">*</span></label>
                             <input type="number" id="precioPrecio" class="form-control-custom"
                                    placeholder="Ej: 15000" min="0" step="0.01" required>
                         </div>
@@ -531,7 +531,7 @@
                         <input type="text" id="filtroPrecios" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -573,7 +573,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -617,7 +617,7 @@
                         <input type="text" id="filtroCategoriasDoc" class="tabla-filtro" placeholder="Buscar...">
                     </div>
                 </div>
-                <div class="panel-body-custom" style="padding:0;">
+                <div class="panel-body-custom panel-body-flush">
                     <table class="tabla-config">
                         <thead>
                         <tr>
@@ -653,26 +653,26 @@
 
 <!-- Modal: formulario de plantilla (alta y edición) -->
 <div class="params-overlay" id="plantillaFormOverlay" onclick="_cerrarModalPlantillaForm(event)">
-    <div class="params-modal" style="max-width:480px;">
+    <div class="params-modal params-modal-sm">
         <div class="params-modal-header">
             <h5 id="plantillaFormTitulo"><i class="bi bi-plus-circle"></i> Nueva plantilla</h5>
             <button class="params-modal-close" onclick="document.getElementById('plantillaFormOverlay').classList.remove('visible')" title="Cerrar">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
-        <div class="params-modal-body" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div class="params-modal-body params-modal-body-form">
             <input type="hidden" id="plantillaEditId">
-            <div class="form-group-custom" style="margin:0;">
-                <label>Nombre <span style="color:red">*</span></label>
+            <div class="form-group-custom form-group-flush">
+                <label>Nombre <span class="required-mark">*</span></label>
                 <input type="text" id="plantillaNombre" class="form-control-custom"
                        placeholder="Ej: Efluente industrial, Agua de red...">
             </div>
-            <div class="form-group-custom" style="margin:0;">
+            <div class="form-group-custom form-group-flush">
                 <label>Descripción</label>
                 <input type="text" id="plantillaDescripcion" class="form-control-custom"
                        placeholder="Opcional">
             </div>
-            <div class="form-group-custom" style="margin:0;">
+            <div class="form-group-custom form-group-flush">
                 <label>Parámetros</label>
                 <button type="button" onclick="_abrirModalPlantillaParams()"
                         style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--borde,#d1d5db);background:var(--bg-input,#fff);cursor:pointer;font-size:13px;color:var(--text,#111);text-align:left;">

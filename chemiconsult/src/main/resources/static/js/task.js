@@ -16,11 +16,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupForm();
     setupDropzones();
 
-    document.getElementById("archivedModal").addEventListener("show.bs.modal", loadArchivedTasks);
-
     if (new URLSearchParams(location.search).get('nueva') === '1') {
         abrirNuevaTarea();
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('taskModal')).show();
     }
 });
 
@@ -232,12 +229,6 @@ async function updateTaskStatus(task, newStatus) {
 
 function setupForm() {
     const form = document.getElementById("taskForm");
-    const modalEl = document.getElementById("taskModal");
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-    // El botón "+ Nueva tarea" del header debe limpiar el modal antes de abrirlo
-    // (si venía de editar una tarea, hay que resetear el modo)
-    document.querySelector('[data-bs-target="#taskModal"]').addEventListener("click", abrirNuevaTarea);
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -275,7 +266,7 @@ function setupForm() {
             }
             renderBoard();
 
-            modal.hide();
+            cerrarTaskModal();
         } catch (e) {
             console.error(e);
             mostrarToast(esEdicion ? "Error actualizando la tarea" : "Error creando tarea", 'danger');
@@ -292,6 +283,7 @@ function abrirNuevaTarea() {
     document.getElementById("taskSubmitBtn").textContent = "Guardar";
     document.getElementById("statusGroup").style.display = "block";
     if (userId) document.getElementById("asignadoUserId").value = userId;
+    abrirTaskModal();
 }
 
 // Abre el modal en modo edición, precargado con los datos de la tarea
@@ -309,8 +301,7 @@ function abrirEditar(taskId) {
     // El estado no se edita acá (se cambia arrastrando la tarjeta entre columnas)
     document.getElementById("statusGroup").style.display = "none";
 
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("taskModal"));
-    modal.show();
+    abrirTaskModal();
 }
 
 async function deleteTask(id) {
@@ -540,3 +531,8 @@ function escapeHtml(str) {
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
 }
+
+function abrirTaskModal()     { document.getElementById('taskModal').classList.add('visible'); }
+function cerrarTaskModal()    { document.getElementById('taskModal').classList.remove('visible'); }
+function abrirArchivedModal() { loadArchivedTasks(); document.getElementById('archivedModal').classList.add('visible'); }
+function cerrarArchivedModal(){ document.getElementById('archivedModal').classList.remove('visible'); }
